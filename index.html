@@ -585,4 +585,126 @@
             ctx.setLineDash([15, 15]);
 
             const textHeight = 45; 
-            const text
+            const textPaddingBottom = 15;
+            const hasText = pawn.name.trim() !== '' || pawn.number.trim() !== '';
+
+            for (let i = 0; i < panels; i++) {
+                let xBase = i * internalPanelWidth;
+                ctx.save();
+                
+                const reservedBottom = (hasText && i < 2) ? textHeight + textPaddingBottom : 0;
+                const margin = internalHeight * 0.05;
+                const availableHeight = internalHeight - margin - reservedBottom;
+
+                const autoScale = Math.min(
+                    internalPanelWidth / pawn.img.width, 
+                    availableHeight / pawn.img.height
+                ) * 0.95; 
+
+                const finalScale = autoScale * pawn.scale;
+                const w = pawn.img.width * finalScale;
+                const h = pawn.img.height * finalScale;
+                
+                const shiftX = pawn.offsetX * (printDPI / 100);
+                const shiftY = pawn.offsetY * (printDPI / 100);
+
+                const xOffset = xBase + (internalPanelWidth - w) / 2 + shiftX;
+                const yOffset = internalHeight - h - (margin / 2) - reservedBottom + shiftY;
+
+                ctx.beginPath();
+                ctx.rect(xBase, 0, internalPanelWidth, internalHeight);
+                ctx.clip();
+
+                if (i === 0) {
+                    ctx.drawImage(pawn.img, xOffset, yOffset, w, h);
+                } 
+                else if (i === 1) {
+                    ctx.translate(xBase + internalPanelWidth / 2, 0);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(pawn.img, -w/2 + shiftX, yOffset, w, h);
+                } 
+                else if (i === 2) {
+                    if (pawn.isDark) {
+                        ctx.strokeStyle = pawn.color; 
+                        ctx.lineWidth = 6;
+                        ctx.setLineDash([]);
+                        const p = 30; 
+                        ctx.beginPath();
+                        ctx.moveTo(xBase + p, p);
+                        ctx.lineTo(xBase + internalPanelWidth - p, internalHeight - p);
+                        ctx.moveTo(xBase + internalPanelWidth - p, p);
+                        ctx.lineTo(xBase + p, internalHeight - p);
+                        ctx.stroke();
+                    } else {
+                        const off = document.createElement('canvas');
+                        off.width = w; off.height = h;
+                        const oCtx = off.getContext('2d');
+                        oCtx.drawImage(pawn.img, 0, 0, w, h);
+                        oCtx.globalCompositeOperation = 'source-in';
+                        oCtx.fillStyle = '#000000';
+                        oCtx.fillRect(0, 0, w, h);
+                        ctx.drawImage(off, xOffset, yOffset, w, h);
+                    }
+                }
+                ctx.restore();
+
+                if (i < 2) {
+                    drawText(ctx, pawn, xBase, internalPanelWidth, internalHeight, textPaddingBottom);
+                }
+
+                if (i < panels - 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(xBase + internalPanelWidth, 0);
+                    ctx.lineTo(xBase + internalPanelWidth, internalHeight);
+                    ctx.stroke();
+                }
+            }
+
+            let xTab = panels * internalPanelWidth;
+            ctx.beginPath();
+            ctx.moveTo(xTab, 0); ctx.lineTo(xTab, internalHeight); ctx.stroke();
+
+            ctx.fillStyle = '#e8e8e8';
+            ctx.fillRect(xTab, 0, internalTabWidth, internalHeight);
+            
+            ctx.save();
+            ctx.fillStyle = pawn.color; 
+            ctx.translate(xTab + internalTabWidth/2, internalHeight/2);
+            ctx.rotate(-Math.PI/2);
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.font = "bold 28px sans-serif";
+            ctx.fillText("GLUE", 0, 0);
+            ctx.restore();
+
+            ctx.strokeStyle = pawn.color; 
+            ctx.lineWidth = 4;
+            ctx.setLineDash([]);
+            ctx.strokeRect(0, 0, internalWidth, internalHeight);
+
+            return canvas;
+        }
+
+        function drawText(ctx, pawn, xBase, panelWidth, panelHeight, paddingBottom) {
+            let displayText = pawn.name;
+            if (pawn.number) {
+                displayText += displayText ? ` #${pawn.number}` : `#${pawn.number}`;
+            }
+            if (!displayText) return;
+
+            ctx.fillStyle = pawn.color; 
+            ctx.textAlign = "center";
+            ctx.textBaseline = "bottom";
+            ctx.font = "bold 32px sans-serif";
+            
+            ctx.shadowColor = "white";
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            
+            ctx.fillText(displayText, xBase + panelWidth / 2, panelHeight - paddingBottom);
+            ctx.shadowBlur = 0;
+        }
+    </script>
+</body>
+</html>
