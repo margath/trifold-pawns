@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tri-Fold Pawn Maker</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #2c2c2c;
+            color: #e0e0e0;
+        }
+        
+        /* Sidebar styling */
+        .sidebar {
+            width: 320px;
+            background: #1e1e1e;
+            padding: 25px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            border-right: 1px solid #444;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+        
+        .sidebar h2 { margin: 0; font-size: 22px; color: #fff; }
+        .sidebar p { margin: 0; font-size: 14px; color: #aaa; line-height: 1.4; }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        .control-group label { font-weight: bold; color: #fff; }
+        
+        /* Main Workspace styling */
+        .main {
+            flex-grow: 1;
+            overflow: auto;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .page {
+            background: white;
+            width: 8.5in;
+            min-height: 11in;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            padding: 0.5in;
+            box-sizing: border-box;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 0.25in;
+        }
+
+        /* Pawn container & UI */
+        .pawn-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            width: fit-content;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            z-index: 5;
+            padding: 0;
+        }
+        .delete-btn:hover { background: #c0392b; }
+
+        .duplicate-btn {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            background: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            z-index: 5;
+            padding: 0;
+        }
+        .duplicate-btn:hover { background: #27ae60; }
+
+        .pawn-inputs {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        
+        .pawn-inputs input {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 12px;
+            background: white;
+            color: black;
+            height: 30px;
+            box-sizing: border-box;
+        }
+        .input-color { width: 32px; padding: 0; cursor: pointer; border: none; }
+        .input-name { flex-grow: 1; padding: 6px; }
+        .input-number { width: 40px; text-align: center; padding: 6px; }
+
+        /* Transform Sliders */
+        .pawn-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            background: #eee;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: #333;
+            font-weight: bold;
+        }
+        .slider-group label { width: 45px; }
+        .slider-group input[type="range"] { 
+            flex-grow: 1; 
+            cursor: pointer; 
+            margin: 0;
+        }
+
+        /* Form Inputs & Buttons */
+        button.primary {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: background 0.2s;
+            width: 100%;
+        }
+        button.primary:hover { background: #2980b9; }
+
+        button.secondary {
+            background: #555;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: background 0.2s;
+            width: 100%;
+        }
+        button.secondary:hover { background: #666; }
+        
+        select, input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background: #1e1e1e;
+            color: white;
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Print Settings */
+        @media print {
+            @page { margin: 0.5in; size: letter portrait; }
+            body { background: white; height: auto; }
+            .sidebar { display: none; }
+            .main { padding: 0; overflow: visible; display: block; }
+            .page { 
+                box-shadow: none; width: 100%; height: auto; min-height: 0; padding: 0; display: block; 
+            }
+            .pawn-wrapper { 
+                display: inline-block; 
+                margin: 0 0.25in 0.25in 0; 
+                padding: 0;
+                border: none;
+                background: transparent;
+                page-break-inside: avoid; 
+            }
+            .delete-btn, .duplicate-btn, .pawn-inputs, .pawn-controls { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div>
+            <h2>Tri-Fold Pawn Maker</h2>
+            <p style="margin-top: 5px;">Create printable triangular prism standees. Duplicate pawns, save projects, and build squads.</p>
+        </div>
+        
+        <div class="control-group">
+            <label>1. Add Images</label>
+            <p style="font-size: 12px;">Drop transparent PNGs anywhere.</p>
+            <input type="file" id="file-input" multiple accept="image/*">
+        </div>
+
+        <div class="control-group">
+            <label>2. Base Size</label>
+            <select id="size-select" onchange="updateSize()">
+                <option value="medium">Medium (1" base x 1.5" tall)</option>
+                <option value="small">Small (0.75" base x 1" tall)</option>
+                <option value="large">Large (1.25" base x 2" tall)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>3. Save / Load Project</label>
+            <div class="btn-row">
+                <button class="secondary" onclick="saveProject()">Save</button>
+                <button class="secondary" onclick="document.getElementById('load-file-input').click()">Load</button>
+                <input type="file" id="load-file-input" style="display:none" accept=".json" onchange="loadProject(event)">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>4. Print & Cut</label>
+            <button class="primary" onclick="window.print()">Generate PDF / Print</button>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="page" id="page"></div>
+    </div>
+
+    <script>
+        const state = {
+            pawns: [], 
+            pawnWidth: 1.0, 
+            pawnHeight: 1.5,
+        };
+
+        const pageEl = document.getElementById('page');
+        document.getElementById('file-input').addEventListener('change', handleFiles);
+
+        // Drag & Drop
+        window.addEventListener('dragover', e => { e.preventDefault(); document.body.style.opacity = '0.7'; });
+        window.addEventListener('dragleave', e => { e.preventDefault(); document.body.style.opacity = '1'; });
+        window.addEventListener('drop', e => {
+            e.preventDefault();
+            document.body.style.opacity = '1';
+            handleFiles({ target: { files: e.dataTransfer.files } });
+        });
+
+        async function handleFiles(e) {
+            const files = e.target.files;
+            for (let file of files) {
+                if (!file.type.startsWith('image/')) continue;
+                
+                const dataUrl = await new Promise(r => {
+                    const reader = new FileReader();
+                    reader.onload = ev => r(ev.target.result);
+                    reader.readAsDataURL(file);
+                });
+
+                const img = new Image();
+                await new Promise(r => {
+                    img.onload = r;
+                    img.src = dataUrl;
+                });
+
+                state.pawns.push({
+                    img: img,
+                    dataUrl: dataUrl, // Save base64 string for exporting
+                    name: '',
+                    number: '',
+                    color: '#000000', 
+                    isDark: calculateDarkness(img),
+                    scale: 1.0,     
+                    offsetX: 0,     
+                    offsetY: 0      
+                });
+            }
+            if(e.target.id === 'file-input') e.target.value = ''; 
+            renderAll();
+        }
+
+        function calculateDarkness(img) {
+            const cvs = document.createElement('canvas');
+            const ctx = cvs.getContext('2d', { willReadFrequently: true });
+            cvs.width = img.width;
+            cvs.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            
+            const imageData = ctx.getImageData(0, 0, cvs.width, cvs.height).data;
+            let totalBrightness = 0;
+            let opaquePixels = 0;
+            
+            for (let i = 0; i < imageData.length; i += 4) {
+                if (imageData[i + 3] > 50) { 
+                    const brightness = (0.299 * imageData[i] + 0.587 * imageData[i + 1] + 0.114 * imageData[i + 2]);
+                    totalBrightness += brightness;
+                    opaquePixels++;
+                }
+            }
+            
+            if (opaquePixels === 0) return false;
+            return (totalBrightness / opaquePixels) < 127.5;
+        }
+
+        function removePawn(index) {
+            state.pawns.splice(index, 1);
+            renderAll();
+        }
+
+        function duplicatePawn(index) {
+            const original = state.pawns[index];
+            let newNumber = original.number;
+            
+            if (!isNaN(newNumber) && newNumber.trim() !== '') {
+                newNumber = (parseInt(newNumber, 10) + 1).toString();
+            }
+
+            const copy = { ...original, number: newNumber };
+            state.pawns.splice(index + 1, 0, copy);
+            renderAll();
+        }
+
+        function updatePawnValue(index, field, value) {
+            state.pawns[index][field] = value;
+            renderSinglePawn(index);
+        }
+
+        function updatePawnTransform(index, field, value) {
+            state.pawns[index][field] = parseFloat(value);
+            renderSinglePawn(index);
+        }
+
+        function updateSize() {
+            const size = document.getElementById('size-select').value;
+            if (size === 'small') { state.pawnWidth = 0.75; state.pawnHeight = 1.0; }
+            if (size === 'medium') { state.pawnWidth = 1.0; state.pawnHeight = 1.5; }
+            if (size === 'large') { state.pawnWidth = 1.25; state.pawnHeight = 2.0; }
+            renderAll();
+        }
+
+        // --- Save / Load Logic ---
+        function saveProject() {
+            const projectData = {
+                pawnWidth: state.pawnWidth,
+                pawnHeight: state.pawnHeight,
+                pawns: state.pawns.map(p => ({
+                    dataUrl: p.dataUrl,
+                    name: p.name,
+                    number: p.number,
+                    color: p.color,
+                    isDark: p.isDark,
+                    scale: p.scale,
+                    offsetX: p.offsetX,
+                    offsetY: p.offsetY
+                }))
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projectData));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "pawns_project.json");
+            document.body.appendChild(downloadAnchorNode); 
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        async function loadProject(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const projectData = JSON.parse(event.target.result);
+                    
+                    // Restore dimensions and update select UI
+                    state.pawnWidth = projectData.pawnWidth || 1.0;
+                    state.pawnHeight = projectData.pawnHeight || 1.5;
+                    
+                    const select = document.getElementById('size-select');
+                    if (state.pawnWidth === 0.75) select.value = 'small';
+                    if (state.pawnWidth === 1.0) select.value = 'medium';
+                    if (state.pawnWidth === 1.25) select.value = 'large';
+
+                    // Rebuild pawns array and instantiate Images
+                    state.pawns = [];
+                    for (let p of projectData.pawns) {
+                        const img = new Image();
+                        await new Promise(r => {
+                            img.onload = r;
+                            img.src = p.dataUrl;
+                        });
+
+                        state.pawns.push({
+                            img: img,
+                            dataUrl: p.dataUrl,
+                            name: p.name || '',
+                            number: p.number || '',
+                            color: p.color || '#000000',
+                            isDark: p.isDark !== undefined ? p.isDark : calculateDarkness(img),
+                            scale: p.scale || 1.0,
+                            offsetX: p.offsetX || 0,
+                            offsetY: p.offsetY || 0
+                        });
+                    }
+                    renderAll();
+                } catch (error) {
+                    alert('Error loading project. Make sure it is a valid pawns project JSON file.');
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = ''; // Reset file input
+        }
+
+        // --- Render UI ---
+        function createSliderGroup(index, labelTxt, field, min, max, step) {
+            const group = document.createElement('div');
+            group.className = 'slider-group';
+            
+            const label = document.createElement('label');
+            label.innerText = labelTxt;
+            
+            const slider = document.createElement('input');
+            slider.type = 'range';
+            slider.min = min;
+            slider.max = max;
+            slider.step = step;
+            slider.value = state.pawns[index][field];
+            slider.oninput = (e) => updatePawnTransform(index, field, e.target.value);
+            
+            group.appendChild(label);
+            group.appendChild(slider);
+            return group;
+        }
+
+        function renderAll() {
+            pageEl.innerHTML = '';
+            state.pawns.forEach((pawn, index) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'pawn-wrapper';
+                wrapper.id = `pawn-wrapper-${index}`;
+                
+                const dupBtn = document.createElement('button');
+                dupBtn.className = 'duplicate-btn';
+                dupBtn.innerHTML = '+';
+                dupBtn.title = 'Duplicate Pawn';
+                dupBtn.onclick = () => duplicatePawn(index);
+                wrapper.appendChild(dupBtn);
+
+                const delBtn = document.createElement('button');
+                delBtn.className = 'delete-btn';
+                delBtn.innerHTML = '×';
+                delBtn.title = 'Remove Pawn';
+                delBtn.onclick = () => removePawn(index);
+                wrapper.appendChild(delBtn);
+
+                const canvasContainer = document.createElement('div');
+                canvasContainer.id = `canvas-container-${index}`;
+                wrapper.appendChild(canvasContainer);
+
+                const inputs = document.createElement('div');
+                inputs.className = 'pawn-inputs';
+                
+                const colorInput = document.createElement('input');
+                colorInput.type = 'color';
+                colorInput.className = 'input-color';
+                colorInput.title = 'Group Color';
+                colorInput.value = pawn.color;
+                colorInput.oninput = (e) => updatePawnValue(index, 'color', e.target.value);
+
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.className = 'input-name';
+                nameInput.placeholder = 'Name...';
+                nameInput.value = pawn.name;
+                nameInput.oninput = (e) => updatePawnValue(index, 'name', e.target.value);
+                
+                const numInput = document.createElement('input');
+                numInput.type = 'text';
+                numInput.className = 'input-number';
+                numInput.placeholder = '#';
+                numInput.value = pawn.number;
+                numInput.oninput = (e) => updatePawnValue(index, 'number', e.target.value);
+
+                inputs.appendChild(colorInput);
+                inputs.appendChild(nameInput);
+                inputs.appendChild(numInput);
+                wrapper.appendChild(inputs);
+
+                const controls = document.createElement('div');
+                controls.className = 'pawn-controls';
+                controls.appendChild(createSliderGroup(index, 'Size', 'scale', 0.2, 3.0, 0.05));
+                controls.appendChild(createSliderGroup(index, 'X-Pos', 'offsetX', -300, 300, 2));
+                controls.appendChild(createSliderGroup(index, 'Y-Pos', 'offsetY', -300, 300, 2));
+                wrapper.appendChild(controls);
+
+                pageEl.appendChild(wrapper);
+                renderSinglePawn(index);
+            });
+        }
+
+        // --- Render Canvas ---
+        function renderSinglePawn(index) {
+            const pawn = state.pawns[index];
+            const container = document.getElementById(`canvas-container-${index}`);
+            if (!container) return;
+            
+            container.innerHTML = '';
+            const canvas = drawPawnCanvas(pawn);
+            container.appendChild(canvas);
+        }
+
+        function drawPawnCanvas(pawn) {
+            const canvas = document.createElement('canvas');
+            const printDPI = 300; 
+            const tabWidthInches = 0.25; 
+            const panels = 3;
+            
+            const internalTabWidth = tabWidthInches * printDPI;
+            const internalPanelWidth = state.pawnWidth * printDPI;
+            const internalWidth = (internalPanelWidth * panels) + internalTabWidth;
+            const internalHeight = state.pawnHeight * printDPI;
+
+            canvas.width = internalWidth;
+            canvas.height = internalHeight;
+            canvas.style.width = (state.pawnWidth * panels + tabWidthInches) + "in";
+            canvas.style.height = state.pawnHeight + "in";
+
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, internalWidth, internalHeight);
+
+            ctx.strokeStyle = '#888';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([15, 15]);
+
+            const textHeight = 45; 
+            const text
