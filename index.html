@@ -385,7 +385,6 @@
                 baseName += ` (and ${others} other${others > 1 ? 's' : ''})`;
             }
             
-            // Clean filename to prevent filesystem errors
             baseName = baseName.replace(/[<>:"/\\|?*]/g, '');
             return baseName + extension;
         }
@@ -452,13 +451,11 @@
                 return;
             }
             
-            // Temporarily rename document title so the browser sets a nice default PDF save name
             const originalTitle = document.title;
             document.title = getExportFilename('');
             
             window.print();
             
-            // Revert title slightly after dialogue opens
             setTimeout(() => { document.title = originalTitle; }, 500);
         }
 
@@ -487,9 +484,17 @@
                 const canvas = container.querySelector('canvas');
                 if (canvas) {
                     const dataUrl = canvas.toDataURL('image/png');
-                    const w = canvas.style.width; 
-                    const h = canvas.style.height;
-                    htmlContent += `<img src="${dataUrl}" style="width: ${w}; height: ${h};" />`;
+                    
+                    // Extract the raw inch values set by the canvas logic
+                    const wInches = parseFloat(canvas.style.width); 
+                    const hInches = parseFloat(canvas.style.height);
+                    
+                    // Microsoft Word's HTML engine scales attributes assuming 96 DPI
+                    const wPx = Math.round(wInches * 96);
+                    const hPx = Math.round(hInches * 96);
+
+                    // Supplying exact pixel attributes forces Word to constrain the high-res 300 DPI image
+                    htmlContent += `<img src="${dataUrl}" width="${wPx}" height="${hPx}" style="width:${wInches}in; height:${hInches}in;" />`;
                 }
             });
 
