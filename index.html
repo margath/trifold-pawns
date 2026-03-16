@@ -9,16 +9,19 @@
 <body>
 
     <header class="top-header">
-        <div class="header-titles">
-            <h1>The Tri-Fold Pawn Maker</h1>
-            <p>Triangular standees with individual layering, border, stats, and text controls.</p>
-        </div>
         <div class="header-help">
             <div class="help-item"><span class="help-icon icon-plus">+</span> Clone</div>
             <div class="help-item"><span class="help-icon icon-del">×</span> Delete</div>
             <div class="help-item"><span class="help-icon icon-copy">C</span> Copy Style</div>
             <div class="help-item"><span class="help-icon icon-paste">P</span> Paste Style</div>
         </div>
+        
+        <div class="header-titles">
+            <h1>The Tri-Fold Pawn Maker</h1>
+            <p>Triangular standees with individual layering, border, stats, and text controls.</p>
+        </div>
+
+        <img class="header-qr" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://trifold.gameportal.win" alt="QR Code for trifold.gameportal.win">
     </header>
 
     <div class="content-wrapper">
@@ -72,9 +75,9 @@
                 <div class="credits-box">
                     <h3>Custom Setup & Logic</h3>
                     <p>Expanded capabilities, stat blocks, styling controls, and export tools.</p>
+                    <a href="https://trifold.gameportal.win" target="_blank">trifold.gameportal.win</a>
+                    
                     <div class="gemini-charm">✨ Vibe developed with <span>Gemini 3.1 Pro</span></div>
-                    <br><br>
-                    <a href="#" target="_blank">Check out the creator's site</a>
                 </div>
             </div>
 
@@ -84,7 +87,7 @@
                     <div class="export-col">
                         <button class="primary" onclick="handlePrint()">Print / PDF</button>
                         <button class="primary word-btn" onclick="exportWord()">Export to Word (.doc)</button>
-                        <button class="primary odt-btn" onclick="exportODT()">Export to OpenDoc (.fodt)</button>
+                        <button class="primary odt-btn" onclick="exportODT()">Export to OpenDoc (.odt)</button>
                     </div>
                 </div>
             </div>
