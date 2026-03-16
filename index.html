@@ -159,8 +159,11 @@
         }
         button.primary:hover { background: #2980b9; }
 
-        button.primary.word-btn { background: #2b579a; }
+        button.primary.word-btn { background: #2b579a; font-size: 14px; padding: 10px;}
         button.primary.word-btn:hover { background: #1a3c6d; }
+
+        button.primary.odt-btn { background: #8e44ad; font-size: 14px; padding: 10px;}
+        button.primary.odt-btn:hover { background: #6c3483; }
 
         button.secondary {
             background: #555; color: white; border: none; padding: 10px; cursor: pointer;
@@ -174,6 +177,24 @@
         }
         .btn-row { display: flex; gap: 10px; }
         .export-col { display: flex; flex-direction: column; gap: 8px; }
+
+        /* Credits Box */
+        .credits-box {
+            margin-top: auto;
+            background: #252525;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            font-size: 12px;
+            color: #aaa;
+            line-height: 1.5;
+            text-align: center;
+        }
+        .credits-box h3 { margin: 0 0 8px 0; font-size: 14px; color: #fff; }
+        .credits-box a { color: #3498db; text-decoration: none; font-weight: bold; }
+        .credits-box a:hover { text-decoration: underline; color: #5dade2; }
+        .credits-box .tip-jar { display: inline-block; margin-top: 8px; padding: 6px 12px; background: #e67e22; color: white; border-radius: 4px; text-decoration: none; font-weight: bold; }
+        .credits-box .tip-jar:hover { background: #d35400; text-decoration: none; }
 
         /* Print Settings */
         @media print {
@@ -224,7 +245,15 @@
             <div class="export-col">
                 <button class="primary" onclick="handlePrint()">Print / PDF</button>
                 <button class="primary word-btn" onclick="exportWord()">Export to Word (.doc)</button>
+                <button class="primary odt-btn" onclick="exportODT()">Export to OpenDoc (.fodt)</button>
             </div>
+        </div>
+
+        <div class="credits-box">
+            <h3>Inspired By Whitebeard</h3>
+            <p>This tool is an expanded iteration of the original <br><a href="https://pwned.whitebeard.blog/" target="_blank">"You've Been Pawned"</a>.</p>
+            <p>Check out more of their work at<br><a href="https://whitebeard.blog" target="_blank">whitebeard.blog</a></p>
+            <a href="https://ko-fi.com/whitebeard" target="_blank" class="tip-jar">☕ Drop a tip in their jar!</a>
         </div>
     </div>
 
@@ -484,16 +513,11 @@
                 const canvas = container.querySelector('canvas');
                 if (canvas) {
                     const dataUrl = canvas.toDataURL('image/png');
-                    
-                    // Extract the raw inch values set by the canvas logic
                     const wInches = parseFloat(canvas.style.width); 
                     const hInches = parseFloat(canvas.style.height);
-                    
-                    // Microsoft Word's HTML engine scales attributes assuming 96 DPI
                     const wPx = Math.round(wInches * 96);
                     const hPx = Math.round(hInches * 96);
 
-                    // Supplying exact pixel attributes forces Word to constrain the high-res 300 DPI image
                     htmlContent += `<img src="${dataUrl}" width="${wPx}" height="${hPx}" style="width:${wInches}in; height:${hInches}in;" />`;
                 }
             });
@@ -505,6 +529,57 @@
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = getExportFilename('.doc');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function exportODT() {
+            if (state.pawns.length === 0) {
+                alert("Please add at least one pawn before exporting.");
+                return;
+            }
+
+            // Create a Flat XML ODF document (.fodt). LibreOffice/OpenOffice reads this natively.
+            let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+            <office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+                             xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+                             xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"
+                             xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"
+                             office:mimetype="application/vnd.oasis.opendocument.text">
+              <office:body>
+                <office:text>
+                  <text:p>`;
+
+            state.pawns.forEach((pawn, index) => {
+                const container = document.getElementById(`canvas-container-${index}`);
+                const canvas = container.querySelector('canvas');
+                if (canvas) {
+                    const dataUrl = canvas.toDataURL('image/png');
+                    const base64Data = dataUrl.split(',')[1]; // Strip the data prefix for the XML body
+                    const wInches = canvas.style.width; 
+                    const hInches = canvas.style.height;
+
+                    xmlContent += `
+                    <draw:frame svg:width="${wInches}" svg:height="${hInches}">
+                      <draw:image>
+                        <office:binary-data>${base64Data}</office:binary-data>
+                      </draw:image>
+                    </draw:frame>
+                    <text:s text:c="2"/>`; // Add standard spacing between images
+                }
+            });
+
+            xmlContent += `</text:p>
+                </office:text>
+              </office:body>
+            </office:document>`;
+
+            const blob = new Blob([xmlContent], { type: 'application/vnd.oasis.opendocument.text' });
+            
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = getExportFilename('.fodt'); // Flat ODT format
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
