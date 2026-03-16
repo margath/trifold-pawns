@@ -172,7 +172,7 @@
         }
         button.secondary:hover { background: #666; }
         
-        select, input[type="file"] {
+        select {
             width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #555;
             background: #1e1e1e; color: white; box-sizing: border-box; cursor: pointer;
         }
@@ -226,8 +226,12 @@
         
         <div class="control-group">
             <label>1. Add Images</label>
-            <p style="font-size: 12px;">Drop transparent PNGs anywhere.</p>
-            <input type="file" id="file-input" multiple accept="image/*">
+            <p style="font-size: 12px;">Drop transparent PNGs, browse, or paste from clipboard.</p>
+            <div class="btn-row">
+                <button class="secondary" onclick="document.getElementById('file-input').click()">Browse Files</button>
+                <button class="secondary" onclick="pasteFromClipboardButton()">Paste 📋</button>
+            </div>
+            <input type="file" id="file-input" multiple accept="image/*" style="display:none">
         </div>
 
         <div class="control-group">
@@ -293,8 +297,52 @@
             handleFiles({ target: { files: e.dataTransfer.files } });
         });
 
+        // Global Paste Listener (Ctrl+V / Cmd+V)
+        window.addEventListener('paste', e => {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            const files = [];
+            for (let index in items) {
+                const item = items[index];
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    const file = item.getAsFile();
+                    files.push(file);
+                }
+            }
+            if (files.length > 0) {
+                handleFiles({ target: { files: files, id: 'paste-event' } });
+            }
+        });
+
+        // Paste Button Logic
+        async function pasteFromClipboardButton() {
+            try {
+                if (!navigator.clipboard || !navigator.clipboard.read) {
+                    throw new Error("Clipboard API not supported or blocked.");
+                }
+                const clipboardItems = await navigator.clipboard.read();
+                const files = [];
+                for (const clipboardItem of clipboardItems) {
+                    for (const type of clipboardItem.types) {
+                        if (type.startsWith('image/')) {
+                            const blob = await clipboardItem.getType(type);
+                            const file = new File([blob], "pasted-image.png", { type: type });
+                            files.push(file);
+                        }
+                    }
+                }
+                if (files.length > 0) {
+                    handleFiles({ target: { files: files, id: 'paste-btn' } });
+                } else {
+                    alert("No image found on your clipboard.");
+                }
+            } catch (err) {
+                alert("Browser blocked clipboard access. Please click anywhere on the page and press Ctrl+V (or Cmd+V) to paste!");
+            }
+        }
+
         async function handleFiles(e) {
             const files = e.target.files;
+            if (!files) return;
             for (let file of files) {
                 if (!file.type.startsWith('image/')) continue;
                 
