@@ -50,8 +50,9 @@
             overflow: auto;
             padding: 40px;
             display: flex;
-            justify-content: center;
-            align-items: flex-start;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
         }
 
         .page {
@@ -178,14 +179,16 @@
         .btn-row { display: flex; gap: 10px; }
         .export-col { display: flex; flex-direction: column; gap: 8px; }
 
-        /* Credits Box */
-        .sidebar-bottom {
-            margin-top: auto;
+        /* Credits Footer Section */
+        .credits-footer {
             display: flex;
-            flex-direction: column;
-            gap: 15px;
+            gap: 20px;
+            margin-top: 40px;
+            width: 100%;
+            max-width: 8.5in;
         }
         .credits-box {
+            flex: 1;
             background: #252525;
             padding: 15px;
             border-radius: 8px;
@@ -209,7 +212,7 @@
             .main { padding: 0; overflow: visible; display: block; }
             .page { box-shadow: none; width: 100%; height: auto; min-height: 0; padding: 0; display: block; }
             .pawn-wrapper { display: inline-block; margin: 0 0.25in 0.25in 0; padding: 0; border: none; background: transparent; page-break-inside: avoid; }
-            .action-group-left, .action-group-right, .edit-toggle-btn, .pawn-settings { display: none !important; }
+            .action-group-left, .action-group-right, .edit-toggle-btn, .pawn-settings, .credits-footer { display: none !important; }
         }
     </style>
 </head>
@@ -253,8 +256,12 @@
                 <button class="primary odt-btn" onclick="exportODT()">Export to OpenDoc (.fodt)</button>
             </div>
         </div>
+    </div>
 
-        <div class="sidebar-bottom">
+    <div class="main">
+        <div class="page" id="page"></div>
+
+        <div class="credits-footer">
             <div class="credits-box">
                 <h3>Inspired By Whitebeard</h3>
                 <p>This tool is an expanded iteration of the original <br><a href="https://pwned.whitebeard.blog/" target="_blank">"You've Been Pawned"</a>.</p>
@@ -268,10 +275,6 @@
                 <a href="#" target="_blank">Check out the creator's site</a>
             </div>
         </div>
-    </div>
-
-    <div class="main">
-        <div class="page" id="page"></div>
     </div>
 
     <script>
@@ -732,6 +735,7 @@
                 }
                 ctx.restore(); 
 
+                // --- Draw Stats (Only on Back Panel i === 2) ---
                 if (i === 2) {
                     const activeStats = STAT_KEYS.filter(key => pawn.stats[key] && pawn.stats[key].trim() !== '');
                     if (activeStats.length > 0) {
@@ -816,7 +820,6 @@
         }
 
         // --- Initialization ---
-        // A default project string loaded automatically on page load to demonstrate features
         const defaultProjectJSON = `
         {
           "pawnWidth": 1.0,
