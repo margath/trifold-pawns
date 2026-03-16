@@ -179,8 +179,13 @@
         .export-col { display: flex; flex-direction: column; gap: 8px; }
 
         /* Credits Box */
-        .credits-box {
+        .sidebar-bottom {
             margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .credits-box {
             background: #252525;
             padding: 15px;
             border-radius: 8px;
@@ -236,7 +241,7 @@
             <div class="btn-row">
                 <button class="secondary" onclick="saveProject()">Save</button>
                 <button class="secondary" onclick="document.getElementById('load-file-input').click()">Load</button>
-                <input type="file" id="load-file-input" style="display:none" accept=".json" onchange="loadProject(event)">
+                <input type="file" id="load-file-input" style="display:none" accept=".json" onchange="handleFileLoad(event)">
             </div>
         </div>
 
@@ -249,11 +254,19 @@
             </div>
         </div>
 
-        <div class="credits-box">
-            <h3>Inspired By Whitebeard</h3>
-            <p>This tool is an expanded iteration of the original <br><a href="https://pwned.whitebeard.blog/" target="_blank">"You've Been Pawned"</a>.</p>
-            <p>Check out more of their work at<br><a href="https://whitebeard.blog" target="_blank">whitebeard.blog</a></p>
-            <a href="https://ko-fi.com/whitebeard" target="_blank" class="tip-jar">☕ Drop a tip in their jar!</a>
+        <div class="sidebar-bottom">
+            <div class="credits-box">
+                <h3>Inspired By Whitebeard</h3>
+                <p>This tool is an expanded iteration of the original <br><a href="https://pwned.whitebeard.blog/" target="_blank">"You've Been Pawned"</a>.</p>
+                <p>Check out more of their work at<br><a href="https://whitebeard.blog" target="_blank">whitebeard.blog</a></p>
+                <a href="https://ko-fi.com/whitebeard" target="_blank" class="tip-jar">☕ Drop a tip in their jar!</a>
+            </div>
+
+            <div class="credits-box">
+                <h3>Custom Setup & Logic</h3>
+                <p>Expanded capabilities, stat blocks, styling controls, and export tools.</p>
+                <a href="#" target="_blank">Check out the creator's site</a>
+            </div>
         </div>
     </div>
 
@@ -402,8 +415,7 @@
             renderAll();
         }
 
-        // --- Output Generation Handlers & Naming ---
-        
+        // --- Core Load / Save Logic ---
         function getExportFilename(extension) {
             if (state.pawns.length === 0) return `Pawns_Project${extension}`;
             
@@ -439,75 +451,68 @@
             document.body.appendChild(a); a.click(); a.remove();
         }
 
-        async function loadProject(e) {
+        async function loadProjectFromJSON(projectData) {
+            state.pawnWidth = projectData.pawnWidth || 1.0; 
+            state.pawnHeight = projectData.pawnHeight || 1.5;
+            const select = document.getElementById('size-select');
+            if (state.pawnWidth === 0.75) select.value = 'small';
+            if (state.pawnWidth === 1.0) select.value = 'medium';
+            if (state.pawnWidth === 1.25) select.value = 'large';
+
+            state.pawns = [];
+            for (let p of projectData.pawns) {
+                const img = new Image(); 
+                await new Promise(r => { img.onload = r; img.src = p.dataUrl; });
+                
+                const loadedStats = p.stats || {};
+                const safeStats = {};
+                STAT_KEYS.forEach(key => safeStats[key] = loadedStats[key] || '');
+
+                state.pawns.push({
+                    img: img, dataUrl: p.dataUrl, name: p.name || '', number: p.number || '', isEditing: false,
+                    borderColor: p.borderColor || '#000000', textColor: p.textColor || '#000000', textBgColor: p.textBgColor || '#FFFFFF99',
+                    isDark: p.isDark !== undefined ? p.isDark : calculateDarkness(img),
+                    isFlipped: p.isFlipped || false, showBorder: p.showBorder || false,
+                    scale: p.scale || 1.0, rotation: p.rotation || 0, offsetX: p.offsetX || 0, offsetY: p.offsetY || 0,
+                    stats: safeStats
+                });
+            }
+            renderAll();
+        }
+
+        async function handleFileLoad(e) {
             const file = e.target.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = async (event) => {
                 try {
                     const projectData = JSON.parse(event.target.result);
-                    state.pawnWidth = projectData.pawnWidth || 1.0; state.pawnHeight = projectData.pawnHeight || 1.5;
-                    const select = document.getElementById('size-select');
-                    if (state.pawnWidth === 0.75) select.value = 'small';
-                    if (state.pawnWidth === 1.0) select.value = 'medium';
-                    if (state.pawnWidth === 1.25) select.value = 'large';
-
-                    state.pawns = [];
-                    for (let p of projectData.pawns) {
-                        const img = new Image(); await new Promise(r => { img.onload = r; img.src = p.dataUrl; });
-                        
-                        const loadedStats = p.stats || {};
-                        const safeStats = {};
-                        STAT_KEYS.forEach(key => safeStats[key] = loadedStats[key] || '');
-
-                        state.pawns.push({
-                            img: img, dataUrl: p.dataUrl, name: p.name || '', number: p.number || '', isEditing: false,
-                            borderColor: p.borderColor || '#000000', textColor: p.textColor || '#000000', textBgColor: p.textBgColor || '#FFFFFF99',
-                            isDark: p.isDark !== undefined ? p.isDark : calculateDarkness(img),
-                            isFlipped: p.isFlipped || false, showBorder: p.showBorder || false,
-                            scale: p.scale || 1.0, rotation: p.rotation || 0, offsetX: p.offsetX || 0, offsetY: p.offsetY || 0,
-                            stats: safeStats
-                        });
-                    }
-                    renderAll();
+                    await loadProjectFromJSON(projectData);
                 } catch (error) { alert('Error loading project.'); }
             };
             reader.readAsText(file); e.target.value = ''; 
         }
 
+        // --- Output Generation Handlers ---
         function handlePrint() {
             if (state.pawns.length === 0) {
-                alert("Please add at least one pawn before printing.");
-                return;
+                alert("Please add at least one pawn before printing."); return;
             }
-            
             const originalTitle = document.title;
             document.title = getExportFilename('');
-            
             window.print();
-            
             setTimeout(() => { document.title = originalTitle; }, 500);
         }
 
         function exportWord() {
             if (state.pawns.length === 0) {
-                alert("Please add at least one pawn before exporting.");
-                return;
+                alert("Please add at least one pawn before exporting."); return;
             }
-
             let htmlContent = `
                 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-                <head>
-                    <meta charset="utf-8">
-                    <title>Pawns Export</title>
-                    <style>
-                        @page { margin: 0.5in; size: letter portrait; }
-                        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
-                        img { margin: 0 0.25in 0.25in 0; display: inline-block; }
-                    </style>
-                </head>
-                <body>
+                <head><meta charset="utf-8"><title>Pawns Export</title>
+                <style>@page { margin: 0.5in; size: letter portrait; } body { margin: 0; padding: 0; font-family: Arial, sans-serif; } img { margin: 0 0.25in 0.25in 0; display: inline-block; }</style>
+                </head><body>
             `;
-
             state.pawns.forEach((pawn, index) => {
                 const container = document.getElementById(`canvas-container-${index}`);
                 const canvas = container.querySelector('canvas');
@@ -517,90 +522,47 @@
                     const hInches = parseFloat(canvas.style.height);
                     const wPx = Math.round(wInches * 96);
                     const hPx = Math.round(hInches * 96);
-
                     htmlContent += `<img src="${dataUrl}" width="${wPx}" height="${hPx}" style="width:${wInches}in; height:${hInches}in;" />`;
                 }
             });
-
             htmlContent += `</body></html>`;
-
             const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
-            
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = getExportFilename('.doc');
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+            a.download = getExportFilename('.doc'); document.body.appendChild(a); a.click(); document.body.removeChild(a);
         }
 
         function exportODT() {
             if (state.pawns.length === 0) {
-                alert("Please add at least one pawn before exporting.");
-                return;
+                alert("Please add at least one pawn before exporting."); return;
             }
-
-            // Create a Flat XML ODF document (.fodt). LibreOffice/OpenOffice reads this natively.
             let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
-            <office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
-                             xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
-                             xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"
-                             xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"
-                             office:mimetype="application/vnd.oasis.opendocument.text">
-              <office:body>
-                <office:text>
-                  <text:p>`;
-
+            <office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" office:mimetype="application/vnd.oasis.opendocument.text">
+              <office:body><office:text><text:p>`;
             state.pawns.forEach((pawn, index) => {
                 const container = document.getElementById(`canvas-container-${index}`);
                 const canvas = container.querySelector('canvas');
                 if (canvas) {
                     const dataUrl = canvas.toDataURL('image/png');
-                    const base64Data = dataUrl.split(',')[1]; // Strip the data prefix for the XML body
-                    const wInches = canvas.style.width; 
-                    const hInches = canvas.style.height;
-
-                    xmlContent += `
-                    <draw:frame svg:width="${wInches}" svg:height="${hInches}">
-                      <draw:image>
-                        <office:binary-data>${base64Data}</office:binary-data>
-                      </draw:image>
-                    </draw:frame>
-                    <text:s text:c="2"/>`; // Add standard spacing between images
+                    const base64Data = dataUrl.split(',')[1]; 
+                    const wInches = canvas.style.width; const hInches = canvas.style.height;
+                    xmlContent += `<draw:frame svg:width="${wInches}" svg:height="${hInches}"><draw:image><office:binary-data>${base64Data}</office:binary-data></draw:image></draw:frame><text:s text:c="2"/>`; 
                 }
             });
-
-            xmlContent += `</text:p>
-                </office:text>
-              </office:body>
-            </office:document>`;
-
+            xmlContent += `</text:p></office:text></office:body></office:document>`;
             const blob = new Blob([xmlContent], { type: 'application/vnd.oasis.opendocument.text' });
-            
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = getExportFilename('.fodt'); // Flat ODT format
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+            a.download = getExportFilename('.fodt'); document.body.appendChild(a); a.click(); document.body.removeChild(a);
         }
 
         function createSliderGroup(index, labelTxt, field, min, max, step, defaultValue) {
             const group = document.createElement('div'); group.className = 'slider-group';
-            
             const label = document.createElement('label'); label.innerText = labelTxt;
-            
             const slider = document.createElement('input'); slider.type = 'range';
             slider.min = min; slider.max = max; slider.step = step; slider.value = state.pawns[index][field];
             slider.oninput = (e) => updatePawnTransform(index, field, e.target.value);
-            
             const resetBtn = document.createElement('button');
             resetBtn.className = 'reset-slider-btn'; resetBtn.innerHTML = '↺'; resetBtn.title = 'Reset Setting';
-            resetBtn.onclick = () => {
-                slider.value = defaultValue;
-                updatePawnTransform(index, field, defaultValue);
-            };
-
+            resetBtn.onclick = () => { slider.value = defaultValue; updatePawnTransform(index, field, defaultValue); };
             group.appendChild(label); group.appendChild(slider); group.appendChild(resetBtn);
             return group;
         }
@@ -610,22 +572,16 @@
             state.pawns.forEach((pawn, index) => {
                 const wrapper = document.createElement('div'); wrapper.className = 'pawn-wrapper'; wrapper.id = `pawn-wrapper-${index}`;
                 
-                // Left Actions
                 const leftActions = document.createElement('div'); leftActions.className = 'action-group-left';
-                
                 const dupBtn = document.createElement('button'); dupBtn.className = 'circle-btn btn-dup'; dupBtn.innerHTML = '+';
                 dupBtn.title = 'Duplicate Pawn'; dupBtn.onclick = () => duplicatePawn(index); leftActions.appendChild(dupBtn);
-
                 const copyBtn = document.createElement('button'); copyBtn.className = 'circle-btn btn-copy'; copyBtn.innerHTML = 'C';
                 copyBtn.title = 'Copy Style'; copyBtn.onclick = () => copyStyle(index); leftActions.appendChild(copyBtn);
-
                 const pasteBtn = document.createElement('button'); pasteBtn.className = 'circle-btn btn-paste'; pasteBtn.innerHTML = 'P';
                 pasteBtn.title = 'Paste Style'; pasteBtn.disabled = styleClipboard === null; pasteBtn.onclick = () => pasteStyle(index);
                 leftActions.appendChild(pasteBtn);
-
                 wrapper.appendChild(leftActions);
 
-                // Right Actions
                 const rightActions = document.createElement('div'); rightActions.className = 'action-group-right';
                 const delBtn = document.createElement('button'); delBtn.className = 'circle-btn btn-del'; delBtn.innerHTML = '×';
                 delBtn.title = 'Remove Pawn'; delBtn.onclick = () => removePawn(index); 
@@ -641,7 +597,6 @@
                 const settingsDiv = document.createElement('div'); settingsDiv.className = 'pawn-settings';
                 settingsDiv.id = `settings-${index}`; settingsDiv.style.display = pawn.isEditing ? 'flex' : 'none';
 
-                // Text Inputs
                 const inputs = document.createElement('div'); inputs.className = 'pawn-inputs';
                 const nameInput = document.createElement('input'); nameInput.type = 'text'; nameInput.className = 'input-name';
                 nameInput.placeholder = 'Name...'; nameInput.value = pawn.name; nameInput.oninput = (e) => updatePawnValue(index, 'name', e.target.value);
@@ -649,7 +604,6 @@
                 numInput.placeholder = '#'; numInput.value = pawn.number; numInput.oninput = (e) => updatePawnValue(index, 'number', e.target.value);
                 inputs.appendChild(nameInput); inputs.appendChild(numInput); settingsDiv.appendChild(inputs);
 
-                // Stat Grid
                 const statsContainer = document.createElement('div'); statsContainer.className = 'pawn-stats-grid';
                 STAT_KEYS.forEach(key => {
                     const statWrapper = document.createElement('div');
@@ -662,7 +616,6 @@
                 });
                 settingsDiv.appendChild(statsContainer);
 
-                // Colors
                 const optionsRow = document.createElement('div'); optionsRow.className = 'pawn-options';
                 const borderHexLabel = document.createElement('label');
                 const borderHexInput = document.createElement('input'); borderHexInput.type = 'color'; borderHexInput.className = 'input-color';
@@ -685,9 +638,7 @@
                 optionsRow.appendChild(borderHexLabel); optionsRow.appendChild(textHexLabel); optionsRow.appendChild(textBgHexLabel);
                 settingsDiv.appendChild(optionsRow);
 
-                // Checkboxes
                 const checksRow = document.createElement('div'); checksRow.className = 'pawn-options'; checksRow.style.paddingTop = '0';
-                
                 const borderLabel = document.createElement('label');
                 const borderCheckbox = document.createElement('input'); borderCheckbox.type = 'checkbox';
                 borderCheckbox.checked = pawn.showBorder; borderCheckbox.onchange = (e) => updatePawnValue(index, 'showBorder', e.target.checked);
@@ -706,7 +657,6 @@
                 checksRow.appendChild(borderLabel); checksRow.appendChild(darkLabel); checksRow.appendChild(flipLabel);
                 settingsDiv.appendChild(checksRow);
 
-                // Transforms 
                 const controls = document.createElement('div'); controls.className = 'pawn-controls';
                 controls.appendChild(createSliderGroup(index, 'Size', 'scale', 0.2, 3.0, 0.05, 1.0));
                 controls.appendChild(createSliderGroup(index, 'Rotate', 'rotation', -180, 180, 1, 0));
@@ -782,12 +732,10 @@
                 }
                 ctx.restore(); 
 
-                // --- Draw Stats (Only on Back Panel i === 2) ---
                 if (i === 2) {
                     const activeStats = STAT_KEYS.filter(key => pawn.stats[key] && pawn.stats[key].trim() !== '');
                     if (activeStats.length > 0) {
                         ctx.save();
-                        
                         const boxW = internalPanelWidth * 0.42; 
                         const boxH = Math.floor(internalPanelWidth * 0.15); 
                         const pad = Math.floor(internalPanelWidth * 0.03);
@@ -798,34 +746,22 @@
                         const startX = xBase + (internalPanelWidth - (2 * boxW + pad)) / 2;
 
                         activeStats.forEach((key, idx) => {
-                            const col = idx % 2;
-                            const row = Math.floor(idx / 2);
-                            const x = startX + col * (boxW + pad);
-                            const y = startY + row * (boxH + pad);
+                            const col = idx % 2; const row = Math.floor(idx / 2);
+                            const x = startX + col * (boxW + pad); const y = startY + row * (boxH + pad);
 
-                            ctx.fillStyle = pawn.textBgColor;
-                            ctx.fillRect(x, y, boxW, boxH);
-                            
-                            ctx.strokeStyle = pawn.borderColor;
-                            ctx.lineWidth = 3;
-                            ctx.setLineDash([]);
-                            ctx.strokeRect(x, y, boxW, boxH);
+                            ctx.fillStyle = pawn.textBgColor; ctx.fillRect(x, y, boxW, boxH);
+                            ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 3; ctx.setLineDash([]); ctx.strokeRect(x, y, boxW, boxH);
 
-                            ctx.fillStyle = pawn.textColor;
-                            ctx.textAlign = 'left';
-                            ctx.textBaseline = 'middle';
-                            ctx.font = `bold ${labelFont}px sans-serif`;
-                            ctx.fillText(key, x + 8, y + boxH/2);
+                            ctx.fillStyle = pawn.textColor; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+                            ctx.font = `bold ${labelFont}px sans-serif`; ctx.fillText(key, x + 8, y + boxH/2);
 
-                            ctx.textAlign = 'right';
-                            ctx.font = `bold ${valFont}px sans-serif`;
+                            ctx.textAlign = 'right'; ctx.font = `bold ${valFont}px sans-serif`;
                             ctx.fillText(pawn.stats[key], x + boxW - 8, y + boxH/2);
                         });
                         ctx.restore();
                     }
                 }
 
-                // Draw Group Border
                 if (pawn.showBorder) {
                     ctx.save();
                     ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 12; ctx.setLineDash([]);
@@ -833,17 +769,14 @@
                     ctx.restore();
                 }
 
-                // Draw Text
                 drawText(ctx, pawn, xBase, internalPanelWidth, internalHeight, reservedBottom, textPaddingBottom);
 
-                // Fold lines
                 if (i < panels - 1) {
                     ctx.setLineDash([15, 15]); ctx.strokeStyle = '#888'; ctx.lineWidth = 2;
                     ctx.beginPath(); ctx.moveTo(xBase + internalPanelWidth, 0); ctx.lineTo(xBase + internalPanelWidth, internalHeight); ctx.stroke();
                 }
             }
 
-            // Glue Tab
             let xTab = panels * internalPanelWidth;
             ctx.setLineDash([]); ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 4;
             ctx.beginPath(); ctx.moveTo(xTab, 0); ctx.lineTo(xTab, internalHeight); ctx.stroke();
@@ -855,7 +788,6 @@
             ctx.font = "bold 28px sans-serif"; ctx.fillText("GLUE", 0, 0);
             ctx.restore();
 
-            // Outline
             ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 4; ctx.strokeRect(0, 0, internalWidth, internalHeight);
             return canvas;
         }
@@ -878,15 +810,47 @@
 
             ctx.save();
             ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.font = "bold 32px sans-serif";
-            
-            ctx.lineWidth = 6;
-            ctx.strokeStyle = 'white';
-            ctx.strokeText(displayText, x, y);
-
-            ctx.fillStyle = pawn.textColor; 
-            ctx.fillText(displayText, x, y);
+            ctx.lineWidth = 6; ctx.strokeStyle = 'white'; ctx.strokeText(displayText, x, y);
+            ctx.fillStyle = pawn.textColor; ctx.fillText(displayText, x, y);
             ctx.restore();
         }
+
+        // --- Initialization ---
+        // A default project string loaded automatically on page load to demonstrate features
+        const defaultProjectJSON = `
+        {
+          "pawnWidth": 1.0,
+          "pawnHeight": 1.5,
+          "pawns": [
+            {
+              "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+              "name": "Welcome",
+              "number": "1",
+              "borderColor": "#e74c3c",
+              "textColor": "#000000",
+              "textBgColor": "#ffffffcc",
+              "isDark": false,
+              "isFlipped": false,
+              "showBorder": true,
+              "scale": 1.0,
+              "rotation": 0,
+              "offsetX": 0,
+              "offsetY": 0,
+              "stats": {
+                "Init": "+2", "AC": "15", "HP": "20", "P.D.": "", "C.D.": "", "S.D.": "", "Inv.": "", "Foc": ""
+              }
+            }
+          ]
+        }`;
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const initData = JSON.parse(defaultProjectJSON);
+                await loadProjectFromJSON(initData);
+            } catch(e) {
+                console.error("Failed to load default project template.", e);
+            }
+        });
     </script>
 </body>
 </html>
