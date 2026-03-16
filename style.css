@@ -239,7 +239,7 @@ select {
     z-index: 100;
     box-sizing: border-box;
     flex-wrap: wrap;
-    max-height: 35vh;
+    max-height: 280px; /* was 35vn */
     overflow-y: auto;
 }
 
