@@ -4,33 +4,406 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Tri-Fold Pawn Maker</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            background-color: #2c2c2c;
+            color: #e0e0e0;
+        }
+
+        /* Flexbox Header Setup */
+        .top-header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 70px;
+            background: #1e1e1e;
+            display: flex;
+            justify-content: space-between; 
+            align-items: center;
+            padding: 0 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+            z-index: 100;
+            border-bottom: 1px solid #444;
+            box-sizing: border-box;
+        }
+
+        .header-left, .header-right {
+            flex: 1;
+            display: flex;
+        }
+        .header-right {
+            justify-content: flex-end;
+        }
+        .header-titles {
+            flex: 2;
+            text-align: center;
+        }
+        .header-titles h1 { margin: 0 0 4px 0; font-size: 22px; color: #fff; }
+        .header-titles p { margin: 0; font-size: 13px; color: #aaa; white-space: nowrap; }
+
+        /* Header Help Box */
+        .header-help {
+            display: flex;
+            flex-wrap: wrap; 
+            gap: 10px;
+            background: #252525;
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            font-size: 11px;
+            color: #ccc;
+        }
+        .help-item { display: flex; align-items: center; gap: 6px; }
+        .help-icon {
+            display: flex; align-items: center; justify-content: center;
+            width: 20px; height: 20px; border-radius: 50%;
+            color: white; font-weight: bold; font-size: 12px;
+        }
+        .icon-plus { background: #2ecc71; }
+        .icon-del { background: #e74c3c; font-size: 14px; }
+        .icon-copy { background: #3498db; }
+        .icon-paste { background: #f39c12; }
+
+        /* Static QR Code */
+        .header-qr {
+            height: 50px;
+            width: 50px;
+            background: white;
+            padding: 2px;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            transition: transform 0.2s ease-in-out;
+            transform-origin: top left; 
+            cursor: pointer;
+        }
+        .header-qr:hover {
+            transform: scale(2.5); 
+            z-index: 200;
+        }
+
+        /* Main Workspace styling */
+        .content-wrapper {
+            margin-top: 70px; 
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 70px);
+            align-items: center;
+        }
+
+        .main {
+            flex-grow: 1;
+            padding: 40px 40px 280px 40px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            width: 100%;
+            box-sizing: border-box;
+            gap: 40px;
+        }
+
+        .page {
+            background: white;
+            width: 8.5in;
+            min-height: 11in;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            padding: 0.5in;
+            box-sizing: border-box;
+        }
+
+        .pawn-page {
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 0.25in;
+        }
+
+        /* Tracker Table Styling */
+        .tracker-page {
+            display: none; 
+            color: black;
+            font-family: sans-serif;
+        }
+        .tracker-page h2 {
+            margin-top: 0;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 10px;
+            color: #333;
+        }
+        .tracker-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .tracker-table th {
+            background: #eee;
+            border: 1px solid #aaa;
+            padding: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .tracker-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            vertical-align: top;
+        }
+        .tracker-table tr {
+            page-break-inside: avoid;
+        }
+        
+        /* Checkbox Styling with unbreakable groups of 5 */
+        .track-box-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 12px; /* Vertical gap between rows, Horizontal gap between 5-groups */
+            margin-top: 6px;
+        }
+        .track-box-group {
+            display: flex;
+            gap: 3px; /* Tiny gap inside the 5-group */
+            flex-wrap: nowrap; /* Forces the 5 boxes to stay on the same line */
+        }
+        .track-box {
+            width: 12px;
+            height: 12px;
+            border: 1px solid #333;
+            background: #fff;
+            box-sizing: border-box;
+        }
+
+        /* Pawn container & UI */
+        .pawn-wrapper {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            width: fit-content;
+        }
+
+        .action-group-left { position: absolute; top: -10px; left: -10px; display: flex; gap: 6px; z-index: 5; }
+        .action-group-right { position: absolute; top: -10px; right: -10px; z-index: 5; }
+
+        .circle-btn {
+            color: white; border: none; border-radius: 50%; width: 24px; height: 24px;
+            cursor: pointer; font-weight: bold; font-size: 14px; display: flex;
+            align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            padding: 0; transition: background 0.2s;
+        }
+
+        .btn-dup { background: #2ecc71; } .btn-dup:hover { background: #27ae60; }
+        .btn-del { background: #e74c3c; font-size: 16px; } .btn-del:hover { background: #c0392b; }
+        .btn-copy { background: #3498db; font-size: 12px; } .btn-copy:hover { background: #2980b9; }
+        .btn-paste { background: #f39c12; font-size: 12px; } .btn-paste:hover { background: #d68910; }
+        .btn-paste:disabled { background: #95a5a6; cursor: not-allowed; box-shadow: none; }
+
+        .edit-toggle-btn {
+            background: #e0e0e0; color: #333; border: 1px solid #ccc; border-radius: 4px;
+            padding: 6px; margin-top: 8px; cursor: pointer; font-size: 12px;
+            font-weight: bold; transition: background 0.2s;
+        }
+        .edit-toggle-btn:hover { background: #d0d0d0; }
+
+        .pawn-settings {
+            display: flex; flex-direction: column; gap: 8px; margin-top: 8px;
+            border-top: 1px dashed #ccc; padding-top: 8px;
+        }
+
+        .pawn-inputs { display: flex; gap: 5px; align-items: center; }
+        .pawn-inputs input {
+            border: 1px solid #ccc; border-radius: 4px; font-size: 12px;
+            background: white; color: black; height: 30px; box-sizing: border-box;
+        }
+        .input-name { flex-grow: 1; padding: 6px; }
+        .input-number { width: 40px; text-align: center; padding: 6px; }
+
+        /* Stats Grid */
+        .pawn-stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+            background: #e8e8e8; padding: 8px; border-radius: 4px; border: 1px solid #ccc;
+        }
+        .pawn-stats-grid div { display: flex; flex-direction: column; }
+        .pawn-stats-grid label { font-size: 10px; font-weight: bold; color: #555; margin-bottom: 2px; }
+        .pawn-stats-grid input {
+            width: 100%; padding: 4px; box-sizing: border-box;
+            border: 1px solid #bbb; border-radius: 2px; font-size: 11px;
+            background: white; color: black;
+        }
+
+        .pawn-options {
+            display: flex; gap: 12px; align-items: center; font-size: 11px;
+            color: #333; padding: 2px 0; flex-wrap: wrap;
+        }
+        .pawn-options label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+        .input-color { width: 22px; height: 22px; padding: 0; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .pawn-options select { width: auto; padding: 2px; border-radius: 4px; font-size: 11px; background: white; color: black; border: 1px solid #ccc; }
+
+        /* Transform Sliders */
+        .pawn-controls {
+            display: flex; flex-direction: column; gap: 4px; background: #eee;
+            padding: 8px; border-radius: 4px; border: 1px solid #ccc;
+        }
+        .slider-group { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #333; font-weight: bold; }
+        .slider-group label { width: 45px; }
+        .slider-group input[type="range"] { flex-grow: 1; cursor: pointer; margin: 0; }
+
+        .reset-slider-btn {
+            background: #dcdcdc; color: #333; border: 1px solid #b0b0b0; border-radius: 4px;
+            cursor: pointer; font-size: 12px; padding: 2px 6px; display: flex;
+            align-items: center; justify-content: center; transition: background 0.2s;
+        }
+        .reset-slider-btn:hover { background: #c0c0c0; }
+
+        /* Generic Buttons */
+        button.primary {
+            background: #3498db; color: white; border: none; padding: 12px; cursor: pointer;
+            font-size: 16px; border-radius: 4px; font-weight: bold; width: 100%; box-sizing: border-box;
+        }
+        button.primary:hover { background: #2980b9; }
+
+        button.primary.word-btn { background: #2b579a; font-size: 14px; padding: 10px;}
+        button.primary.word-btn:hover { background: #1a3c6d; }
+
+        button.primary.odt-btn { background: #8e44ad; font-size: 14px; padding: 10px;}
+        button.primary.odt-btn:hover { background: #6c3483; }
+
+        button.secondary {
+            background: #555; color: white; border: none; padding: 10px; cursor: pointer;
+            font-size: 14px; border-radius: 4px; font-weight: bold; box-sizing: border-box;
+        }
+        button.secondary:hover { background: #666; }
+        
+        select, input[type="file"] {
+            width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #555;
+            background: #1e1e1e; color: white; box-sizing: border-box; cursor: pointer;
+        }
+        .btn-row { display: flex; gap: 10px; width: 100%; }
+        .btn-row button { flex: 1; }
+        .export-col { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+
+        /* Floating Footer Layout */
+        .credits-footer {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            padding: 20px 40px;
+            background: #1e1e1e;
+            border-top: 1px solid #444;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: stretch;
+            z-index: 100;
+            box-sizing: border-box;
+            flex-wrap: wrap;
+            max-height: 35vh;
+            overflow-y: auto;
+        }
+
+        .footer-col {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex: 1;
+            min-width: 180px;
+            max-width: 280px;
+        }
+
+        .footer-block {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        .footer-block label { font-weight: bold; color: #fff; font-size: 13px; }
+
+        .credits-box {
+            background: #252525;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            font-size: 12px;
+            color: #aaa;
+            line-height: 1.5;
+            text-align: center;
+            height: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .credits-box h3 { margin: 0 0 8px 0; font-size: 14px; color: #fff; }
+        .credits-box a { color: #3498db; text-decoration: none; font-weight: bold; }
+        .credits-box a:hover { text-decoration: underline; color: #5dade2; }
+        .credits-box .tip-jar { display: inline-block; margin-top: 8px; padding: 6px 12px; background: #e67e22; color: white; border-radius: 4px; text-decoration: none; font-weight: bold; }
+        .credits-box .tip-jar:hover { background: #d35400; text-decoration: none; }
+
+        .gemini-charm {
+            margin-top: auto;
+            display: inline-block;
+            background: #1a1a1a;
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 10px;
+            border: 1px solid #444;
+            color: #ccc;
+        }
+        .gemini-charm span { color: #3498db; font-weight: bold; }
+
+        /* Print Settings */
+        @media print {
+            @page { margin: 0.5in; size: letter portrait; }
+            body { background: white; height: auto; }
+            .top-header { display: none !important; }
+            .content-wrapper { margin-top: 0; display: block; height: auto; overflow: visible; }
+            .main { padding: 0; overflow: visible; display: block; }
+            .page { box-shadow: none; width: 100%; height: auto; min-height: 0; padding: 0; }
+            .pawn-page { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 0.25in; }
+            .pawn-wrapper { display: inline-block; margin: 0; padding: 0; border: none; background: transparent; page-break-inside: avoid; }
+            .action-group-left, .action-group-right, .edit-toggle-btn, .pawn-settings, .credits-footer { display: none !important; }
+            
+            /* Print Display Logic */
+            .print-hide-pawns .pawn-page { display: none !important; }
+            .print-hide-table .tracker-page { display: none !important; }
+        }
+    </style>
 </head>
 <body>
 
     <header class="top-header">
         <div class="header-left">
-            <div class="header-help">
-                <div class="help-item"><span class="help-icon icon-plus">+</span> Clone</div>
-                <div class="help-item"><span class="help-icon icon-del">×</span> Delete</div>
-                <div class="help-item"><span class="help-icon icon-copy">C</span> Copy Style</div>
-                <div class="help-item"><span class="help-icon icon-paste">P</span> Paste Style</div>
-            </div>
+            <img class="header-qr" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0nMS4wJyBlbmNvZGluZz0nVVRGLTgnPz4KPHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzdtbSIgaGVpZ2h0PSIzN21tIiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNW1tIiB5PSI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE2bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI3bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI4bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTVtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzJtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMW1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOW1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iN21tIiB5PSI3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIwbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI4bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjhtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTVtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjJtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzBtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzJtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyM21tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI1bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTJtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMThtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIwbW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMm1tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjRtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMG1tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIxMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMTFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjExbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMTFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjExbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIxMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMTFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjExbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSIxMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTJtbSIgeT0iMTJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNG1tIiB5PSIxMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iMTJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIxMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjJtbSIgeT0iMTJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIxMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjdtbSIgeT0iMTJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjVtbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjExbW0iIHk9IjEzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIxM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjEzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIxM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjEzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSIxM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjEzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTFtbSIgeT0iMTRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMTRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMTRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMTRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMW1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNW1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTJtbSIgeT0iMTVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjE1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxN21tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMTVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjE1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMTVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjE1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMW1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEybW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMThtbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMW1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNW1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iN21tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMTdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjE3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMTdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjE3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMTdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIxbW0iIHk9IjE3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMm1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMTdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjE3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iN21tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMThtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEybW0iIHk9IjE4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTVtbSIgeT0iMThtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjE4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOG1tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjVtbSIgeT0iMThtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjE4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMG1tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMThtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjE4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMTltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTltbSIgeT0iMTltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIxbW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMm1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMTltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI1bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMTltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMW1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMjBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjExbW0iIHk9IjIwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMjBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjIwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxN21tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMjBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjIwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMjBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjVtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjExbW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIxbW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI3bW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOW1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzJtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjltbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMThtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjJtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI1bW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjdtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIyM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMjNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE2bW0iIHk9IjIzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOG1tIiB5PSIyM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMjNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjIzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSIyM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMjNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjIzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIyM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEybW0iIHk9IjI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNG1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iMjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjVtbSIgeT0iMjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iMjVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjI1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIyNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMjVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjI1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIyNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzBtbSIgeT0iMjVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjI1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIyNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNW1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iN21tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMjZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMjZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIxbW0iIHk9IjI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iMjZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI4bW0iIHk9IjI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMW1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIyN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEybW0iIHk9IjI3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOG1tIiB5PSIyN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTltbSIgeT0iMjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjI3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIyN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjI3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIwbW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMW1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjJtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI3bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjhtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIyOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIyOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMG1tIiB5PSIyOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzJtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjhtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjMwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIzMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjMwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIzMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjMwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIzMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjMwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIzMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjMxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNG1tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTVtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjMxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjMxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyM21tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjRtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI1bW0iIHk9IjMxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjVtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjhtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjltbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjMybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIzMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTltbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjMybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSIzMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjVtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI3bW0iIHk9IjMybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIzMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PC9zdmc+" alt="Static QR Code for tools.gameportal.win" title="tools.gameportal.win">
         </div>
-        
         <div class="header-titles">
             <h1>The Tri-Fold Pawn Maker</h1>
             <p>Triangular standees with individual layering, border, stats, and text controls.</p>
         </div>
-
         <div class="header-right">
-            <img class="header-qr" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0nMS4wJyBlbmNvZGluZz0nVVRGLTgnPz4KPHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzdtbSIgaGVpZ2h0PSIzN21tIiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNW1tIiB5PSI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE2bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI3bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI4bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTVtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzJtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMW1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOW1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iN21tIiB5PSI3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIwbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI4bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjhtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTVtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjJtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzBtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzJtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyM21tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI1bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTJtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMThtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIwbW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMm1tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjRtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMG1tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIxMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMTFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjExbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMTFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjExbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIxMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMTFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjExbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSIxMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTJtbSIgeT0iMTJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNG1tIiB5PSIxMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iMTJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIxMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjJtbSIgeT0iMTJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIxMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjdtbSIgeT0iMTJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjVtbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjExbW0iIHk9IjEzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIxM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjEzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIxM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjEzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSIxM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjEzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTFtbSIgeT0iMTRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMTRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMTRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMTRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMW1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNW1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTJtbSIgeT0iMTVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjE1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxN21tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMTVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjE1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMTVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjE1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMW1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEybW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMThtbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMW1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNW1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iN21tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMTdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjE3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMTdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjE3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMTdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIxbW0iIHk9IjE3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMm1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMTdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjE3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iN21tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMThtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEybW0iIHk9IjE4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTVtbSIgeT0iMThtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjE4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOG1tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjVtbSIgeT0iMThtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjE4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMG1tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMThtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjE4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMTltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTltbSIgeT0iMTltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIxbW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMm1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMTltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI1bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMTltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMW1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMjBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjExbW0iIHk9IjIwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMjBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjIwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxN21tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMjBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjIwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMjBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjVtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjExbW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIxbW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI3bW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOW1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzJtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjltbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMThtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjJtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI1bW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjdtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIyM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMjNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE2bW0iIHk9IjIzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOG1tIiB5PSIyM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMjNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjIzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSIyM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMjNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjIzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIyM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEybW0iIHk9IjI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNG1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iMjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjVtbSIgeT0iMjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iMjVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjI1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIyNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMjVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjI1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIyNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzBtbSIgeT0iMjVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjI1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIyNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNW1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iN21tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMjZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMjZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIxbW0iIHk9IjI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iMjZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI4bW0iIHk9IjI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMW1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIyN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEybW0iIHk9IjI3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOG1tIiB5PSIyN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTltbSIgeT0iMjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjI3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIyN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjI3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIwbW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMW1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjJtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI3bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjhtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIyOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIyOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMG1tIiB5PSIyOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzJtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjhtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjMwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIzMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjMwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIzMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjMwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIzMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjMwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIzMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjMxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNG1tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTVtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjMxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjMxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyM21tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjRtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI1bW0iIHk9IjMxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjVtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjhtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjltbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjMybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIzMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTltbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjMybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSIzMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjVtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI3bW0iIHk9IjMybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIzMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PC9zdmc+" alt="Static QR Code for https://tools.gameportal.win/" title="https://tools.gameportal.win">
+            <div class="header-help">
+                <div class="help-item"><span class="help-icon icon-plus">+</span> Clone</div>
+                <div class="help-item"><span class="help-icon icon-del">×</span> Delete</div>
+                <div class="help-item"><span class="help-icon icon-copy">C</span> Copy</div>
+                <div class="help-item"><span class="help-icon icon-paste">P</span> Paste</div>
+            </div>
         </div>
     </header>
 
     <div class="content-wrapper">
         <div class="main">
-            <div class="page" id="page"></div>
+            <div class="page pawn-page" id="page"></div>
+            
+            <div class="page tracker-page" id="tracker-page"></div>
         </div>
 
         <footer class="credits-footer">
@@ -49,8 +422,8 @@
 
             <div class="footer-col">
                 <div class="footer-block" style="padding-bottom: 5px;">
-                    <label>2. Base Size</label>
-                    <select id="size-select" onchange="updateSize()">
+                    <label>2. Global Base Size</label>
+                    <select id="size-select" onchange="updateGlobalSize()">
                         <option value="medium">Medium (1" base x 1.5" tall)</option>
                         <option value="small">Small (0.75" base x 1" tall)</option>
                         <option value="large">Large (1.25" base x 2" tall)</option>
@@ -77,7 +450,7 @@
 
             <div class="footer-col">
                 <div class="credits-box">
-                    <h3>Prompt Engineered</h3>
+                    <h3>Custom Setup & Logic</h3>
                     <p>Expanded capabilities, stat blocks, styling controls, and export tools.</p>
                     <a href="https://tools.gameportal.win" target="_blank">tools.gameportal.win</a>
                     <div class="gemini-charm">✨ Vibe developed with <span>Gemini 3.1 Pro</span></div>
@@ -88,9 +461,25 @@
                 <div class="footer-block">
                     <label>4. Print & Export</label>
                     <div class="export-col">
-                        <button class="primary" onclick="handlePrint()">Print / PDF</button>
-                        <button class="primary word-btn" onclick="exportWord()">Export to Word (.doc)</button>
-                        <button class="primary odt-btn" onclick="exportODT()">Export to OpenDoc (.fodt)</button>
+                        <label style="font-size: 12px; cursor: pointer; color: white;">
+                            <input type="checkbox" id="toggle-table" onchange="toggleTable(event)"> 
+                            Append Tracker Sheet
+                        </label>
+                        <select id="tracker-scale" onchange="updateTrackerScale(event)" style="padding: 4px; font-size: 11px;">
+                            <option value="1">1 Box = 1 Point</option>
+                            <option value="5">1 Box = 5 Points</option>
+                            <option value="10">1 Box = 10 Points</option>
+                        </select>
+
+                        <button class="primary" style="margin-top: 2px;" onclick="handlePrint('all')">Print Sheet(s)</button>
+                        <div style="display:flex; gap:5px;">
+                            <button class="secondary" style="flex:1; padding: 6px;" onclick="handlePrint('pawns')">Pawns Only</button>
+                            <button class="secondary" style="flex:1; padding: 6px;" onclick="handlePrint('table')">Table Only</button>
+                        </div>
+                        <div style="display:flex; gap:5px;">
+                            <button class="primary word-btn" style="flex:1; padding: 6px; font-size: 12px;" onclick="exportWord()">Word (.doc)</button>
+                            <button class="primary odt-btn" style="flex:1; padding: 6px; font-size: 12px;" onclick="exportODT()">OpenDoc (.odt)</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -98,6 +487,708 @@
         </footer>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        const state = { pawns: [], pawnWidth: 1.0, pawnHeight: 1.5, showTable: false, trackerScale: 1 };
+        let styleClipboard = null; 
+        const STAT_KEYS = ["Init", "AC", "HP", "P.D.", "C.D.", "S.D.", "Inv.", "Foc"];
+
+        const pageEl = document.getElementById('page');
+        document.getElementById('file-input').addEventListener('change', handleFiles);
+
+        window.addEventListener('dragover', e => { e.preventDefault(); document.body.style.opacity = '0.7'; });
+        window.addEventListener('dragleave', e => { e.preventDefault(); document.body.style.opacity = '1'; });
+        window.addEventListener('drop', e => {
+            e.preventDefault(); document.body.style.opacity = '1';
+            handleFiles({ target: { files: e.dataTransfer.files } });
+        });
+
+        window.addEventListener('paste', e => {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            const files = [];
+            for (let index in items) {
+                const item = items[index];
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    files.push(item.getAsFile());
+                }
+            }
+            if (files.length > 0) handleFiles({ target: { files: files, id: 'paste-event' } });
+        });
+
+        async function pasteFromClipboardButton() {
+            try {
+                if (!navigator.clipboard || !navigator.clipboard.read) throw new Error("Clipboard API not supported or blocked.");
+                const clipboardItems = await navigator.clipboard.read();
+                const files = [];
+                for (const clipboardItem of clipboardItems) {
+                    for (const type of clipboardItem.types) {
+                        if (type.startsWith('image/')) {
+                            const blob = await clipboardItem.getType(type);
+                            files.push(new File([blob], "pasted-image.png", { type: type }));
+                        }
+                    }
+                }
+                if (files.length > 0) handleFiles({ target: { files: files, id: 'paste-btn' } });
+                else alert("No image found on your clipboard.");
+            } catch (err) {
+                alert("Browser blocked clipboard access. Please click anywhere on the page and press Ctrl+V (or Cmd+V) to paste!");
+            }
+        }
+
+        async function handleFiles(e) {
+            const files = e.target.files;
+            if (!files) return;
+            for (let file of files) {
+                if (!file.type.startsWith('image/')) continue;
+                
+                const dataUrl = await new Promise(r => {
+                    const reader = new FileReader();
+                    reader.onload = ev => r(ev.target.result);
+                    reader.readAsDataURL(file);
+                });
+
+                const img = new Image();
+                await new Promise(r => { img.onload = r; img.src = dataUrl; });
+
+                const emptyStats = {};
+                STAT_KEYS.forEach(key => emptyStats[key] = '');
+
+                state.pawns.push({
+                    img: img, dataUrl: dataUrl, name: '', number: '', isEditing: false,
+                    isDark: calculateDarkness(img), isFlipped: false, showBorder: false, 
+                    borderColor: '#000000', textColor: '#000000', textBgColor: '#FFFFFFEE',
+                    scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0,
+                    pawnWidth: state.pawnWidth, pawnHeight: state.pawnHeight,
+                    stats: emptyStats      
+                });
+            }
+            if(e.target.id === 'file-input') e.target.value = ''; 
+            renderAll();
+        }
+
+        function calculateDarkness(img) {
+            try {
+                const cvs = document.createElement('canvas');
+                const ctx = cvs.getContext('2d', { willReadFrequently: true });
+                cvs.width = img.width; cvs.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                
+                const imageData = ctx.getImageData(0, 0, cvs.width, cvs.height).data;
+                let totalBrightness = 0, opaquePixels = 0;
+                for (let i = 0; i < imageData.length; i += 4) {
+                    if (imageData[i + 3] > 50) { 
+                        totalBrightness += (0.299 * imageData[i] + 0.587 * imageData[i + 1] + 0.114 * imageData[i + 2]);
+                        opaquePixels++;
+                    }
+                }
+                if (opaquePixels === 0) return false;
+                return (totalBrightness / opaquePixels) < 127.5;
+            } catch (err) { return false; }
+        }
+
+        function removePawn(index) { state.pawns.splice(index, 1); renderAll(); }
+
+        function duplicatePawn(index) {
+            const original = state.pawns[index];
+            let newNumber = original.number;
+
+            if (newNumber && newNumber.trim() !== '' && !isNaN(newNumber)) {
+                let targetNum = parseInt(newNumber, 10) + 1;
+                while (state.pawns.some(p => p.dataUrl === original.dataUrl && p.name === original.name && parseInt(p.number, 10) === targetNum)) {
+                    targetNum++;
+                }
+                newNumber = targetNum.toString();
+            }
+
+            const newStats = { ...original.stats };
+            const copy = { ...original, number: newNumber, isEditing: false, stats: newStats }; 
+            state.pawns.push(copy);
+            renderAll();
+        }
+
+        function copyStyle(index) {
+            const p = state.pawns[index];
+            styleClipboard = {
+                borderColor: p.borderColor, textColor: p.textColor, textBgColor: p.textBgColor,
+                showBorder: p.showBorder, isDark: p.isDark, isFlipped: p.isFlipped,
+                scale: p.scale, rotation: p.rotation, offsetX: p.offsetX, offsetY: p.offsetY,
+                pawnWidth: p.pawnWidth, pawnHeight: p.pawnHeight
+            };
+            renderAll(); 
+        }
+
+        function pasteStyle(index) {
+            if (!styleClipboard) return;
+            Object.assign(state.pawns[index], styleClipboard);
+            renderAll(); 
+        }
+
+        function toggleEdit(index) {
+            state.pawns[index].isEditing = !state.pawns[index].isEditing;
+            const settingsDiv = document.getElementById(`settings-${index}`);
+            const editBtn = document.getElementById(`edit-btn-${index}`);
+            if (state.pawns[index].isEditing) {
+                settingsDiv.style.display = 'flex';
+                editBtn.innerHTML = '▲ Hide Controls';
+            } else {
+                settingsDiv.style.display = 'none';
+                editBtn.innerHTML = '▼ Edit Controls';
+            }
+        }
+
+        function updatePawnValue(index, field, value) {
+            state.pawns[index][field] = value;
+            renderSinglePawn(index);
+            if (state.showTable && (field === 'name' || field === 'number')) renderTable();
+        }
+
+        function updatePawnStat(index, key, value) {
+            state.pawns[index].stats[key] = value;
+            renderSinglePawn(index);
+            if (state.showTable) renderTable();
+        }
+
+        function updatePawnColor(index, field, value, includeAlpha=false) {
+            if (includeAlpha) {
+                let currentAlpha = state.pawns[index][field].slice(7) || 'EE';
+                state.pawns[index][field] = value + currentAlpha;
+            } else {
+                state.pawns[index][field] = value;
+            }
+            renderSinglePawn(index);
+        }
+
+        function updatePawnTransform(index, field, value) {
+            state.pawns[index][field] = parseFloat(value);
+            renderSinglePawn(index);
+        }
+
+        function updateGlobalSize() {
+            const size = document.getElementById('size-select').value;
+            let w = 1.0, h = 1.5;
+            if (size === 'small') { w = 0.75; h = 1.0; }
+            if (size === 'medium') { w = 1.0; h = 1.5; }
+            if (size === 'large') { w = 1.25; h = 2.0; }
+            
+            state.pawnWidth = w; state.pawnHeight = h;
+            state.pawns.forEach(p => { p.pawnWidth = w; p.pawnHeight = h; });
+            renderAll();
+        }
+
+        function updatePawnSize(index, sizeStr) {
+            let w = 1.0, h = 1.5;
+            if (sizeStr === 'small') { w = 0.75; h = 1.0; }
+            if (sizeStr === 'medium') { w = 1.0; h = 1.5; }
+            if (sizeStr === 'large') { w = 1.25; h = 2.0; }
+            state.pawns[index].pawnWidth = w; state.pawns[index].pawnHeight = h;
+            renderAll();
+        }
+
+        function toggleTable(e) {
+            state.showTable = e.target.checked;
+            renderTable();
+        }
+
+        function updateTrackerScale(e) {
+            state.trackerScale = parseInt(e.target.value, 10);
+            renderTable();
+        }
+
+        function getExportFilename(extension) {
+            if (state.pawns.length === 0) return `Pawns_Project${extension}`;
+            let baseName = state.pawns[0].name.trim() || "Unnamed Pawn";
+            const others = state.pawns.length - 1;
+            if (others > 0) baseName += ` (and ${others} other${others > 1 ? 's' : ''})`;
+            return baseName.replace(/[<>:"/\\|?*]/g, '') + extension;
+        }
+
+        function saveProject() {
+            if (state.pawns.length === 0) { alert("Please add at least one pawn before saving."); return; }
+            const projectData = {
+                pawnWidth: state.pawnWidth, pawnHeight: state.pawnHeight, showTable: state.showTable, trackerScale: state.trackerScale,
+                pawns: state.pawns.map(p => ({
+                    dataUrl: p.dataUrl, name: p.name, number: p.number,
+                    borderColor: p.borderColor, textColor: p.textColor, textBgColor: p.textBgColor,
+                    isDark: p.isDark, isFlipped: p.isFlipped, showBorder: p.showBorder, 
+                    scale: p.scale, rotation: p.rotation, offsetX: p.offsetX, offsetY: p.offsetY,
+                    pawnWidth: p.pawnWidth || state.pawnWidth, pawnHeight: p.pawnHeight || state.pawnHeight,
+                    stats: p.stats
+                }))
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projectData));
+            const a = document.createElement('a'); a.href = dataStr; 
+            a.download = getExportFilename('.json');
+            document.body.appendChild(a); a.click(); a.remove();
+        }
+
+        async function loadProjectFromJSON(projectData) {
+            state.pawnWidth = projectData.pawnWidth || 1.0; 
+            state.pawnHeight = projectData.pawnHeight || 1.5;
+            state.showTable = projectData.showTable || false;
+            state.trackerScale = projectData.trackerScale || 1;
+
+            const select = document.getElementById('size-select');
+            if (state.pawnWidth === 0.75) select.value = 'small';
+            if (state.pawnWidth === 1.0) select.value = 'medium';
+            if (state.pawnWidth === 1.25) select.value = 'large';
+
+            document.getElementById('toggle-table').checked = state.showTable;
+            document.getElementById('tracker-scale').value = state.trackerScale;
+
+            state.pawns = [];
+            for (let p of projectData.pawns) {
+                const img = new Image(); 
+                await new Promise(r => { img.onload = r; img.src = p.dataUrl; });
+                
+                const loadedStats = p.stats || {};
+                const safeStats = {};
+                STAT_KEYS.forEach(key => safeStats[key] = loadedStats[key] || '');
+
+                state.pawns.push({
+                    img: img, dataUrl: p.dataUrl, name: p.name || '', number: p.number || '', isEditing: false,
+                    borderColor: p.borderColor || '#000000', textColor: p.textColor || '#000000', textBgColor: p.textBgColor || '#FFFFFFEE',
+                    isDark: p.isDark !== undefined ? p.isDark : calculateDarkness(img),
+                    isFlipped: p.isFlipped || false, showBorder: p.showBorder || false,
+                    scale: p.scale || 1.0, rotation: p.rotation || 0, offsetX: p.offsetX || 0, offsetY: p.offsetY || 0,
+                    pawnWidth: p.pawnWidth || state.pawnWidth, pawnHeight: p.pawnHeight || state.pawnHeight,
+                    stats: safeStats
+                });
+            }
+            renderAll();
+        }
+
+        async function handleFileLoad(e) {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const projectData = JSON.parse(event.target.result);
+                    await loadProjectFromJSON(projectData);
+                } catch (error) { alert('Error loading project.'); }
+            };
+            reader.readAsText(file); e.target.value = ''; 
+        }
+
+        function handlePrint(mode) {
+            if (state.pawns.length === 0) { alert("Please add at least one pawn before printing."); return; }
+            const originalTitle = document.title;
+            document.title = getExportFilename('');
+
+            if (mode === 'pawns') {
+                document.body.classList.add('print-hide-table');
+            } else if (mode === 'table') {
+                if (!state.showTable) { alert("Please enable 'Append Tracker Sheet' to print the table."); document.title = originalTitle; return; }
+                document.body.classList.add('print-hide-pawns');
+            } else if (mode === 'all') {
+                 if (!state.showTable) document.body.classList.add('print-hide-table');
+            }
+
+            window.print();
+            setTimeout(() => { 
+                document.title = originalTitle; 
+                document.body.classList.remove('print-hide-table', 'print-hide-pawns');
+            }, 500);
+        }
+
+        function exportWord() {
+            if (state.pawns.length === 0) { alert("Please add at least one pawn before exporting."); return; }
+            let htmlContent = `
+                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                <head><meta charset="utf-8"><title>Pawns Export</title>
+                <style>@page { margin: 0.5in; size: letter portrait; } body { margin: 0; padding: 0; font-family: Arial, sans-serif; } img { margin: 0 0.25in 0.25in 0; display: inline-block; }</style>
+                </head><body>
+            `;
+            state.pawns.forEach((pawn, index) => {
+                const container = document.getElementById(`canvas-container-${index}`);
+                const canvas = container.querySelector('canvas');
+                if (canvas) {
+                    const dataUrl = canvas.toDataURL('image/png');
+                    const wInches = parseFloat(canvas.style.width); const hInches = parseFloat(canvas.style.height);
+                    const wPx = Math.round(wInches * 96); const hPx = Math.round(hInches * 96);
+                    htmlContent += `<img src="${dataUrl}" width="${wPx}" height="${hPx}" style="width:${wInches}in; height:${hInches}in;" />`;
+                }
+            });
+            htmlContent += `</body></html>`;
+            const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+            a.download = getExportFilename('.doc'); document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+
+        function exportODT() {
+            if (state.pawns.length === 0) { alert("Please add at least one pawn before exporting."); return; }
+            let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+            <office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" office:mimetype="application/vnd.oasis.opendocument.text">
+              <office:body><office:text><text:p>`;
+            state.pawns.forEach((pawn, index) => {
+                const container = document.getElementById(`canvas-container-${index}`);
+                const canvas = container.querySelector('canvas');
+                if (canvas) {
+                    const dataUrl = canvas.toDataURL('image/png');
+                    const base64Data = dataUrl.split(',')[1]; 
+                    const wInches = canvas.style.width; const hInches = canvas.style.height;
+                    xmlContent += `<draw:frame svg:width="${wInches}" svg:height="${hInches}"><draw:image><office:binary-data>${base64Data}</office:binary-data></draw:image></draw:frame><text:s text:c="2"/>`; 
+                }
+            });
+            xmlContent += `</text:p></office:text></office:body></office:document>`;
+            const blob = new Blob([xmlContent], { type: 'application/vnd.oasis.opendocument.text' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+            a.download = getExportFilename('.odt'); 
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+
+        function createSliderGroup(index, labelTxt, field, min, max, step, defaultValue) {
+            const group = document.createElement('div'); group.className = 'slider-group';
+            const label = document.createElement('label'); label.innerText = labelTxt;
+            const slider = document.createElement('input'); slider.type = 'range';
+            slider.min = min; slider.max = max; slider.step = step; slider.value = state.pawns[index][field];
+            slider.oninput = (e) => updatePawnTransform(index, field, e.target.value);
+            const resetBtn = document.createElement('button');
+            resetBtn.className = 'reset-slider-btn'; resetBtn.innerHTML = '↺'; resetBtn.title = 'Reset Setting';
+            resetBtn.onclick = () => { slider.value = defaultValue; updatePawnTransform(index, field, defaultValue); };
+            group.appendChild(label); group.appendChild(slider); group.appendChild(resetBtn);
+            return group;
+        }
+
+        function renderTable() {
+            const tablePage = document.getElementById('tracker-page');
+            if (!state.showTable || state.pawns.length === 0) { tablePage.style.display = 'none'; return; }
+            
+            const activeStatKeys = STAT_KEYS.filter(key => {
+                return state.pawns.some(p => p.stats[key] && p.stats[key].trim() !== '');
+            });
+
+            tablePage.style.display = 'block';
+            let html = `<h2>Encounter Stat Tracker</h2>`;
+            html += `<table class="tracker-table"><thead><tr>
+                <th style="width: 20%;">Name</th>
+                <th style="width: 5%;">#</th>`;
+            
+            activeStatKeys.forEach(k => html += `<th>${k}</th>`);
+            html += `</tr></thead><tbody>`;
+
+            const scale = state.trackerScale || 1;
+            const scaleNote = scale > 1 ? ` <span style="font-size:10px; color:#666;">(x${scale})</span>` : '';
+
+            state.pawns.forEach(p => {
+                html += `<tr>
+                    <td style="font-weight:bold;">${p.name || '-'}</td>
+                    <td style="text-align:center;">${p.number || '-'}</td>`;
+                
+                activeStatKeys.forEach(k => {
+                    let val = p.stats[k] || '';
+                    if ((k === 'HP' || k === 'Inv.' || k === 'Foc') && val.trim() !== '') {
+                        const num = parseInt(val, 10);
+                        if (!isNaN(num) && num > 0) { 
+                            const numBoxes = Math.ceil(num / scale);
+                            let boxes = '<div class="track-box-container">';
+                            
+                            for(let i = 0; i < numBoxes; i++) {
+                                if (i % 5 === 0) {
+                                    if (i > 0) boxes += '</div>';
+                                    boxes += '<div class="track-box-group">';
+                                }
+                                boxes += '<span class="track-box"></span>';
+                            }
+                            if (numBoxes > 0) boxes += '</div>';
+                            
+                            boxes += '</div>';
+                            val = `${val}${scaleNote}${boxes}`;
+                        }
+                    }
+                    html += `<td>${val}</td>`;
+                });
+                html += `</tr>`;
+            });
+            html += `</tbody></table>`;
+            tablePage.innerHTML = html;
+        }
+
+        function renderAll() {
+            state.pawns.sort((a, b) => {
+                const widthA = a.pawnWidth || state.pawnWidth;
+                const widthB = b.pawnWidth || state.pawnWidth;
+                return widthB - widthA;
+            });
+
+            pageEl.innerHTML = '';
+            state.pawns.forEach((pawn, index) => {
+                const wrapper = document.createElement('div'); wrapper.className = 'pawn-wrapper'; wrapper.id = `pawn-wrapper-${index}`;
+                
+                const leftActions = document.createElement('div'); leftActions.className = 'action-group-left';
+                const dupBtn = document.createElement('button'); dupBtn.className = 'circle-btn btn-dup'; dupBtn.innerHTML = '+';
+                dupBtn.title = 'Duplicate Pawn'; dupBtn.onclick = () => duplicatePawn(index); leftActions.appendChild(dupBtn);
+                const copyBtn = document.createElement('button'); copyBtn.className = 'circle-btn btn-copy'; copyBtn.innerHTML = 'C';
+                copyBtn.title = 'Copy Style'; copyBtn.onclick = () => copyStyle(index); leftActions.appendChild(copyBtn);
+                const pasteBtn = document.createElement('button'); pasteBtn.className = 'circle-btn btn-paste'; pasteBtn.innerHTML = 'P';
+                pasteBtn.title = 'Paste Style'; pasteBtn.disabled = styleClipboard === null; pasteBtn.onclick = () => pasteStyle(index);
+                leftActions.appendChild(pasteBtn);
+                wrapper.appendChild(leftActions);
+
+                const rightActions = document.createElement('div'); rightActions.className = 'action-group-right';
+                const delBtn = document.createElement('button'); delBtn.className = 'circle-btn btn-del'; delBtn.innerHTML = '×';
+                delBtn.title = 'Remove Pawn'; delBtn.onclick = () => removePawn(index); 
+                rightActions.appendChild(delBtn); wrapper.appendChild(rightActions);
+
+                const canvasContainer = document.createElement('div'); canvasContainer.id = `canvas-container-${index}`;
+                wrapper.appendChild(canvasContainer);
+
+                const editBtn = document.createElement('button'); editBtn.className = 'edit-toggle-btn'; editBtn.id = `edit-btn-${index}`;
+                editBtn.innerHTML = pawn.isEditing ? '▲ Hide Controls' : '▼ Edit Controls';
+                editBtn.onclick = () => toggleEdit(index); wrapper.appendChild(editBtn);
+
+                const settingsDiv = document.createElement('div'); settingsDiv.className = 'pawn-settings';
+                settingsDiv.id = `settings-${index}`; settingsDiv.style.display = pawn.isEditing ? 'flex' : 'none';
+
+                const inputs = document.createElement('div'); inputs.className = 'pawn-inputs';
+                const nameInput = document.createElement('input'); nameInput.type = 'text'; nameInput.className = 'input-name';
+                nameInput.placeholder = 'Name...'; nameInput.value = pawn.name; nameInput.oninput = (e) => updatePawnValue(index, 'name', e.target.value);
+                const numInput = document.createElement('input'); numInput.type = 'text'; numInput.className = 'input-number';
+                numInput.placeholder = '#'; numInput.value = pawn.number; numInput.oninput = (e) => updatePawnValue(index, 'number', e.target.value);
+                inputs.appendChild(nameInput); inputs.appendChild(numInput); settingsDiv.appendChild(inputs);
+
+                const statsContainer = document.createElement('div'); statsContainer.className = 'pawn-stats-grid';
+                STAT_KEYS.forEach(key => {
+                    const statWrapper = document.createElement('div');
+                    const statLabel = document.createElement('label'); statLabel.innerText = key;
+                    const statInput = document.createElement('input'); statInput.type = 'text';
+                    statInput.value = pawn.stats[key]; statInput.placeholder = '-';
+                    statInput.oninput = (e) => updatePawnStat(index, key, e.target.value);
+                    statWrapper.appendChild(statLabel); statWrapper.appendChild(statInput);
+                    statsContainer.appendChild(statWrapper);
+                });
+                settingsDiv.appendChild(statsContainer);
+
+                const optionsRow = document.createElement('div'); optionsRow.className = 'pawn-options';
+                const borderHexLabel = document.createElement('label');
+                const borderHexInput = document.createElement('input'); borderHexInput.type = 'color'; borderHexInput.className = 'input-color';
+                borderHexInput.value = pawn.borderColor; borderHexInput.title = "Color for Border, 'X', and Outline"; 
+                borderHexInput.oninput = (e) => updatePawnColor(index, 'borderColor', e.target.value);
+                borderHexLabel.appendChild(borderHexInput); borderHexLabel.appendChild(document.createTextNode('Border/X'));
+
+                const textHexLabel = document.createElement('label');
+                const textHexInput = document.createElement('input'); textHexInput.type = 'color'; textHexInput.className = 'input-color';
+                textHexInput.value = pawn.textColor; textHexInput.title = "Color for Name & Number text"; 
+                textHexInput.oninput = (e) => updatePawnColor(index, 'textColor', e.target.value);
+                textHexLabel.appendChild(textHexInput); textHexLabel.appendChild(document.createTextNode('Text'));
+
+                const textBgHexLabel = document.createElement('label');
+                const textBgHexInput = document.createElement('input'); textBgHexInput.type = 'color'; textBgHexInput.className = 'input-color';
+                textBgHexInput.value = pawn.textBgColor.slice(0,7); textBgHexInput.title = "Color for bar behind text"; 
+                textBgHexInput.oninput = (e) => updatePawnColor(index, 'textBgColor', e.target.value, true); 
+                textBgHexLabel.appendChild(textBgHexInput); textBgHexLabel.appendChild(document.createTextNode('T-Bg'));
+
+                const sizeLabel = document.createElement('label'); sizeLabel.style.marginLeft = "10px";
+                const sizeSel = document.createElement('select'); sizeSel.style.width = "auto"; sizeSel.style.padding = "2px";
+                const pWidth = pawn.pawnWidth || state.pawnWidth;
+                sizeSel.innerHTML = `
+                    <option value="small" ${pWidth === 0.75 ? 'selected' : ''}>Sm Size</option>
+                    <option value="medium" ${pWidth === 1.0 ? 'selected' : ''}>Md Size</option>
+                    <option value="large" ${pWidth === 1.25 ? 'selected' : ''}>Lg Size</option>
+                `;
+                sizeSel.onchange = (e) => updatePawnSize(index, e.target.value);
+                sizeLabel.appendChild(sizeSel);
+
+                optionsRow.appendChild(borderHexLabel); optionsRow.appendChild(textHexLabel); optionsRow.appendChild(textBgHexLabel); optionsRow.appendChild(sizeLabel);
+                settingsDiv.appendChild(optionsRow);
+
+                const checksRow = document.createElement('div'); checksRow.className = 'pawn-options';
+                checksRow.style.paddingTop = '0';
+                const borderLabel = document.createElement('label');
+                const borderCheckbox = document.createElement('input'); borderCheckbox.type = 'checkbox';
+                borderCheckbox.checked = pawn.showBorder; borderCheckbox.onchange = (e) => updatePawnValue(index, 'showBorder', e.target.checked);
+                borderLabel.appendChild(borderCheckbox); borderLabel.appendChild(document.createTextNode("Draw Border"));
+
+                const darkLabel = document.createElement('label');
+                const darkCheckbox = document.createElement('input'); darkCheckbox.type = 'checkbox';
+                darkCheckbox.checked = pawn.isDark; darkCheckbox.onchange = (e) => updatePawnValue(index, 'isDark', e.target.checked);
+                darkLabel.appendChild(darkCheckbox); darkLabel.appendChild(document.createTextNode("'X' Back"));
+
+                const flipLabel = document.createElement('label');
+                const flipCheckbox = document.createElement('input'); flipCheckbox.type = 'checkbox';
+                flipCheckbox.checked = pawn.isFlipped; flipCheckbox.onchange = (e) => updatePawnValue(index, 'isFlipped', e.target.checked);
+                flipLabel.appendChild(flipCheckbox); flipLabel.appendChild(document.createTextNode("Flip Image"));
+                
+                checksRow.appendChild(borderLabel); checksRow.appendChild(darkLabel); checksRow.appendChild(flipLabel);
+                settingsDiv.appendChild(checksRow);
+
+                const controls = document.createElement('div'); controls.className = 'pawn-controls';
+                controls.appendChild(createSliderGroup(index, 'Image Scale', 'scale', 0.2, 3.0, 0.05, 1.0));
+                controls.appendChild(createSliderGroup(index, 'Rotate', 'rotation', -180, 180, 1, 0));
+                controls.appendChild(createSliderGroup(index, 'X-Pos', 'offsetX', -300, 300, 2, 0));
+                controls.appendChild(createSliderGroup(index, 'Y-Pos', 'offsetY', -300, 300, 2, 0));
+                settingsDiv.appendChild(controls);
+
+                wrapper.appendChild(settingsDiv);
+                pageEl.appendChild(wrapper);
+                renderSinglePawn(index);
+            });
+            renderTable();
+        }
+
+        function renderSinglePawn(index) {
+            const pawn = state.pawns[index];
+            const container = document.getElementById(`canvas-container-${index}`);
+            if (!container) return;
+            container.innerHTML = ''; container.appendChild(drawPawnCanvas(pawn));
+        }
+
+        function drawPawnCanvas(pawn) {
+            const canvas = document.createElement('canvas');
+            const printDPI = 300; const tabWidthInches = 0.25; const panels = 3;
+            
+            const pWidth = pawn.pawnWidth || state.pawnWidth;
+            const pHeight = pawn.pawnHeight || state.pawnHeight;
+
+            const internalTabWidth = tabWidthInches * printDPI; 
+            const internalPanelWidth = pWidth * printDPI;
+            const internalWidth = (internalPanelWidth * panels) + internalTabWidth; 
+            const internalHeight = pHeight * printDPI;
+
+            canvas.width = internalWidth; canvas.height = internalHeight;
+            canvas.style.width = (pWidth * panels + tabWidthInches) + "in"; 
+            canvas.style.height = pHeight + "in";
+
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'white'; ctx.fillRect(0, 0, internalWidth, internalHeight);
+            ctx.strokeStyle = '#888'; ctx.lineWidth = 2; ctx.setLineDash([15, 15]);
+
+            const textHeight = 45; const textPaddingBottom = 15;
+            const hasText = pawn.name.trim() !== '' || pawn.number.trim() !== '';
+            const reservedBottom = hasText ? textHeight + textPaddingBottom : 0; 
+
+            for (let i = 0; i < panels; i++) {
+                let xBase = i * internalPanelWidth;
+                ctx.save();
+                
+                const margin = internalHeight * 0.05;
+                const availableHeight = internalHeight - margin - reservedBottom;
+
+                const autoScale = Math.min(internalPanelWidth / pawn.img.width, availableHeight / pawn.img.height) * 0.95; 
+                const finalScale = autoScale * pawn.scale;
+                const w = pawn.img.width * finalScale; const h = pawn.img.height * finalScale;
+                const shiftX = pawn.offsetX * (printDPI / 100); const shiftY = pawn.offsetY * (printDPI / 100);
+                
+                const xCenter = xBase + (internalPanelWidth / 2);
+                const yCenter = internalHeight - (h / 2) - (margin / 2) - reservedBottom + shiftY;
+
+                ctx.beginPath(); ctx.rect(xBase, 0, internalPanelWidth, internalHeight); ctx.clip();
+
+                let shouldFlip = (i === 1) ? !pawn.isFlipped : pawn.isFlipped;
+
+                if (i === 2 && pawn.isDark) {
+                    ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 6; ctx.setLineDash([]);
+                    const p = 30; ctx.beginPath();
+                    ctx.moveTo(xBase + p, p); ctx.lineTo(xBase + internalPanelWidth - p, internalHeight - p);
+                    ctx.moveTo(xBase + internalPanelWidth - p, p); ctx.lineTo(xBase + p, internalHeight - p);
+                    ctx.stroke();
+                } else {
+                    ctx.save();
+                    ctx.translate(xCenter, yCenter);
+                    if (shouldFlip) ctx.scale(-1, 1);
+                    ctx.translate(shiftX, 0);
+                    ctx.rotate((pawn.rotation * Math.PI) / 180);
+                    if (i === 2) ctx.filter = 'brightness(0)'; 
+                    
+                    ctx.drawImage(pawn.img, -w/2, -h/2, w, h);
+                    ctx.restore();
+                }
+                ctx.restore(); 
+
+                if (i === 2) {
+                    const activeStats = STAT_KEYS.filter(key => pawn.stats[key] && pawn.stats[key].trim() !== '');
+                    if (activeStats.length > 0) {
+                        ctx.save();
+                        const boxW = internalPanelWidth * 0.42; 
+                        const boxH = Math.floor(internalPanelWidth * 0.15); 
+                        const pad = Math.floor(internalPanelWidth * 0.03);
+                        const labelFont = Math.floor(internalPanelWidth * 0.065);
+                        const valFont = Math.floor(internalPanelWidth * 0.08);
+
+                        const startY = internalHeight * 0.08; 
+                        const startX = xBase + (internalPanelWidth - (2 * boxW + pad)) / 2;
+
+                        activeStats.forEach((key, idx) => {
+                            const col = idx % 2; const row = Math.floor(idx / 2);
+                            const x = startX + col * (boxW + pad); const y = startY + row * (boxH + pad);
+
+                            ctx.fillStyle = pawn.textBgColor; ctx.fillRect(x, y, boxW, boxH);
+                            ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 3; ctx.setLineDash([]); ctx.strokeRect(x, y, boxW, boxH);
+
+                            ctx.fillStyle = pawn.textColor; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+                            ctx.font = `bold ${labelFont}px sans-serif`; ctx.fillText(key, x + 8, y + boxH/2);
+
+                            ctx.textAlign = 'right'; ctx.font = `bold ${valFont}px sans-serif`;
+                            ctx.fillText(pawn.stats[key], x + boxW - 8, y + boxH/2);
+                        });
+                        ctx.restore();
+                    }
+                }
+
+                if (pawn.showBorder) {
+                    ctx.save();
+                    ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 12; ctx.setLineDash([]);
+                    ctx.strokeRect(xBase + 6, 6, internalPanelWidth - 12, internalHeight - 12);
+                    ctx.restore();
+                }
+
+                drawText(ctx, pawn, xBase, internalPanelWidth, internalHeight, reservedBottom, textPaddingBottom);
+
+                if (i < panels - 1) {
+                    ctx.setLineDash([15, 15]); ctx.strokeStyle = '#888'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(xBase + internalPanelWidth, 0); ctx.lineTo(xBase + internalPanelWidth, internalHeight); ctx.stroke();
+                }
+            }
+
+            let xTab = panels * internalPanelWidth;
+            ctx.setLineDash([]); ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(xTab, 0); ctx.lineTo(xTab, internalHeight); ctx.stroke();
+            ctx.fillStyle = '#e8e8e8'; ctx.fillRect(xTab, 0, internalTabWidth, internalHeight);
+            
+            ctx.save();
+            ctx.fillStyle = pawn.borderColor; ctx.translate(xTab + internalTabWidth/2, internalHeight/2);
+            ctx.rotate(-Math.PI/2); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            ctx.font = "bold 28px sans-serif"; ctx.fillText("GLUE", 0, 0);
+            ctx.restore();
+
+            ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 4; ctx.strokeRect(0, 0, internalWidth, internalHeight);
+            return canvas;
+        }
+
+        function drawText(ctx, pawn, xBase, panelWidth, panelHeight, reservedBottom, paddingBottom) {
+            let displayText = pawn.name;
+            if (pawn.number) { displayText += displayText ? ` #${pawn.number}` : `#${pawn.number}`; }
+            if (!displayText) return;
+
+            const x = xBase + panelWidth / 2;
+            const y = panelHeight - paddingBottom;
+            const barHeight = reservedBottom;
+
+            if (pawn.textBgColor) {
+                ctx.save();
+                ctx.fillStyle = pawn.textBgColor; 
+                ctx.fillRect(xBase, panelHeight - barHeight, panelWidth, barHeight);
+                ctx.restore();
+            }
+
+            ctx.save();
+            ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.font = "bold 32px sans-serif";
+            ctx.lineWidth = 6; ctx.strokeStyle = 'white'; ctx.strokeText(displayText, x, y);
+            ctx.fillStyle = pawn.textColor; ctx.fillText(displayText, x, y);
+            ctx.restore();
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('default-pawns.json');
+                if (response.ok) {
+                    const initData = await response.json();
+                    await loadProjectFromJSON(initData);
+                } else {
+                    console.log("No default-pawns.json found.");
+                }
+            } catch(e) {
+                console.log("Starting blank.");
+            }
+        });
+    </script>
 </body>
 </html>
