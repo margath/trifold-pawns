@@ -154,19 +154,19 @@
             page-break-inside: avoid;
         }
         
-        /* Checkbox Styling with Clustering */
+        /* Checkbox Styling with Grid for perfect 5-box rows */
+        .track-box-container {
+            display: grid;
+            grid-template-columns: repeat(5, 12px);
+            gap: 4px 6px;
+            margin-top: 6px;
+        }
         .track-box {
-            display: inline-block;
             width: 12px;
             height: 12px;
             border: 1px solid #333;
-            margin: 2px 2px 2px 0;
             background: #fff;
             box-sizing: border-box;
-        }
-        /* Forces a larger gap after every 5th box to create clusters */
-        .track-box:nth-child(5n) {
-            margin-right: 10px;
         }
 
         /* Pawn container & UI */
@@ -874,7 +874,8 @@
                         const num = parseInt(val, 10);
                         if (!isNaN(num) && num > 0) { 
                             const numBoxes = Math.ceil(num / scale);
-                            let boxes = '<div style="margin-top: 4px; display: flex; flex-wrap: wrap;">';
+                            // New Grid Container for precise 5-wide stacking
+                            let boxes = '<div class="track-box-container">';
                             for(let i = 0; i < numBoxes; i++) boxes += '<span class="track-box"></span>';
                             boxes += '</div>';
                             val = `${val}${scaleNote}${boxes}`;
