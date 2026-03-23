@@ -153,14 +153,20 @@
         .tracker-table tr {
             page-break-inside: avoid;
         }
+        
+        /* Checkbox Styling with Clustering */
         .track-box {
             display: inline-block;
             width: 12px;
             height: 12px;
             border: 1px solid #333;
-            margin: 2px 3px 2px 0;
+            margin: 2px 2px 2px 0;
             background: #fff;
             box-sizing: border-box;
+        }
+        /* Forces a larger gap after every 5th box to create clusters */
+        .track-box:nth-child(5n) {
+            margin-right: 10px;
         }
 
         /* Pawn container & UI */
@@ -273,7 +279,7 @@
         }
         .btn-row { display: flex; gap: 10px; width: 100%; }
         .btn-row button { flex: 1; }
-        .export-col { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+        .export-col { display: flex; flex-direction: column; gap: 6px; width: 100%; }
 
         /* Floating Footer Layout */
         .credits-footer {
@@ -454,7 +460,13 @@
                             <input type="checkbox" id="toggle-table" onchange="toggleTable(event)"> 
                             Append Tracker Sheet
                         </label>
-                        <button class="primary" style="margin-top: 4px;" onclick="handlePrint('all')">Print Sheet(s)</button>
+                        <select id="tracker-scale" onchange="updateTrackerScale(event)" style="padding: 4px; font-size: 11px;">
+                            <option value="1">1 Box = 1 Point</option>
+                            <option value="5">1 Box = 5 Points</option>
+                            <option value="10">1 Box = 10 Points</option>
+                        </select>
+
+                        <button class="primary" style="margin-top: 2px;" onclick="handlePrint('all')">Print Sheet(s)</button>
                         <div style="display:flex; gap:5px;">
                             <button class="secondary" style="flex:1; padding: 6px;" onclick="handlePrint('pawns')">Pawns Only</button>
                             <button class="secondary" style="flex:1; padding: 6px;" onclick="handlePrint('table')">Table Only</button>
@@ -471,7 +483,7 @@
     </div>
 
     <script>
-        const state = { pawns: [], pawnWidth: 1.0, pawnHeight: 1.5, showTable: false };
+        const state = { pawns: [], pawnWidth: 1.0, pawnHeight: 1.5, showTable: false, trackerScale: 1 };
         let styleClipboard = null; 
         const STAT_KEYS = ["Init", "AC", "HP", "P.D.", "C.D.", "S.D.", "Inv.", "Foc"];
 
@@ -671,6 +683,11 @@
             renderTable();
         }
 
+        function updateTrackerScale(e) {
+            state.trackerScale = parseInt(e.target.value, 10);
+            renderTable();
+        }
+
         function getExportFilename(extension) {
             if (state.pawns.length === 0) return `Pawns_Project${extension}`;
             let baseName = state.pawns[0].name.trim() || "Unnamed Pawn";
@@ -682,7 +699,7 @@
         function saveProject() {
             if (state.pawns.length === 0) { alert("Please add at least one pawn before saving."); return; }
             const projectData = {
-                pawnWidth: state.pawnWidth, pawnHeight: state.pawnHeight, showTable: state.showTable,
+                pawnWidth: state.pawnWidth, pawnHeight: state.pawnHeight, showTable: state.showTable, trackerScale: state.trackerScale,
                 pawns: state.pawns.map(p => ({
                     dataUrl: p.dataUrl, name: p.name, number: p.number,
                     borderColor: p.borderColor, textColor: p.textColor, textBgColor: p.textBgColor,
@@ -702,6 +719,7 @@
             state.pawnWidth = projectData.pawnWidth || 1.0; 
             state.pawnHeight = projectData.pawnHeight || 1.5;
             state.showTable = projectData.showTable || false;
+            state.trackerScale = projectData.trackerScale || 1;
 
             const select = document.getElementById('size-select');
             if (state.pawnWidth === 0.75) select.value = 'small';
@@ -709,6 +727,7 @@
             if (state.pawnWidth === 1.25) select.value = 'large';
 
             document.getElementById('toggle-table').checked = state.showTable;
+            document.getElementById('tracker-scale').value = state.trackerScale;
 
             state.pawns = [];
             for (let p of projectData.pawns) {
@@ -828,7 +847,6 @@
             const tablePage = document.getElementById('tracker-page');
             if (!state.showTable || state.pawns.length === 0) { tablePage.style.display = 'none'; return; }
             
-            // Dynamic Columns: Only show stats that are actually used by at least one pawn
             const activeStatKeys = STAT_KEYS.filter(key => {
                 return state.pawns.some(p => p.stats[key] && p.stats[key].trim() !== '');
             });
@@ -842,6 +860,9 @@
             activeStatKeys.forEach(k => html += `<th>${k}</th>`);
             html += `</tr></thead><tbody>`;
 
+            const scale = state.trackerScale || 1;
+            const scaleNote = scale > 1 ? ` <span style="font-size:10px; color:#666;">(x${scale})</span>` : '';
+
             state.pawns.forEach(p => {
                 html += `<tr>
                     <td style="font-weight:bold;">${p.name || '-'}</td>
@@ -852,10 +873,11 @@
                     if ((k === 'HP' || k === 'Inv.' || k === 'Foc') && val.trim() !== '') {
                         const num = parseInt(val, 10);
                         if (!isNaN(num) && num > 0) { 
+                            const numBoxes = Math.ceil(num / scale);
                             let boxes = '<div style="margin-top: 4px; display: flex; flex-wrap: wrap;">';
-                            for(let i = 0; i < num; i++) boxes += '<span class="track-box"></span>';
+                            for(let i = 0; i < numBoxes; i++) boxes += '<span class="track-box"></span>';
                             boxes += '</div>';
-                            val = `${val}${boxes}`;
+                            val = `${val}${scaleNote}${boxes}`;
                         }
                     }
                     html += `<td>${val}</td>`;
@@ -954,7 +976,8 @@
                 optionsRow.appendChild(borderHexLabel); optionsRow.appendChild(textHexLabel); optionsRow.appendChild(textBgHexLabel); optionsRow.appendChild(sizeLabel);
                 settingsDiv.appendChild(optionsRow);
 
-                const checksRow = document.createElement('div'); checksRow.className = 'pawn-options'; checksRow.style.paddingTop = '0';
+                const checksRow = document.createElement('div'); checksRow.className = 'pawn-options';
+                checksRow.style.paddingTop = '0';
                 const borderLabel = document.createElement('label');
                 const borderCheckbox = document.createElement('input'); borderCheckbox.type = 'checkbox';
                 borderCheckbox.checked = pawn.showBorder; borderCheckbox.onchange = (e) => updatePawnValue(index, 'showBorder', e.target.checked);
