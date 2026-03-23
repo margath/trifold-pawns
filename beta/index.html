@@ -76,7 +76,7 @@
             border-radius: 4px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.5);
             transition: transform 0.2s ease-in-out;
-            transform-origin: top left; /* Updated so it doesn't clip on the left edge */
+            transform-origin: top left; 
             cursor: pointer;
         }
         .header-qr:hover {
@@ -154,12 +154,17 @@
             page-break-inside: avoid;
         }
         
-        /* Checkbox Styling with Grid for perfect 5-box rows */
+        /* Checkbox Styling with unbreakable groups of 5 */
         .track-box-container {
-            display: grid;
-            grid-template-columns: repeat(5, 12px);
-            gap: 4px 6px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 12px; /* Vertical gap between rows, Horizontal gap between 5-groups */
             margin-top: 6px;
+        }
+        .track-box-group {
+            display: flex;
+            gap: 3px; /* Tiny gap inside the 5-group */
+            flex-wrap: nowrap; /* Forces the 5 boxes to stay on the same line */
         }
         .track-box {
             width: 12px;
@@ -377,16 +382,13 @@
 <body>
 
     <header class="top-header">
-        
         <div class="header-left">
-            <img class="header-qr" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJNMTAgMTBoMzB2MzBIMTB6TTIwIDIwaDEwdjEwaC0xMHzNNjAgMTBoMzB2MzBINjB6TTcwIDIwaDEwdjEwaC0xMHpNMTAgNjBoMzB2MzBIMTB6TTIwIDcwaDEwdjEwaC0xMHoiIGZpbGw9IiMwMDAiLz48L3N2Zz4=" alt="Static QR Code for tools.gameportal.win" title="tools.gameportal.win">
+            <img class="header-qr" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAACWAQMAAAAGz+OhAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABHklEQVRIib2VsXHEMAwEoVHAkCWwFDb285I6+1JUgkIGHJ8PhGR7PB++DsOEy0AQcAeYvYkFjJdZNZta8Uv7OHvwO/nVM/HSyuovGpZBMB/WysYDbEqGowJfJmesfdqnpmQ/tS/M5X8/7mOhNbJR+7/6u5ddUVn439v9jLn07OkkrGl/8siYC+2gp20AEePfe8HdW97ztC9Nwha4oWfACrv9PLUmYXDsnk4UWsHnGf3rospwPVv0V8KsUlfdrEW3vc4Sll1XLHVIrJ17QcE4NLqra3PmI0vBIngbSp6wm4bFnKSPErYYlU3CYi/MGPP5zEXCYv+6w8ZS4PRQsqPG0h9y0zF6C9z7NjqgYaP2uLw1XhQstNY9i/WytYK9iW+n58dp/gGeIAAAAABJRU5ErkJggg==" alt="Static QR Code for tools.gameportal.win" title="tools.gameportal.win">
         </div>
-        
         <div class="header-titles">
             <h1>The Tri-Fold Pawn Maker</h1>
             <p>Triangular standees with individual layering, border, stats, and text controls.</p>
         </div>
-
         <div class="header-right">
             <div class="header-help">
                 <div class="help-item"><span class="help-icon icon-plus">+</span> Clone</div>
@@ -395,7 +397,6 @@
                 <div class="help-item"><span class="help-icon icon-paste">P</span> Paste</div>
             </div>
         </div>
-
     </header>
 
     <div class="content-wrapper">
@@ -879,7 +880,16 @@
                         if (!isNaN(num) && num > 0) { 
                             const numBoxes = Math.ceil(num / scale);
                             let boxes = '<div class="track-box-container">';
-                            for(let i = 0; i < numBoxes; i++) boxes += '<span class="track-box"></span>';
+                            
+                            for(let i = 0; i < numBoxes; i++) {
+                                if (i % 5 === 0) {
+                                    if (i > 0) boxes += '</div>';
+                                    boxes += '<div class="track-box-group">';
+                                }
+                                boxes += '<span class="track-box"></span>';
+                            }
+                            if (numBoxes > 0) boxes += '</div>';
+                            
                             boxes += '</div>';
                             val = `${val}${scaleNote}${boxes}`;
                         }
