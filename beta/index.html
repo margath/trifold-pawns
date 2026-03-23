@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Tri-Fold Pawn Maker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="top-header">
+        <div class="header-left">
+            <div class="header-help">
+                <div class="help-item"><span class="help-icon icon-plus">+</span> Clone</div>
+                <div class="help-item"><span class="help-icon icon-del">×</span> Delete</div>
+                <div class="help-item"><span class="help-icon icon-copy">C</span> Copy Style</div>
+                <div class="help-item"><span class="help-icon icon-paste">P</span> Paste Style</div>
+            </div>
+        </div>
+        
+        <div class="header-titles">
+            <h1>The Tri-Fold Pawn Maker</h1>
+            <p>Triangular standees with individual layering, border, stats, and text controls.</p>
+        </div>
+
+        <div class="header-right">
+            <img class="header-qr" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAACWAQMAAAAGz+OhAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABHklEQVRIib2VsXHEMAwEoVHAkCWwFDb285I6+1JUgkIGHJ8PhGR7PB++DsOEy0AQcAeYvYkFjJdZNZta8Uv7OHvwO/nVM/HSyuovGpZBMB/WysYDbEqGowJfJmesfdqnpmQ/tS/M5X8/7mOhNbJR+7/6u5ddUVn439v9jLn07OkkrGl/8siYC+2gp20AEePfe8HdW97ztC9Nwha4oWfACrv9PLUmYXDsnk4UWsHnGf3rospwPVv0V8KsUlfdrEW3vc4Sll1XLHVIrJ17QcE4NLqra3PmI0vBIngbSp6wm4bFnKSPErYYlU3CYi/MGPP5zEXCYv+6w8ZS4PRQsqPG0h9y0zF6C9z7NjqgYaP2uLw1XhQstNY9i/WytYK9iW+n58dp/gGeIAAAAABJRU5ErkJggg==" alt="Static QR Code for trifold.gameportal.win" title="trifold.gameportal.win">
+        </div>
+    </header>
+
+    <div class="content-wrapper">
+        <div class="main">
+            <div class="page" id="page"></div>
+        </div>
+
+        <footer class="credits-footer">
+            
+            <div class="footer-col">
+                <div class="footer-block">
+                    <label>1. Add Images</label>
+                    <p style="font-size: 11px; margin: 0; color: #aaa;">Drop transparent PNGs, browse, or paste from clipboard.</p>
+                    <div class="export-col">
+                        <button class="secondary" onclick="document.getElementById('file-input').click()">Browse Files...</button>
+                        <button class="secondary" style="background:#3498db; color:white; border:none;" onclick="pasteFromClipboardButton()">Paste Image 📋</button>
+                        <input type="file" id="file-input" multiple accept="image/*" style="display:none">
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <div class="footer-block" style="padding-bottom: 5px;">
+                    <label>2. Base Size</label>
+                    <select id="size-select" onchange="updateSize()">
+                        <option value="medium">Medium (1" base x 1.5" tall)</option>
+                        <option value="small">Small (0.75" base x 1" tall)</option>
+                        <option value="large">Large (1.25" base x 2" tall)</option>
+                    </select>
+                </div>
+                <div class="footer-block" style="padding-top: 5px;">
+                    <label>3. Save / Load Project</label>
+                    <div class="btn-row">
+                        <button class="secondary" onclick="saveProject()">Save</button>
+                        <button class="secondary" onclick="document.getElementById('load-file-input').click()">Load</button>
+                        <input type="file" id="load-file-input" style="display:none" accept=".json" onchange="handleFileLoad(event)">
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <div class="credits-box">
+                    <h3>Inspired By Whitebeard</h3>
+                    <p>This tool is an expanded iteration of the original <br><a href="https://pwned.whitebeard.blog/" target="_blank">"You've Been Pawned"</a>.</p>
+                    <p>Check out more of their work at<br><a href="https://whitebeard.blog" target="_blank">whitebeard.blog</a></p>
+                    <a href="https://ko-fi.com/whitebeard" target="_blank" class="tip-jar">☕ Drop a tip in their jar!</a>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <div class="credits-box">
+                    <h3>Prompt Engineered</h3>
+                    <p>Expanded capabilities, stat blocks, styling controls, and export tools.</p>
+                    <a href="https://tools.gameportal.win" target="_blank">tools.gameportal.win</a>
+                    <div class="gemini-charm">✨ Vibe developed with <span>Gemini 3.1 Pro</span></div>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <div class="footer-block">
+                    <label>4. Print & Export</label>
+                    <div class="export-col">
+                        <button class="primary" onclick="handlePrint()">Print / PDF</button>
+                        <button class="primary word-btn" onclick="exportWord()">Export to Word (.doc)</button>
+                        <button class="primary odt-btn" onclick="exportODT()">Export to OpenDoc (.fodt)</button>
+                    </div>
+                </div>
+            </div>
+
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
