@@ -265,6 +265,58 @@
             background: white; color: black;
         }
 
+        /* System selector */
+        .system-row { gap: 8px; }
+        .system-label { font-size: 11px; font-weight: bold; color: #333; white-space: nowrap; }
+        .system-select {
+            flex-grow: 0; width: auto; padding: 4px 6px; font-size: 12px;
+            border-radius: 4px; border: 1px solid #ccc; background: white; color: black;
+        }
+
+        /* D&D 5e stat entry form (pawn editor) */
+        .dnd5e-stats-grid {
+            display: flex; flex-direction: column; gap: 6px;
+            background: #e8e8e8; padding: 8px; border-radius: 4px; border: 1px solid #ccc;
+        }
+        .dnd5e-section-title {
+            font-size: 10px; font-weight: bold; color: #555; text-transform: uppercase;
+            letter-spacing: 0.5px; margin-top: 4px;
+        }
+        .dnd5e-section-title:first-child { margin-top: 0; }
+        .dnd5e-stats-section { display: grid; gap: 6px; }
+        .dnd5e-stats-section > div { display: flex; flex-direction: column; }
+        .dnd5e-stats-section label { font-size: 10px; font-weight: bold; color: #555; margin-bottom: 2px; }
+        .dnd5e-stats-section input[type="text"] {
+            width: 100%; padding: 4px; box-sizing: border-box;
+            border: 1px solid #bbb; border-radius: 2px; font-size: 11px;
+            background: white; color: black;
+        }
+        .dnd5e-checkbox-field { flex-direction: row !important; align-items: center; gap: 5px; }
+        .dnd5e-checkbox-field label { margin-bottom: 0 !important; }
+
+        /* D&D 5e tracker stat cards (DM sheet) */
+        .dnd-section-header { margin-top: 20px; border-bottom: 2px solid #ccc; padding-bottom: 8px; color: #333; }
+        .dnd-cards-container { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; }
+        .dnd-stat-card {
+            border: 2px solid #555; border-radius: 6px; padding: 10px 12px;
+            width: 230px; box-sizing: border-box; background: #fafafa;
+            page-break-inside: avoid;
+        }
+        .dnd-card-header {
+            font-weight: bold; font-size: 14px; color: #222;
+            border-bottom: 1px solid #bbb; padding-bottom: 4px; margin-bottom: 6px;
+        }
+        .dnd-card-grid { display: grid; gap: 2px 10px; margin-bottom: 6px; }
+        .dnd-stat-cell {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px dotted #ddd; padding: 2px 0; font-size: 11px;
+        }
+        .dnd-stat-label { color: #555; font-weight: bold; }
+        .dnd-stat-value { color: #000; font-weight: bold; text-align: right; }
+        .dnd-lair-icon { color: #8e44ad; font-size: 14px; }
+        .dnd-legres-boxes { display: flex; gap: 3px; }
+        .dnd-legres-boxes .track-box { width: 12px; height: 12px; min-width: 12px; padding: 0; }
+
         .pawn-options {
             display: flex; gap: 12px; align-items: center; font-size: 11px;
             color: #333; padding: 2px 0; flex-wrap: wrap;
@@ -520,6 +572,21 @@
         let styleClipboard = null; 
         const STAT_KEYS = ["Init", "AC", "HP", "P.D.", "C.D.", "S.D.", "Inv.", "Foc"];
 
+        // --- System coding ---
+        // Every pawn is tagged with the ruleset/system it's intended for. "Generic"
+        // pawns keep the original free-form STAT_KEYS above and the classic tracker
+        // table. Systems with dedicated support (currently D&D 5th Edition) get a
+        // purpose-built stat entry form and a purpose-built DM tracker layout.
+        const SYSTEMS = ["Generic", "D&D 5th Edition"];
+
+        function emptyDnd5eStats() {
+            return {
+                ac: '', init: '', prof: '', lairActions: false, legRes: '',
+                str: '', dex: '', con: '', int: '', wis: '', cha: '',
+                strSave: '', dexSave: '', conSave: '', intSave: '', wisSave: '', chaSave: ''
+            };
+        }
+
         const pageEl = document.getElementById('page');
         document.getElementById('file-input').addEventListener('change', handleFiles);
 
@@ -587,7 +654,9 @@
                     scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0,
                     pawnWidth: state.pawnWidth, pawnHeight: state.pawnHeight,
                     trackerScale: 1, 
-                    stats: emptyStats      
+                    system: 'Generic',
+                    stats: emptyStats,
+                    dnd5e: emptyDnd5eStats()
                 });
             }
             if(e.target.id === 'file-input') e.target.value = ''; 
@@ -629,7 +698,8 @@
             }
 
             const newStats = { ...original.stats };
-            const copy = { ...original, number: newNumber, isEditing: false, stats: newStats }; 
+            const newDnd5e = { ...(original.dnd5e || emptyDnd5eStats()) };
+            const copy = { ...original, number: newNumber, isEditing: false, stats: newStats, dnd5e: newDnd5e }; 
             state.pawns.push(copy);
             renderAll();
         }
@@ -673,6 +743,18 @@
         function updatePawnStat(index, key, value) {
             state.pawns[index].stats[key] = value;
             renderSinglePawn(index);
+            if (state.showTable) renderTable();
+        }
+
+        function updatePawnSystem(index, value) {
+            state.pawns[index].system = value;
+            if (!state.pawns[index].dnd5e) state.pawns[index].dnd5e = emptyDnd5eStats();
+            renderAll();
+        }
+
+        function updatePawnDnd5e(index, key, value) {
+            if (!state.pawns[index].dnd5e) state.pawns[index].dnd5e = emptyDnd5eStats();
+            state.pawns[index].dnd5e[key] = value;
             if (state.showTable) renderTable();
         }
 
@@ -736,7 +818,9 @@
                     scale: p.scale, rotation: p.rotation, offsetX: p.offsetX, offsetY: p.offsetY,
                     pawnWidth: p.pawnWidth || state.pawnWidth, pawnHeight: p.pawnHeight || state.pawnHeight,
                     trackerScale: p.trackerScale || 1,
-                    stats: p.stats
+                    system: p.system || 'Generic',
+                    stats: p.stats,
+                    dnd5e: p.dnd5e || emptyDnd5eStats()
                 }))
             };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projectData));
@@ -766,6 +850,12 @@
                 const safeStats = {};
                 STAT_KEYS.forEach(key => safeStats[key] = loadedStats[key] || '');
 
+                const loadedDnd5e = p.dnd5e || {};
+                const safeDnd5e = emptyDnd5eStats();
+                Object.keys(safeDnd5e).forEach(key => {
+                    if (loadedDnd5e[key] !== undefined) safeDnd5e[key] = loadedDnd5e[key];
+                });
+
                 state.pawns.push({
                     img: img, dataUrl: p.dataUrl, name: p.name || '', number: p.number || '', isEditing: false,
                     borderColor: p.borderColor || '#000000', textColor: p.textColor || '#000000', textBgColor: p.textBgColor || '#FFFFFFEE',
@@ -774,7 +864,9 @@
                     scale: p.scale || 1.0, rotation: p.rotation || 0, offsetX: p.offsetX || 0, offsetY: p.offsetY || 0,
                     pawnWidth: p.pawnWidth || state.pawnWidth, pawnHeight: p.pawnHeight || state.pawnHeight,
                     trackerScale: p.trackerScale || 1,
-                    stats: safeStats
+                    system: p.system || 'Generic',
+                    stats: safeStats,
+                    dnd5e: safeDnd5e
                 });
             }
             renderAll();
@@ -872,24 +964,143 @@
             return group;
         }
 
+        function buildDnd5eStatsUI(index, pawn) {
+            if (!pawn.dnd5e) pawn.dnd5e = emptyDnd5eStats();
+            const d = pawn.dnd5e;
+            const wrap = document.createElement('div'); wrap.className = 'dnd5e-stats-grid';
+
+            function makeField(key, labelTxt, type) {
+                const cell = document.createElement('div');
+                const label = document.createElement('label'); label.innerText = labelTxt;
+                if (type === 'checkbox') {
+                    cell.classList.add('dnd5e-checkbox-field');
+                    const input = document.createElement('input'); input.type = 'checkbox';
+                    input.checked = !!d[key];
+                    input.onchange = (e) => updatePawnDnd5e(index, key, e.target.checked);
+                    cell.appendChild(input); cell.appendChild(label);
+                    return cell;
+                }
+                const input = document.createElement('input'); input.type = 'text';
+                input.value = d[key]; input.placeholder = '-';
+                input.oninput = (e) => updatePawnDnd5e(index, key, e.target.value);
+                cell.appendChild(label); cell.appendChild(input);
+                return cell;
+            }
+
+            const coreTitle = document.createElement('div'); coreTitle.className = 'dnd5e-section-title';
+            coreTitle.innerText = 'Core Stats'; wrap.appendChild(coreTitle);
+            const coreGrid = document.createElement('div'); coreGrid.className = 'dnd5e-stats-section'; coreGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+            coreGrid.appendChild(makeField('ac', 'Armor Class'));
+            coreGrid.appendChild(makeField('lairActions', 'Has Lair Actions', 'checkbox'));
+            coreGrid.appendChild(makeField('init', 'Initiative Mod.'));
+            coreGrid.appendChild(makeField('legRes', 'Legendary Resistances (#)'));
+            coreGrid.appendChild(makeField('prof', 'Proficiency Bonus'));
+            wrap.appendChild(coreGrid);
+
+            const abilTitle = document.createElement('div'); abilTitle.className = 'dnd5e-section-title';
+            abilTitle.innerText = 'Ability Modifiers'; wrap.appendChild(abilTitle);
+            const abilGrid = document.createElement('div'); abilGrid.className = 'dnd5e-stats-section'; abilGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+            abilGrid.appendChild(makeField('str', 'Strength Mod.'));
+            abilGrid.appendChild(makeField('int', 'Intelligence Mod.'));
+            abilGrid.appendChild(makeField('dex', 'Dexterity Mod.'));
+            abilGrid.appendChild(makeField('wis', 'Wisdom Mod.'));
+            abilGrid.appendChild(makeField('con', 'Constitution Mod.'));
+            abilGrid.appendChild(makeField('cha', 'Charisma Mod.'));
+            wrap.appendChild(abilGrid);
+
+            const saveTitle = document.createElement('div'); saveTitle.className = 'dnd5e-section-title';
+            saveTitle.innerText = 'Saving Throws'; wrap.appendChild(saveTitle);
+            const saveGrid = document.createElement('div'); saveGrid.className = 'dnd5e-stats-section'; saveGrid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            saveGrid.appendChild(makeField('strSave', 'STR Save'));
+            saveGrid.appendChild(makeField('dexSave', 'DEX Save'));
+            saveGrid.appendChild(makeField('conSave', 'CON Save'));
+            saveGrid.appendChild(makeField('intSave', 'INT Save'));
+            saveGrid.appendChild(makeField('wisSave', 'WIS Save'));
+            saveGrid.appendChild(makeField('chaSave', 'CHA Save'));
+            wrap.appendChild(saveGrid);
+
+            return wrap;
+        }
+
+        function renderDnd5eCard(p) {
+            const d = p.dnd5e || emptyDnd5eStats();
+            const lairHtml = d.lairActions ? '<span class="dnd-lair-icon" title="Has Lair Actions">&#9733;</span>' : '';
+            let legHtml = '';
+            const legNum = parseInt(d.legRes, 10);
+            if (!isNaN(legNum) && legNum > 0) {
+                legHtml = '<div class="dnd-legres-boxes">';
+                for (let i = 0; i < legNum; i++) legHtml += '<span class="track-box"></span>';
+                legHtml += '</div>';
+            }
+            const cell = (label, value) => `<div class="dnd-stat-cell"><span class="dnd-stat-label">${label}</span><span class="dnd-stat-value">${value}</span></div>`;
+
+            return `
+            <div class="dnd-stat-card">
+                <div class="dnd-card-header">${p.name || '-'}${p.number ? ' #' + p.number : ''}</div>
+                <div class="dnd-card-grid" style="grid-template-columns: 1fr 1fr;">
+                    ${cell('AC', d.ac || '')}
+                    ${cell('Lair Actions', lairHtml)}
+                    ${cell('Initiative', d.init || '')}
+                    ${cell('Legendary Res.', legHtml)}
+                    ${cell('Proficiency', d.prof || '')}
+                    <div class="dnd-stat-cell"></div>
+                </div>
+                <div class="dnd-card-grid" style="grid-template-columns: 1fr 1fr;">
+                    ${cell('STR', d.str || '')}
+                    ${cell('INT', d.int || '')}
+                    ${cell('DEX', d.dex || '')}
+                    ${cell('WIS', d.wis || '')}
+                    ${cell('CON', d.con || '')}
+                    ${cell('CHA', d.cha || '')}
+                </div>
+                <div class="dnd-card-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+                    ${cell('STR Save', d.strSave || '')}
+                    ${cell('DEX Save', d.dexSave || '')}
+                    ${cell('CON Save', d.conSave || '')}
+                    ${cell('INT Save', d.intSave || '')}
+                    ${cell('WIS Save', d.wisSave || '')}
+                    ${cell('CHA Save', d.chaSave || '')}
+                </div>
+            </div>`;
+        }
+
         function renderTable() {
             const tablePage = document.getElementById('tracker-page');
             if (!state.showTable || state.pawns.length === 0) { tablePage.style.display = 'none'; return; }
-            
-            const activeStatKeys = STAT_KEYS.filter(key => {
-                return state.pawns.some(p => p.stats[key] && p.stats[key].trim() !== '');
-            });
+
+            const genericPawns = state.pawns.filter(p => (p.system || 'Generic') !== 'D&D 5th Edition');
+            const dnd5ePawns = state.pawns.filter(p => (p.system || 'Generic') === 'D&D 5th Edition');
 
             tablePage.style.display = 'block';
             let html = `<h2>Encounter Stat Tracker</h2>`;
-            html += `<table class="tracker-table"><thead><tr>
+
+            if (genericPawns.length > 0) {
+                html += renderGenericTrackerTable(genericPawns);
+            }
+
+            if (dnd5ePawns.length > 0) {
+                html += `<h3 class="dnd-section-header">D&D 5th Edition Monsters</h3>`;
+                html += `<div class="dnd-cards-container">`;
+                dnd5ePawns.forEach(p => { html += renderDnd5eCard(p); });
+                html += `</div>`;
+            }
+
+            tablePage.innerHTML = html;
+        }
+
+        function renderGenericTrackerTable(pawnList) {
+            const activeStatKeys = STAT_KEYS.filter(key => {
+                return pawnList.some(p => p.stats[key] && p.stats[key].trim() !== '');
+            });
+
+            let html = `<table class="tracker-table"><thead><tr>
                 <th style="width: 20%;">Name</th>
                 <th style="width: 5%;">#</th>`;
             
             activeStatKeys.forEach(k => html += `<th>${k}</th>`);
             html += `</tr></thead><tbody>`;
 
-            state.pawns.forEach(p => {
+            pawnList.forEach(p => {
                 html += `<tr>
                     <td style="font-weight:bold;">${p.name || '-'}</td>
                     <td style="text-align:center;">${p.number || '-'}</td>`;
@@ -925,7 +1136,7 @@
                 html += `</tr>`;
             });
             html += `</tbody></table>`;
-            tablePage.innerHTML = html;
+            return html;
         }
 
         function renderAll() {
@@ -971,17 +1182,33 @@
                 numInput.placeholder = '#'; numInput.value = pawn.number; numInput.oninput = (e) => updatePawnValue(index, 'number', e.target.value);
                 inputs.appendChild(nameInput); inputs.appendChild(numInput); settingsDiv.appendChild(inputs);
 
-                const statsContainer = document.createElement('div'); statsContainer.className = 'pawn-stats-grid';
-                STAT_KEYS.forEach(key => {
-                    const statWrapper = document.createElement('div');
-                    const statLabel = document.createElement('label'); statLabel.innerText = key;
-                    const statInput = document.createElement('input'); statInput.type = 'text';
-                    statInput.value = pawn.stats[key]; statInput.placeholder = '-';
-                    statInput.oninput = (e) => updatePawnStat(index, key, e.target.value);
-                    statWrapper.appendChild(statLabel); statWrapper.appendChild(statInput);
-                    statsContainer.appendChild(statWrapper);
+                const systemRow = document.createElement('div'); systemRow.className = 'pawn-inputs system-row';
+                const systemLabel = document.createElement('label'); systemLabel.className = 'system-label'; systemLabel.innerText = 'System:';
+                const systemSel = document.createElement('select'); systemSel.className = 'system-select';
+                SYSTEMS.forEach(sys => {
+                    const opt = document.createElement('option'); opt.value = sys; opt.innerText = sys;
+                    if ((pawn.system || 'Generic') === sys) opt.selected = true;
+                    systemSel.appendChild(opt);
                 });
-                settingsDiv.appendChild(statsContainer);
+                systemSel.onchange = (e) => updatePawnSystem(index, e.target.value);
+                systemRow.appendChild(systemLabel); systemRow.appendChild(systemSel);
+                settingsDiv.appendChild(systemRow);
+
+                if ((pawn.system || 'Generic') === 'D&D 5th Edition') {
+                    settingsDiv.appendChild(buildDnd5eStatsUI(index, pawn));
+                } else {
+                    const statsContainer = document.createElement('div'); statsContainer.className = 'pawn-stats-grid';
+                    STAT_KEYS.forEach(key => {
+                        const statWrapper = document.createElement('div');
+                        const statLabel = document.createElement('label'); statLabel.innerText = key;
+                        const statInput = document.createElement('input'); statInput.type = 'text';
+                        statInput.value = pawn.stats[key]; statInput.placeholder = '-';
+                        statInput.oninput = (e) => updatePawnStat(index, key, e.target.value);
+                        statWrapper.appendChild(statLabel); statWrapper.appendChild(statInput);
+                        statsContainer.appendChild(statWrapper);
+                    });
+                    settingsDiv.appendChild(statsContainer);
+                }
 
                 const optionsRow = document.createElement('div'); optionsRow.className = 'pawn-options';
                 const borderHexLabel = document.createElement('label');
@@ -1217,18 +1444,70 @@
             ctx.restore();
         }
 
+        // --- Built-in fallback pawns ---
+        // If default-pawns.json can't be fetched (missing file, opened straight from
+        // disk, hosting without that file, etc.) the app still starts with a couple
+        // of example pawns instead of a blank page. Placeholder art is generated as
+        // inline SVG so no external image assets are required.
+        function createPlaceholderDataUrl(bgColor, label) {
+            const w = 400, h = 600;
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+                <rect width="100%" height="100%" rx="24" fill="${bgColor}"/>
+                <circle cx="${w/2}" cy="${h*0.4}" r="${w*0.3}" fill="#ffffff" opacity="0.12"/>
+                <text x="50%" y="56%" font-family="sans-serif" font-size="200" font-weight="bold" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">${label}</text>
+            </svg>`;
+            return 'data:image/svg+xml;base64,' + btoa(svg);
+        }
+
+        function getFallbackProjectData() {
+            const genericImg = createPlaceholderDataUrl('#2c3e50', 'G');
+            const dndImg = createPlaceholderDataUrl('#8e0000', 'D');
+
+            return {
+                pawnWidth: 1.0,
+                pawnHeight: 1.5,
+                showTable: false,
+                pawns: [
+                    {
+                        dataUrl: genericImg, name: 'Goblin', number: '1',
+                        borderColor: '#27ae60', textColor: '#000000', textBgColor: '#FFFFFFEE',
+                        isDark: true, isFlipped: false, showBorder: true,
+                        scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0,
+                        pawnWidth: 1.0, pawnHeight: 1.5, trackerScale: 1,
+                        system: 'Generic',
+                        stats: { Init: '+2', AC: '15', HP: '7', 'P.D.': '', 'C.D.': '', 'S.D.': '', 'Inv.': '', Foc: '' }
+                    },
+                    {
+                        dataUrl: dndImg, name: 'Adult Red Dragon', number: '1',
+                        borderColor: '#c0392b', textColor: '#000000', textBgColor: '#FFFFFFEE',
+                        isDark: true, isFlipped: false, showBorder: true,
+                        scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0,
+                        pawnWidth: 1.25, pawnHeight: 2.0, trackerScale: 1,
+                        system: 'D&D 5th Edition',
+                        stats: { Init: '', AC: '', HP: '', 'P.D.': '', 'C.D.': '', 'S.D.': '', 'Inv.': '', Foc: '' },
+                        dnd5e: {
+                            ac: '19', init: '+2', prof: '+5', lairActions: true, legRes: '3',
+                            str: '+6', dex: '+2', con: '+6', int: '+2', wis: '+2', cha: '+5',
+                            strSave: '+11', dexSave: '+7', conSave: '+11', intSave: '+7', wisSave: '+7', chaSave: '+10'
+                        }
+                    }
+                ]
+            };
+        }
+
         window.addEventListener('DOMContentLoaded', async () => {
             try {
                 const response = await fetch('default-pawns.json');
                 if (response.ok) {
                     const initData = await response.json();
                     await loadProjectFromJSON(initData);
-                } else {
-                    console.log("No default-pawns.json found.");
+                    return;
                 }
+                console.log("No default-pawns.json found. Loading built-in fallback pawns.");
             } catch(e) {
-                console.log("Starting blank.");
+                console.log("Could not load default-pawns.json. Loading built-in fallback pawns.");
             }
+            await loadProjectFromJSON(getFallbackProjectData());
         });
     </script>
 </body>
