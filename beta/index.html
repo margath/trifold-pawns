@@ -294,28 +294,43 @@
         .dnd5e-checkbox-field { flex-direction: row !important; align-items: center; gap: 5px; }
         .dnd5e-checkbox-field label { margin-bottom: 0 !important; }
 
-        /* D&D 5e tracker stat cards (DM sheet) */
+        /* D&D 5e tracker table (DM sheet) */
         .dnd-section-header { margin-top: 20px; border-bottom: 2px solid #ccc; padding-bottom: 8px; color: #333; }
-        .dnd-cards-container { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; }
-        .dnd-stat-card {
-            border: 2px solid #555; border-radius: 6px; padding: 10px 12px;
-            width: 230px; box-sizing: border-box; background: #fafafa;
-            page-break-inside: avoid;
-        }
-        .dnd-card-header {
-            font-weight: bold; font-size: 14px; color: #222;
-            border-bottom: 1px solid #bbb; padding-bottom: 4px; margin-bottom: 6px;
-        }
-        .dnd-card-grid { display: grid; gap: 2px 10px; margin-bottom: 6px; }
-        .dnd-stat-cell {
+        .recharge-box { min-width: 30px; background: #fdebd0; border-color: #e67e22; color: #7a3c00; }
+        .dnd-stack-cell { padding: 4px 8px !important; }
+        .dnd-stack-row {
             display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px dotted #ddd; padding: 2px 0; font-size: 11px;
+            gap: 8px; font-size: 11px; white-space: nowrap;
+            padding: 2px 0; border-bottom: 1px dotted #e0e0e0;
         }
-        .dnd-stat-label { color: #555; font-weight: bold; }
-        .dnd-stat-value { color: #000; font-weight: bold; text-align: right; }
-        .dnd-lair-icon { color: #8e44ad; font-size: 14px; }
-        .dnd-legres-boxes { display: flex; gap: 3px; }
-        .dnd-legres-boxes .track-box { width: 12px; height: 12px; min-width: 12px; padding: 0; }
+        .dnd-stack-row:last-child { border-bottom: none; }
+        .dnd-stack-icon { color: #555; display: inline-flex; align-items: center; flex-shrink: 0; }
+        .dnd-stack-value { color: #000; font-weight: bold; }
+        .dnd-yes-mark { color: #27ae60; font-weight: bold; }
+        .dnd-inline-boxes { display: inline-flex; gap: 2px; }
+        .dnd-inline-boxes .track-box { width: 12px; height: 12px; min-width: 12px; padding: 0; }
+
+        /* Icon legend - repeated in <thead> (so it reappears at the top of every
+           printed page the table spans) and once more in <tfoot>. */
+        .dnd-legend-row td {
+            background: #f4f4f4 !important; border-top: 2px solid #999 !important;
+            border-bottom: 2px solid #999 !important; padding: 6px 8px !important;
+            text-align: left !important; font-weight: normal !important;
+        }
+        .dnd-legend-title { font-size: 11px; font-weight: bold; color: #444; margin-right: 8px; }
+        .dnd-legend-items { display: inline-flex; flex-wrap: wrap; gap: 4px 14px; vertical-align: middle; }
+        .dnd-legend-item { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: #444; white-space: nowrap; }
+        .dnd-legend-item svg { color: #555; flex-shrink: 0; }
+        .dnd-legend-note { display: block; font-size: 10px; font-style: italic; color: #777; margin-top: 4px; }
+
+        /* Combined #/Name column */
+        .dnd-combo-num { color: #777; font-weight: normal; margin-right: 5px; }
+
+        /* Full-width HP row spanning every column beneath a pawn's data row, so
+           the boxes flow across the whole table width and wrap back to the left
+           margin instead of being squeezed into one narrow trailing column. */
+        .dnd-hp-row td { border-top: none !important; padding-top: 2px !important; background: #fafafa; }
+        .dnd-hp-label { font-size: 10px; font-weight: bold; color: #666; margin-right: 8px; vertical-align: middle; }
 
         .pawn-options {
             display: flex; gap: 12px; align-items: center; font-size: 11px;
@@ -575,17 +590,36 @@
         // --- System coding ---
         // Every pawn is tagged with the ruleset/system it's intended for. "Generic"
         // pawns keep the original free-form STAT_KEYS above and the classic tracker
-        // table. Systems with dedicated support (currently D&D 5th Edition) get a
-        // purpose-built stat entry form and a purpose-built DM tracker layout.
-        const SYSTEMS = ["Generic", "D&D 5th Edition"];
+        // table. Systems with dedicated support (D&D 5th Edition, Cosmere System)
+        // each get a purpose-built stat entry form and DM tracker layout.
+        const SYSTEMS = ["Generic", "D&D 5th Edition", "Cosmere System"];
 
         function emptyDnd5eStats() {
             return {
-                ac: '', init: '', prof: '', lairActions: false, legRes: '',
+                hp: '', ac: '', init: '', prof: '', lairActions: false, legRes: '', recharge: '',
                 str: '', dex: '', con: '', int: '', wis: '', cha: '',
                 strSave: '', dexSave: '', conSave: '', intSave: '', wisSave: '', chaSave: ''
             };
         }
+
+        function emptyCosmereStats() {
+            return {
+                hp: '',
+                physDef: '', cogDef: '', spiritDef: '',
+                focus: '', essence: '',
+                strength: '', finesse: '', intellect: '', willpower: '', awareness: '', presence: ''
+            };
+        }
+
+        // Recharge abilities (like a dragon's breath weapon) recharge on a d6 roll at
+        // or above a threshold. 'value' is stored on the pawn; 'label' is what's shown.
+        const RECHARGE_OPTIONS = [
+            { value: '', label: '— None —' },
+            { value: '3', label: '3+' },
+            { value: '4', label: '4+' },
+            { value: '5', label: '5+' },
+            { value: '6', label: '6' }
+        ];
 
         const pageEl = document.getElementById('page');
         document.getElementById('file-input').addEventListener('change', handleFiles);
@@ -656,7 +690,8 @@
                     trackerScale: 1, 
                     system: 'Generic',
                     stats: emptyStats,
-                    dnd5e: emptyDnd5eStats()
+                    dnd5e: emptyDnd5eStats(),
+                    cosmere: emptyCosmereStats()
                 });
             }
             if(e.target.id === 'file-input') e.target.value = ''; 
@@ -699,7 +734,8 @@
 
             const newStats = { ...original.stats };
             const newDnd5e = { ...(original.dnd5e || emptyDnd5eStats()) };
-            const copy = { ...original, number: newNumber, isEditing: false, stats: newStats, dnd5e: newDnd5e }; 
+            const newCosmere = { ...(original.cosmere || emptyCosmereStats()) };
+            const copy = { ...original, number: newNumber, isEditing: false, stats: newStats, dnd5e: newDnd5e, cosmere: newCosmere }; 
             state.pawns.push(copy);
             renderAll();
         }
@@ -749,12 +785,19 @@
         function updatePawnSystem(index, value) {
             state.pawns[index].system = value;
             if (!state.pawns[index].dnd5e) state.pawns[index].dnd5e = emptyDnd5eStats();
+            if (!state.pawns[index].cosmere) state.pawns[index].cosmere = emptyCosmereStats();
             renderAll();
         }
 
         function updatePawnDnd5e(index, key, value) {
             if (!state.pawns[index].dnd5e) state.pawns[index].dnd5e = emptyDnd5eStats();
             state.pawns[index].dnd5e[key] = value;
+            if (state.showTable) renderTable();
+        }
+
+        function updatePawnCosmere(index, key, value) {
+            if (!state.pawns[index].cosmere) state.pawns[index].cosmere = emptyCosmereStats();
+            state.pawns[index].cosmere[key] = value;
             if (state.showTable) renderTable();
         }
 
@@ -820,7 +863,8 @@
                     trackerScale: p.trackerScale || 1,
                     system: p.system || 'Generic',
                     stats: p.stats,
-                    dnd5e: p.dnd5e || emptyDnd5eStats()
+                    dnd5e: p.dnd5e || emptyDnd5eStats(),
+                    cosmere: p.cosmere || emptyCosmereStats()
                 }))
             };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projectData));
@@ -856,6 +900,12 @@
                     if (loadedDnd5e[key] !== undefined) safeDnd5e[key] = loadedDnd5e[key];
                 });
 
+                const loadedCosmere = p.cosmere || {};
+                const safeCosmere = emptyCosmereStats();
+                Object.keys(safeCosmere).forEach(key => {
+                    if (loadedCosmere[key] !== undefined) safeCosmere[key] = loadedCosmere[key];
+                });
+
                 state.pawns.push({
                     img: img, dataUrl: p.dataUrl, name: p.name || '', number: p.number || '', isEditing: false,
                     borderColor: p.borderColor || '#000000', textColor: p.textColor || '#000000', textBgColor: p.textBgColor || '#FFFFFFEE',
@@ -866,7 +916,8 @@
                     trackerScale: p.trackerScale || 1,
                     system: p.system || 'Generic',
                     stats: safeStats,
-                    dnd5e: safeDnd5e
+                    dnd5e: safeDnd5e,
+                    cosmere: safeCosmere
                 });
             }
             renderAll();
@@ -980,6 +1031,17 @@
                     cell.appendChild(input); cell.appendChild(label);
                     return cell;
                 }
+                if (type === 'select') {
+                    const select = document.createElement('select');
+                    RECHARGE_OPTIONS.forEach(opt => {
+                        const o = document.createElement('option'); o.value = opt.value; o.innerText = opt.label;
+                        if ((d[key] || '') === opt.value) o.selected = true;
+                        select.appendChild(o);
+                    });
+                    select.onchange = (e) => updatePawnDnd5e(index, key, e.target.value);
+                    cell.appendChild(label); cell.appendChild(select);
+                    return cell;
+                }
                 const input = document.createElement('input'); input.type = 'text';
                 input.value = d[key]; input.placeholder = '-';
                 input.oninput = (e) => updatePawnDnd5e(index, key, e.target.value);
@@ -990,11 +1052,14 @@
             const coreTitle = document.createElement('div'); coreTitle.className = 'dnd5e-section-title';
             coreTitle.innerText = 'Core Stats'; wrap.appendChild(coreTitle);
             const coreGrid = document.createElement('div'); coreGrid.className = 'dnd5e-stats-section'; coreGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+            const hpField = makeField('hp', 'Hit Points'); hpField.style.gridColumn = '1 / -1';
+            coreGrid.appendChild(hpField);
             coreGrid.appendChild(makeField('ac', 'Armor Class'));
             coreGrid.appendChild(makeField('lairActions', 'Has Lair Actions', 'checkbox'));
             coreGrid.appendChild(makeField('init', 'Initiative Mod.'));
             coreGrid.appendChild(makeField('legRes', 'Legendary Resistances (#)'));
             coreGrid.appendChild(makeField('prof', 'Proficiency Bonus'));
+            coreGrid.appendChild(makeField('recharge', 'Recharge (d6)', 'select'));
             wrap.appendChild(coreGrid);
 
             const abilTitle = document.createElement('div'); abilTitle.className = 'dnd5e-section-title';
@@ -1022,54 +1087,366 @@
             return wrap;
         }
 
-        function renderDnd5eCard(p) {
-            const d = p.dnd5e || emptyDnd5eStats();
-            const lairHtml = d.lairActions ? '<span class="dnd-lair-icon" title="Has Lair Actions">&#9733;</span>' : '';
-            let legHtml = '';
-            const legNum = parseInt(d.legRes, 10);
-            if (!isNaN(legNum) && legNum > 0) {
-                legHtml = '<div class="dnd-legres-boxes">';
-                for (let i = 0; i < legNum; i++) legHtml += '<span class="track-box"></span>';
-                legHtml += '</div>';
-            }
-            const cell = (label, value) => `<div class="dnd-stat-cell"><span class="dnd-stat-label">${label}</span><span class="dnd-stat-value">${value}</span></div>`;
+        function buildCosmereStatsUI(index, pawn) {
+            if (!pawn.cosmere) pawn.cosmere = emptyCosmereStats();
+            const d = pawn.cosmere;
+            const wrap = document.createElement('div'); wrap.className = 'dnd5e-stats-grid';
 
-            return `
-            <div class="dnd-stat-card">
-                <div class="dnd-card-header">${p.name || '-'}${p.number ? ' #' + p.number : ''}</div>
-                <div class="dnd-card-grid" style="grid-template-columns: 1fr 1fr;">
-                    ${cell('AC', d.ac || '')}
-                    ${cell('Lair Actions', lairHtml)}
-                    ${cell('Initiative', d.init || '')}
-                    ${cell('Legendary Res.', legHtml)}
-                    ${cell('Proficiency', d.prof || '')}
-                    <div class="dnd-stat-cell"></div>
-                </div>
-                <div class="dnd-card-grid" style="grid-template-columns: 1fr 1fr;">
-                    ${cell('STR', d.str || '')}
-                    ${cell('INT', d.int || '')}
-                    ${cell('DEX', d.dex || '')}
-                    ${cell('WIS', d.wis || '')}
-                    ${cell('CON', d.con || '')}
-                    ${cell('CHA', d.cha || '')}
-                </div>
-                <div class="dnd-card-grid" style="grid-template-columns: 1fr 1fr 1fr;">
-                    ${cell('STR Save', d.strSave || '')}
-                    ${cell('DEX Save', d.dexSave || '')}
-                    ${cell('CON Save', d.conSave || '')}
-                    ${cell('INT Save', d.intSave || '')}
-                    ${cell('WIS Save', d.wisSave || '')}
-                    ${cell('CHA Save', d.chaSave || '')}
-                </div>
-            </div>`;
+            function makeField(key, labelTxt) {
+                const cell = document.createElement('div');
+                const label = document.createElement('label'); label.innerText = labelTxt;
+                const input = document.createElement('input'); input.type = 'text';
+                input.value = d[key]; input.placeholder = '-';
+                input.oninput = (e) => updatePawnCosmere(index, key, e.target.value);
+                cell.appendChild(label); cell.appendChild(input);
+                return cell;
+            }
+
+            // Core Stats: Hit Points, then the three Defenses paired alongside
+            // Focus / Essence (Investiture) - no proficiency bonus or initiative
+            // modifier in this system.
+            const coreTitle = document.createElement('div'); coreTitle.className = 'dnd5e-section-title';
+            coreTitle.innerText = 'Core Stats'; wrap.appendChild(coreTitle);
+            const coreGrid = document.createElement('div'); coreGrid.className = 'dnd5e-stats-section'; coreGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+            const hpField = makeField('hp', 'Hit Points'); hpField.style.gridColumn = '1 / -1';
+            coreGrid.appendChild(hpField);
+            coreGrid.appendChild(makeField('physDef', 'Physical Defense'));
+            coreGrid.appendChild(makeField('focus', 'Focus'));
+            coreGrid.appendChild(makeField('cogDef', 'Cognitive Defense'));
+            coreGrid.appendChild(makeField('essence', 'Essence (Investiture)'));
+            coreGrid.appendChild(makeField('spiritDef', 'Spiritual Defense'));
+            wrap.appendChild(coreGrid);
+
+            // Attributes, grouped by defense: Physical (Strength/Finesse),
+            // Cognitive (Intellect/Willpower), Spiritual (Awareness/Presence).
+            const attrTitle = document.createElement('div'); attrTitle.className = 'dnd5e-section-title';
+            attrTitle.innerText = 'Attributes'; wrap.appendChild(attrTitle);
+            const attrGrid = document.createElement('div'); attrGrid.className = 'dnd5e-stats-section'; attrGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+            attrGrid.appendChild(makeField('strength', 'Strength (Physical)'));
+            attrGrid.appendChild(makeField('finesse', 'Finesse (Physical)'));
+            attrGrid.appendChild(makeField('intellect', 'Intellect (Cognitive)'));
+            attrGrid.appendChild(makeField('willpower', 'Willpower (Cognitive)'));
+            attrGrid.appendChild(makeField('awareness', 'Awareness (Spiritual)'));
+            attrGrid.appendChild(makeField('presence', 'Presence (Spiritual)'));
+            wrap.appendChild(attrGrid);
+
+            return wrap;
+        }
+
+        // Small inline-SVG icons used in the D&D 5e tracker so stat rows read at a
+        // glance instead of via text labels. A legend explaining each icon is
+        // rendered with the table (see buildDnd5eLegendRowHtml below).
+        const DND5E_ICONS = {
+            ac: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M8 1 L14 3.2 V7.5 C14 11 11.5 13.6 8 15 C4.5 13.6 2 11 2 7.5 V3.2 Z" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>',
+            init: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M9 1 L3 9 H7 L6 15 L13 6 H9 Z" fill="currentColor"/></svg>',
+            prof: '<svg viewBox="0 0 16 16" width="13" height="13"><circle cx="8" cy="8" r="4" fill="currentColor"/></svg>',
+            lairActions: '<svg viewBox="0 0 16 16" width="13" height="13"><polygon points="8,2 14,14 2,14" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>',
+            legRes: '<svg viewBox="0 0 16 16" width="13" height="13"><polygon points="8,1 14,4.5 14,11.5 8,15 2,11.5 2,4.5" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>',
+            recharge: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M13 8 A5 5 0 1 1 11.3 4.3" fill="none" stroke="currentColor" stroke-width="1.6"/><polygon points="11,2 14,4 11,6" fill="currentColor"/></svg>',
+            str: '<svg viewBox="0 0 16 16" width="13" height="13"><rect x="4" y="4" width="8" height="8" fill="currentColor" transform="rotate(45 8 8)"/></svg>',
+            dex: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M2 14 L14 2 M9 2 H14 V7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+            con: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M8 14 C3 10.5 1 8 1 5.3 C1 3 3 1.3 5.2 1.3 C6.6 1.3 7.6 2 8 2.8 C8.4 2 9.4 1.3 10.8 1.3 C13 1.3 15 3 15 5.3 C15 8 13 10.5 8 14 Z" fill="currentColor"/></svg>',
+            int: '<svg viewBox="0 0 16 16" width="13" height="13"><rect x="2" y="3" width="12" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="8" y1="3" x2="8" y2="13" stroke="currentColor" stroke-width="1.4"/></svg>',
+            wis: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M1 8 C4 3 12 3 15 8 C12 13 4 13 1 8 Z" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>',
+            cha: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M8 1 L9.5 6.5 L15 8 L9.5 9.5 L8 15 L6.5 9.5 L1 8 L6.5 6.5 Z" fill="currentColor"/></svg>'
+        };
+
+        // Fixed legend content - always the full set of 12 icons, regardless of
+        // which columns happen to be active for the current pawn list, so the
+        // legend reads the same everywhere it's repeated.
+        const DND5E_LEGEND_ITEMS = [
+            { icon: 'ac', label: 'Armor Class' },
+            { icon: 'init', label: 'Initiative Mod.' },
+            { icon: 'prof', label: 'Proficiency Bonus' },
+            { icon: 'lairActions', label: 'Lair Actions' },
+            { icon: 'legRes', label: 'Legendary Resist. (uses)' },
+            { icon: 'recharge', label: 'Recharge (min. roll)' },
+            { icon: 'str', label: 'Strength' },
+            { icon: 'dex', label: 'Dexterity' },
+            { icon: 'con', label: 'Constitution' },
+            { icon: 'int', label: 'Intelligence' },
+            { icon: 'wis', label: 'Wisdom' },
+            { icon: 'cha', label: 'Charisma' }
+        ];
+
+        // Columns are grouped under shared super-headers ("Stats" spans the two
+        // ability columns, "Saves" spans the two save columns); "Basic" and
+        // "Legendary" are single stacked columns with their own header.
+        const DND5E_COLUMN_DEFS = [
+            { superHeader: null, header: 'Basic', fields: [
+                { key: 'ac', label: 'Armor Class', icon: 'ac' },
+                { key: 'init', label: 'Initiative', icon: 'init' },
+                { key: 'prof', label: 'Proficiency Bonus', icon: 'prof' }
+            ] },
+            { superHeader: null, header: 'Legendary', fields: [
+                { key: 'lairActions', label: 'Lair Actions', icon: 'lairActions', kind: 'icon' },
+                { key: 'legRes', label: 'Legendary Resistance', icon: 'legRes', kind: 'checkboxes' },
+                { key: 'recharge', label: 'Recharge', icon: 'recharge', kind: 'recharge' }
+            ] },
+            { superHeader: 'Stats / Saves', header: '', fields: [
+                { key: 'str', saveKey: 'strSave', label: 'Strength (Mod / Save)', icon: 'str', kind: 'modsave' },
+                { key: 'dex', saveKey: 'dexSave', label: 'Dexterity (Mod / Save)', icon: 'dex', kind: 'modsave' },
+                { key: 'con', saveKey: 'conSave', label: 'Constitution (Mod / Save)', icon: 'con', kind: 'modsave' }
+            ] },
+            { superHeader: 'Stats / Saves', header: '', fields: [
+                { key: 'int', saveKey: 'intSave', label: 'Intelligence (Mod / Save)', icon: 'int', kind: 'modsave' },
+                { key: 'wis', saveKey: 'wisSave', label: 'Wisdom (Mod / Save)', icon: 'wis', kind: 'modsave' },
+                { key: 'cha', saveKey: 'chaSave', label: 'Charisma (Mod / Save)', icon: 'cha', kind: 'modsave' }
+            ] }
+        ];
+
+        function dnd5eFieldHasValue(pawn, field) {
+            const d = pawn.dnd5e || {};
+            const v = d[field.key];
+            if (field.kind === 'icon') return !!v;
+            if (field.kind === 'checkboxes') { const n = parseInt(v, 10); return !isNaN(n) && n > 0; }
+            if (field.kind === 'recharge') return !!v;
+            if (field.kind === 'modsave') {
+                const v2 = d[field.saveKey];
+                return (v !== undefined && v !== null && String(v).trim() !== '') ||
+                       (v2 !== undefined && v2 !== null && String(v2).trim() !== '');
+            }
+            return v !== undefined && v !== null && String(v).trim() !== '';
+        }
+
+        function dnd5eFieldValueHtml(pawn, field) {
+            const d = pawn.dnd5e || {};
+            const v = d[field.key];
+            if (field.kind === 'icon') {
+                return v ? '<span class="dnd-yes-mark">&#10003;</span>' : '';
+            }
+            if (field.kind === 'checkboxes') {
+                const n = parseInt(v, 10);
+                if (isNaN(n) || n <= 0) return '';
+                let boxes = '<span class="dnd-inline-boxes">';
+                for (let i = 0; i < n; i++) boxes += '<span class="track-box"></span>';
+                boxes += '</span>';
+                return boxes;
+            }
+            if (field.kind === 'recharge') {
+                if (!v) return '';
+                const opt = RECHARGE_OPTIONS.find(o => o.value === v);
+                return `<span class="track-box recharge-box">${opt ? opt.label : v}</span>`;
+            }
+            if (field.kind === 'modsave') {
+                const modVal = (v || '').toString().trim();
+                const saveVal = (d[field.saveKey] || '').toString().trim();
+                const parts = [];
+                if (modVal) parts.push(modVal);
+                if (saveVal) parts.push(saveVal);
+                return parts.join(' / ');
+            }
+            return v || '';
+        }
+
+        function dnd5eFieldRowHtml(pawn, field) {
+            const icon = DND5E_ICONS[field.icon] || '';
+            return `<div class="dnd-stack-row"><span class="dnd-stack-icon" title="${field.label}">${icon}</span><span class="dnd-stack-value">${dnd5eFieldValueHtml(pawn, field)}</span></div>`;
+        }
+
+        function buildDnd5eLegendRowHtml(colspanTotal) {
+            const items = DND5E_LEGEND_ITEMS.map(it =>
+                `<span class="dnd-legend-item">${DND5E_ICONS[it.icon]}<span>${it.label}</span></span>`
+            ).join('');
+            return `<tr class="dnd-legend-row"><td colspan="${colspanTotal}">
+                <span class="dnd-legend-title">Legend:</span>
+                <span class="dnd-legend-items">${items}</span>
+                <span class="dnd-legend-note">Ability icons show Modifier / Saving Throw.</span>
+            </td></tr>`;
+        }
+
+        // Combines the pawn's number and name into one compact cell, e.g. "#1
+        // Adult Red Dragon" - saves a whole column versus separate Name/# cells.
+        function buildComboNameNumberCell(pawn) {
+            const name = pawn.name || '-';
+            const num = (pawn.number || '').toString().trim();
+            return num ? `<span class="dnd-combo-num">#${num}</span> ${name}` : name;
+        }
+
+        // Renders the full-width HP box row that goes directly under a pawn's
+        // main data row, spanning every column so the boxes have the whole table
+        // width to flow across before wrapping back to the left margin - instead
+        // of being squeezed into one narrow trailing column.
+        function buildTrackerHpSubRowHtml(pawn, hpValue, colspanTotal) {
+            const n = parseInt(hpValue, 10);
+            if (isNaN(n) || n <= 0) return '';
+            const scale = pawn.trackerScale || 1;
+            const boxesHtml = renderScaledBoxes(n, scale);
+            if (!boxesHtml) return '';
+            return `<tr class="dnd-hp-row"><td colspan="${colspanTotal}"><span class="dnd-hp-label">HP</span>${boxesHtml}</td></tr>`;
+        }
+
+        // Builds one header row's worth of <th> cells for a system tracker table,
+        // merging consecutive columns that share a superHeader (e.g. "Stats /
+        // Saves") into a single colspan cell. No second row of empty sub-column
+        // headers is emitted - the group name alone is the header. HP has no
+        // header cell of its own; it's a full-width row under each pawn instead.
+        function buildTrackerHeaderRow(activeCols) {
+            let row = `<th style="width: 22%;">#/Name</th>`;
+            let i = 0;
+            while (i < activeCols.length) {
+                const col = activeCols[i];
+                if (col.superHeader) {
+                    let j = i;
+                    while (j < activeCols.length && activeCols[j].superHeader === col.superHeader) j++;
+                    const span = j - i;
+                    row += span > 1 ? `<th colspan="${span}">${col.superHeader}</th>` : `<th>${col.superHeader}</th>`;
+                    i = j;
+                } else {
+                    row += `<th>${col.header}</th>`;
+                    i++;
+                }
+            }
+            return row;
+        }
+
+        function renderDnd5eTrackerTable(pawnList) {
+            // Only keep columns at least one pawn actually uses.
+            const activeCols = DND5E_COLUMN_DEFS.filter(col =>
+                col.fields.some(f => pawnList.some(p => dnd5eFieldHasValue(p, f)))
+            );
+
+            const totalCols = 1 + activeCols.length;
+            const headerRow = buildTrackerHeaderRow(activeCols);
+
+            let html = `<table class="tracker-table"><thead>`;
+            html += `<tr>${headerRow}</tr>`;
+            html += `</thead><tbody>`;
+
+            pawnList.forEach(p => {
+                html += `<tr>
+                    <td style="font-weight:bold;">${buildComboNameNumberCell(p)}</td>`;
+                activeCols.forEach(col => {
+                    html += `<td class="dnd-stack-cell">`;
+                    col.fields.forEach(f => { html += dnd5eFieldRowHtml(p, f); });
+                    html += `</td>`;
+                });
+                html += `</tr>`;
+                html += buildTrackerHpSubRowHtml(p, (p.dnd5e || {}).hp, totalCols);
+            });
+            html += `</tbody>`;
+            // Legend lives only here, at the very bottom of the table (tfoot) -
+            // it does not repeat inside the column headers or between data rows.
+            html += `<tfoot>${buildDnd5eLegendRowHtml(totalCols)}</tfoot>`;
+            html += `</table>`;
+            return html;
+        }
+
+        // Icons for the Cosmere System tracker. Strength/Intellect/Awareness and
+        // Finesse/Willpower/Presence reuse the D&D5e ability icons that already
+        // fit their meaning (fist/book/eye/sparkle); the rest are new.
+        const COSMERE_ICONS = {
+            physDef: DND5E_ICONS.ac,
+            cogDef: '<svg viewBox="0 0 16 16" width="13" height="13"><circle cx="6" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="10" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>',
+            spiritDef: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M8 1 C10 5 13 6 11 10 C10 12 8 12 8 15 C8 12 6 12 5 10 C3 6 6 5 8 1 Z" fill="currentColor"/></svg>',
+            focus: '<svg viewBox="0 0 16 16" width="13" height="13"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>',
+            essence: '<svg viewBox="0 0 16 16" width="13" height="13"><polygon points="8,1 13,6 8,15 3,6" fill="currentColor"/></svg>',
+            strength: DND5E_ICONS.str,
+            finesse: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M2 14 Q8 2 14 2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
+            intellect: DND5E_ICONS.int,
+            willpower: '<svg viewBox="0 0 16 16" width="13" height="13"><circle cx="8" cy="3" r="2" fill="currentColor"/><rect x="6.5" y="5" width="3" height="9" fill="currentColor"/></svg>',
+            awareness: DND5E_ICONS.wis,
+            presence: DND5E_ICONS.cha
+        };
+
+        const COSMERE_LEGEND_ITEMS = [
+            { icon: 'physDef', label: 'Physical Defense' },
+            { icon: 'cogDef', label: 'Cognitive Defense' },
+            { icon: 'spiritDef', label: 'Spiritual Defense' },
+            { icon: 'focus', label: 'Focus' },
+            { icon: 'essence', label: 'Essence (Investiture)' },
+            { icon: 'strength', label: 'Strength' },
+            { icon: 'finesse', label: 'Finesse' },
+            { icon: 'intellect', label: 'Intellect' },
+            { icon: 'willpower', label: 'Willpower' },
+            { icon: 'awareness', label: 'Awareness' },
+            { icon: 'presence', label: 'Presence' }
+        ];
+
+        // No "Legendary" column here (that's a D&D5e-only concept) - instead a
+        // "Resources" column holds Focus / Essence. Attributes are grouped by
+        // their associated defense: Physical (Strength/Finesse), Cognitive
+        // (Intellect/Willpower), Spiritual (Awareness/Presence), split across two
+        // stacked columns under a shared "Stats" header.
+        const COSMERE_COLUMN_DEFS = [
+            { superHeader: null, header: 'Basic', fields: [
+                { key: 'physDef', label: 'Physical Defense', icon: 'physDef' },
+                { key: 'cogDef', label: 'Cognitive Defense', icon: 'cogDef' },
+                { key: 'spiritDef', label: 'Spiritual Defense', icon: 'spiritDef' }
+            ] },
+            { superHeader: null, header: 'Resources', fields: [
+                { key: 'focus', label: 'Focus', icon: 'focus' },
+                { key: 'essence', label: 'Essence (Investiture)', icon: 'essence' }
+            ] },
+            { superHeader: 'Stats', header: '', fields: [
+                { key: 'strength', label: 'Strength (Physical)', icon: 'strength' },
+                { key: 'intellect', label: 'Intellect (Cognitive)', icon: 'intellect' },
+                { key: 'awareness', label: 'Awareness (Spiritual)', icon: 'awareness' }
+            ] },
+            { superHeader: 'Stats', header: '', fields: [
+                { key: 'finesse', label: 'Finesse (Physical)', icon: 'finesse' },
+                { key: 'willpower', label: 'Willpower (Cognitive)', icon: 'willpower' },
+                { key: 'presence', label: 'Presence (Spiritual)', icon: 'presence' }
+            ] }
+        ];
+
+        function cosmereFieldHasValue(pawn, field) {
+            const d = pawn.cosmere || {};
+            const v = d[field.key];
+            return v !== undefined && v !== null && String(v).trim() !== '';
+        }
+
+        function cosmereFieldRowHtml(pawn, field) {
+            const d = pawn.cosmere || {};
+            const icon = COSMERE_ICONS[field.icon] || '';
+            const v = d[field.key] || '';
+            return `<div class="dnd-stack-row"><span class="dnd-stack-icon" title="${field.label}">${icon}</span><span class="dnd-stack-value">${v}</span></div>`;
+        }
+
+        function buildCosmereLegendRowHtml(colspanTotal) {
+            const items = COSMERE_LEGEND_ITEMS.map(it =>
+                `<span class="dnd-legend-item">${COSMERE_ICONS[it.icon]}<span>${it.label}</span></span>`
+            ).join('');
+            return `<tr class="dnd-legend-row"><td colspan="${colspanTotal}">
+                <span class="dnd-legend-title">Legend:</span>
+                <span class="dnd-legend-items">${items}</span>
+            </td></tr>`;
+        }
+
+        function renderCosmereTrackerTable(pawnList) {
+            const activeCols = COSMERE_COLUMN_DEFS.filter(col =>
+                col.fields.some(f => pawnList.some(p => cosmereFieldHasValue(p, f)))
+            );
+
+            const totalCols = 1 + activeCols.length;
+            const headerRow = buildTrackerHeaderRow(activeCols);
+
+            let html = `<table class="tracker-table"><thead><tr>${headerRow}</tr></thead><tbody>`;
+
+            pawnList.forEach(p => {
+                html += `<tr>
+                    <td style="font-weight:bold;">${buildComboNameNumberCell(p)}</td>`;
+                activeCols.forEach(col => {
+                    html += `<td class="dnd-stack-cell">`;
+                    col.fields.forEach(f => { html += cosmereFieldRowHtml(p, f); });
+                    html += `</td>`;
+                });
+                html += `</tr>`;
+                html += buildTrackerHpSubRowHtml(p, (p.cosmere || {}).hp, totalCols);
+            });
+            html += `</tbody>`;
+            html += `<tfoot>${buildCosmereLegendRowHtml(totalCols)}</tfoot>`;
+            html += `</table>`;
+            return html;
         }
 
         function renderTable() {
             const tablePage = document.getElementById('tracker-page');
             if (!state.showTable || state.pawns.length === 0) { tablePage.style.display = 'none'; return; }
 
-            const genericPawns = state.pawns.filter(p => (p.system || 'Generic') !== 'D&D 5th Edition');
+            const genericPawns = state.pawns.filter(p => (p.system || 'Generic') === 'Generic');
             const dnd5ePawns = state.pawns.filter(p => (p.system || 'Generic') === 'D&D 5th Edition');
+            const cosmerePawns = state.pawns.filter(p => (p.system || 'Generic') === 'Cosmere System');
 
             tablePage.style.display = 'block';
             let html = `<h2>Encounter Stat Tracker</h2>`;
@@ -1080,12 +1457,32 @@
 
             if (dnd5ePawns.length > 0) {
                 html += `<h3 class="dnd-section-header">D&D 5th Edition Monsters</h3>`;
-                html += `<div class="dnd-cards-container">`;
-                dnd5ePawns.forEach(p => { html += renderDnd5eCard(p); });
-                html += `</div>`;
+                html += renderDnd5eTrackerTable(dnd5ePawns);
+            }
+
+            if (cosmerePawns.length > 0) {
+                html += `<h3 class="dnd-section-header">Cosmere System Characters</h3>`;
+                html += renderCosmereTrackerTable(cosmerePawns);
             }
 
             tablePage.innerHTML = html;
+        }
+
+        function renderScaledBoxes(num, scale) {
+            if (isNaN(num) || num <= 0) return '';
+            const numBoxes = Math.ceil(num / scale);
+            let boxes = '<div class="track-box-container">';
+            for (let i = 0; i < numBoxes; i++) {
+                if (i % 5 === 0) {
+                    if (i > 0) boxes += '</div>';
+                    boxes += '<div class="track-box-group">';
+                }
+                let innerText = Math.min((i + 1) * scale, num);
+                boxes += `<span class="track-box">${innerText}</span>`;
+            }
+            if (numBoxes > 0) boxes += '</div>';
+            boxes += '</div>';
+            return boxes;
         }
 
         function renderGenericTrackerTable(pawnList) {
@@ -1094,16 +1491,14 @@
             });
 
             let html = `<table class="tracker-table"><thead><tr>
-                <th style="width: 20%;">Name</th>
-                <th style="width: 5%;">#</th>`;
+                <th style="width: 22%;">#/Name</th>`;
             
             activeStatKeys.forEach(k => html += `<th>${k}</th>`);
             html += `</tr></thead><tbody>`;
 
             pawnList.forEach(p => {
                 html += `<tr>
-                    <td style="font-weight:bold;">${p.name || '-'}</td>
-                    <td style="text-align:center;">${p.number || '-'}</td>`;
+                    <td style="font-weight:bold;">${buildComboNameNumberCell(p)}</td>`;
                 
                 const hpScale = p.trackerScale || 1;
 
@@ -1111,24 +1506,9 @@
                     let val = p.stats[k] || '';
                     if ((k === 'HP' || k === 'Inv.' || k === 'Foc') && val.trim() !== '') {
                         const num = parseInt(val, 10);
-                        if (!isNaN(num) && num > 0) { 
+                        if (!isNaN(num) && num > 0) {
                             const scale = (k === 'HP') ? hpScale : 1;
-                            const numBoxes = Math.ceil(num / scale);
-                            
-                            let boxes = '<div class="track-box-container">';
-                            
-                            for(let i = 0; i < numBoxes; i++) {
-                                if (i % 5 === 0) {
-                                    if (i > 0) boxes += '</div>';
-                                    boxes += '<div class="track-box-group">';
-                                }
-                                let innerText = Math.min((i + 1) * scale, num);
-                                boxes += `<span class="track-box">${innerText}</span>`;
-                            }
-                            if (numBoxes > 0) boxes += '</div>';
-                            boxes += '</div>';
-                            
-                            val = boxes; // Overwrite val entirely with just the boxes
+                            val = renderScaledBoxes(num, scale);
                         }
                     }
                     html += `<td>${val}</td>`;
@@ -1196,6 +1576,8 @@
 
                 if ((pawn.system || 'Generic') === 'D&D 5th Edition') {
                     settingsDiv.appendChild(buildDnd5eStatsUI(index, pawn));
+                } else if ((pawn.system || 'Generic') === 'Cosmere System') {
+                    settingsDiv.appendChild(buildCosmereStatsUI(index, pawn));
                 } else {
                     const statsContainer = document.createElement('div'); statsContainer.className = 'pawn-stats-grid';
                     STAT_KEYS.forEach(key => {
@@ -1482,11 +1864,11 @@
                         borderColor: '#c0392b', textColor: '#000000', textBgColor: '#FFFFFFEE',
                         isDark: true, isFlipped: false, showBorder: true,
                         scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0,
-                        pawnWidth: 1.25, pawnHeight: 2.0, trackerScale: 1,
+                        pawnWidth: 1.25, pawnHeight: 2.0, trackerScale: 5,
                         system: 'D&D 5th Edition',
                         stats: { Init: '', AC: '', HP: '', 'P.D.': '', 'C.D.': '', 'S.D.': '', 'Inv.': '', Foc: '' },
                         dnd5e: {
-                            ac: '19', init: '+2', prof: '+5', lairActions: true, legRes: '3',
+                            hp: '256', ac: '19', init: '+2', prof: '+5', lairActions: true, legRes: '3', recharge: '5',
                             str: '+6', dex: '+2', con: '+6', int: '+2', wis: '+2', cha: '+5',
                             strSave: '+11', dexSave: '+7', conSave: '+11', intSave: '+7', wisSave: '+7', chaSave: '+10'
                         }
