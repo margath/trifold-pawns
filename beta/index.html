@@ -9,11 +9,15 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e1e1e">
     <meta name="description" content="Generate foldable paper pawn tokens and a DM tracker sheet for tabletop RPGs.">
-    <link rel="icon" href="icons/favicon-64.png" type="image/png">
-    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <!-- Inlined so the standalone file needs no icons/ folder. The manifest
+         still references the real PNGs, which is what install prompts read. -->
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAIWklEQVR42u1bPWwcxxX+5s3M/XF5/DmRjHi8EwFBUQADFiDZUSDEKQLBMhDYaQykdICoS6HKhYqUqVynkIAUKoNUKQIoKVIkgRFYTSIkTQCJuB+J1FEyJfKOx9vbeS8Fd8+EIpI7G1ISyTyAIA47czfvm2++9+btjMKrTcV/DAC1Wu0DpdSPAPwAwDsAygAkbvM2WDKWdQD/AvBnEfl9q9X6S/yc4jbyKkdfNtrh+E+I6Oci8n0iUiICEcHbbEopKKXAzKKU+isz/6rVav3mZd92A0ADcLVabV4p9Wsi+ggAmBkAXNye8HYbxzOtibaHysx3ReRnrVbrceLjqwDQANzCwsL7WuvfKaVOM7Pb8ewomgMAItIisuyc+3G73b63EwS1kxoLCwvf1VrfBTDFzJFSyuAYmIhERGQArDnnPmq3218lPo8ofebMmVkR+YdSalZE3BGe9V3ZoJTSItJRSl1oNBqdZOYVAHbO3SGiWRGJjqHzAKBjJsw65+7EWqEIgKvX659qrT9k5giAwfE1w8yR1vrDer3+KQCXMOBzpdTbFNcPOVIqAfA5AKVqtdoHRPQnEdEnBAAAEKWUY+YfEoBPYrVnnBzj2OdPCMCVOLtTJwgAFft8hZRS78Yf6AQBQCICpdS7BCDAybXA/C+7OqVe76qJZy112zTNTFbnmTnZJPlxL96gZNlVEhGYOVVfrVPlctlyfRFBsVhEoVDwdmQwGICIYIzJ1Ndauy8LRAT9fj/V93sDYIzBs2fPcP36ddy4cQMbGxswxqRiTBAEuH37NoIgwNWrV7GxsTFixH4OWWtx69YtXL58GfPz8wjD8L+AEBEYY7CxsYGbN2+OxrYXECbL7GutcfHiRUxMTMBamwqAnYO7dOkSgiCA1jrVbGqt0e12ERdpkM/nUSwWd/0NH30yWYVobGwMIoIoilJTWUTQ6/VgrUUYhoiiKBUAALC1tYUoiqC1xnA43LNtFEXpGe2r+sPhEJVKBfV6HVEUgYhSOWGMwfr6OgCgXC6DmUflqzTL7sWLF3DOwRiD4XC4a7+034kdhRBvBlhrEQSBV1giInS7XQyHQ5TLZTjnUvfVWmNtbQ1TU1PI5/MHWpckXwaEYYjFxUVMTk6movDOvv1+f6TiPk4opbC5uflK4XvtADAzSqUS8vl86jwgWQKNRgPlchnFYtGrLxHh0aNHOHXq1MEXCHwBcM7h/PnzmZIZYwycc8i67IrF4oGX5TNpwMTERCYAGo0GqtWql3YkoDebTVhr3ywAzAxrLc6dO5dpL7C5uYl8Pu89SOccrLU4ffr0nhHgtTAAwIgBPksniiKsr69jenraKwIQEQaDAZ48eXI4++IsOUCtVvOaiYTGz58/R6VSSa0DiQD2ej0YY7wjz4EzIFHzJAv0AWAwGEAp5b2Ok/CplDrwHMCbAVEUYW5uDkEQeM1isoEKwxAzMzNe7LHWYmVlBSKCXC735gGoVCojAHyoyMwgokwOJMBn2UIfeBRYWFjwCoFJDH/48CEmJiZQKpW82bO0tDTaOr9RBjjnMD8/nykHSNr7ChgzQ2uNs2fPerPuQAFIZiMBwHcgzWYT8/Pz3uIpInjw4IFXv0MDgIhQrVYz/VCv10OhUMiUBAHA1NTUm2NAQv9yuTyK4z6zyMwIw9BrE7QzfAJApVLxKnQcOAOccyiVSpidnfUGIAxDdDodVKvV1IlMwrh+v49Go5GqdnioDIiiCLOzs14qvlPIslA3YUCtVsPk5OSB7wO8AahUKhgfH0/NgCQEdjodDIdDzM3NeRU1rLVYXl7G48ePDyUL9FoCzDwSwCwDSRKhLCI4MzPz5peAcy5TEmSMQbPZRLlcRqFQ8K4iLS0tYWxsDLlcLtObqAMBIKnNB0GQaR1vbW1lehuUaMBhpMCZAEhKYb5C9PTpU1QqFS8xTFj39ddfY3FxMbOQHggAzIxCoYBSqZRpIKurq5iamso0wJWVlUNR/9QAJBFgcnISi4uL3qXwJAnyqSLvXDq5XA7VavXQQKC0TgRBAGttpkyu0+mgVqt5J0HdbhetVgtBEByKAKYGIAxD1Go1TE9Pe5ekiAhElKkcrpTC+Pg4tNaHJoImrQiWxyfALGAnUJBUfYy1WO08xTAcolI5hWE4BGT/MCoiMDmDdusRNBlUpisYxAmU8F79AOHt/z4A7HlEZlsDhnjnwndApGBLGtamOQ8gyFEOYiJEKsT41Bici6CR7lV6vmQxxADr/ecwRQ1HKsVLWMAYBROmZuj+R2RYGPlcAdGyRfvvq+ht9qB1OidszqLZWEG5/y08ub+eWshEBIXCAKv/7OLbExfw4t8h+v1ByrfQDhvdEMKS5vCPUvV6fQO7nhRTYHEomQA/rf8C1uXAo3sT6S2Xy8fv9MVbA6zNYTgM004oSGn0XQ932r9E3/VASu/1u10jIveJ6IqI8G6iKCLQRqFQyIPFHwAWQd7YTCLFwrAF6wVA5PZlKCuliJnvGwBfKqWuyJ7KJOi7XjwgfwBen33DgH3YJvFy+jLlYWmFPBW2n77dd6ZGYxzw1l6DHR2WVgBUvV7/GxG9z9vZht6NikfJSO2a4jgiIma+12w2v5eEwS9E5Ld7QbYtJkfJZI9gIQrAFwBE4ZvbYn8wxhz3WyMREZkoiv7YbrevAdDJjUrSWn/GzJ34HL07hs47pZRh5o7W+rM44snoJmWj0Vhh5o8BrMW3q6Lj4rmIREopDWCNmT9uNBoribQlSsEAdLvd/so5dw3Ast5O99wRZ4MD4GJflp1z1+I7gzqZeHqpsW632/eY+T1mvktEmoj0judHIRQwdtwYJSLNzHeZ+b2Xb40C/788vWtKd2Kuz/8HUhLWN8IkvekAAAAASUVORK5CYII=">
+    <link rel="apple-touch-icon" href="data:image/png;base64,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">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Trifold Pawns">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Trifold Pawns">
 
     <style>
         body {
@@ -493,6 +497,231 @@
             .print-hide-pawns .pawn-page { display: none !important; }
             .print-hide-table .tracker-page { display: none !important; }
         }
+
+        /* ==================================================================
+           ADAPTIVE HP BOXES
+           Three cues distinguish denominations at once - border weight, box
+           size AND printed label - because border weight alone does not
+           survive a cheap laser printer, which is the actual use case here.
+           ================================================================== */
+        .adaptive-hp .track-box { font-weight: bold; color: #222; }
+        .hp-box-10 { min-width: 26px; height: 22px; border: 2.5px solid #111; font-size: 11px; font-weight: 800; }
+        .hp-box-5  { min-width: 22px; height: 20px; border: 2px solid #333;   font-size: 10px; }
+        .hp-box-2  { min-width: 18px; height: 17px; border: 1px solid #555;   font-size: 9px; }
+        .hp-box-1  { min-width: 14px; height: 14px; border: 1px dashed #777;  font-size: 8px; color: #666; }
+
+        /* ==================================================================
+           CONSUMABLE RESOURCE ROW (full-width, under each pawn's stat row)
+           ================================================================== */
+        .res-row { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: flex-start; }
+        .res-cluster { display: flex; align-items: flex-start; gap: 6px; }
+        .res-label {
+            font-size: 10px; font-weight: bold; color: #666;
+            text-transform: uppercase; letter-spacing: 0.4px;
+            padding-top: 4px; white-space: nowrap;
+        }
+        .res-overflow { font-size: 10px; color: #888; align-self: center; margin-left: 4px; }
+
+        .surge-box   { border-color: #27ae60; }
+        .ap-box      { border-color: #2980b9; }
+        .stress-box  { border-color: #8e44ad; }
+        .armor-box   { border-color: #7f8c8d; }
+        .hope-box    { border-color: #d4ac0d; }
+        .fear-box    { border-color: #34495e; background: #f2f3f4; }
+        .wound-box   { border-color: #c0392b; min-width: 26px; font-size: 9px; }
+        .fatigue-box { border-color: #e67e22; min-width: 26px; font-size: 9px; }
+        .benny-box   { border-color: #16a085; border-radius: 50%; }
+        .pp-box      { border-color: #9b59b6; }
+
+        /* ==================================================================
+           TRAITS
+           ================================================================== */
+        .traits-cell { max-width: 0; }   /* lets the % width on <th> actually bind */
+        .trait-row .dnd-stack-value { white-space: normal; text-align: left; }
+        .trait-text { font-weight: normal; font-size: 10.5px; line-height: 1.35; }
+        .trait-row { align-items: flex-start; white-space: normal; }
+        .trait-row .dnd-stack-icon { padding-top: 2px; }
+        .tough-armor { font-weight: normal; color: #555; }
+
+        .traits-grid textarea.trait-input {
+            width: 100%; padding: 4px; font-size: 11px; resize: vertical;
+            border: 1px solid #ccc; border-radius: 4px; background: white;
+            color: #222; box-sizing: border-box; font-family: inherit;
+        }
+        .traits-grid textarea.trait-input:focus {
+            outline: none; border-color: #3498db; box-shadow: 0 0 0 2px rgba(52,152,219,0.25);
+        }
+
+        /* ==================================================================
+           ACTION CARDS - pawn editor
+           ================================================================== */
+        .attach-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+        .attach-select { flex: 1; min-width: 120px; padding: 4px; font-size: 11px; }
+        .attach-btn {
+            background: #3498db; color: white; border: none; border-radius: 4px;
+            padding: 5px 9px; font-size: 11px; font-weight: bold; cursor: pointer;
+            white-space: nowrap;
+        }
+        .attach-btn:hover { background: #2980b9; }
+        .attach-btn:disabled { background: #95a5a6; cursor: not-allowed; }
+        .manage-btn { background: #8e44ad; }
+        .manage-btn:hover { background: #6c3483; }
+        .danger-btn { background: #e74c3c; }
+        .danger-btn:hover { background: #c0392b; }
+
+        .attached-card {
+            background: #fff; border: 1px solid #ccc; border-left: 3px solid #8e44ad;
+            border-radius: 4px; padding: 8px; margin-top: 6px;
+        }
+        .attached-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .attached-card-name { font-size: 12px; font-weight: bold; color: #333; }
+        .attached-del {
+            background: #e74c3c; color: white; border: none; border-radius: 50%;
+            width: 18px; height: 18px; line-height: 1; cursor: pointer; font-size: 13px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .override-fields {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 6px; margin-top: 6px;
+        }
+        .override-cell { display: flex; flex-direction: column; }
+        .override-cell label { font-size: 10px; font-weight: bold; color: #777; margin-bottom: 2px; }
+        .override-control { display: flex; gap: 3px; align-items: center; }
+        .override-control input, .override-control select, .override-control textarea {
+            flex: 1; width: 100%; padding: 4px; font-size: 11px; min-width: 0;
+            border: 1px solid #ccc; border-radius: 4px; background: white; color: #222;
+            box-sizing: border-box; font-family: inherit;
+        }
+        /* An overridden field is visually distinct from an inherited one, so the
+           GM can see at a glance what is bespoke to this pawn. */
+        .override-active { border-color: #e67e22 !important; background: #fff6e8 !important; font-weight: bold; }
+        .override-reset { padding: 2px 5px; font-size: 11px; flex-shrink: 0; }
+
+        /* ==================================================================
+           ACTION CARDS - global library modal
+           ================================================================== */
+        .card-modal {
+            display: none; position: fixed; inset: 0; z-index: 300;
+            background: rgba(0,0,0,0.65); align-items: center; justify-content: center;
+            padding: 30px; box-sizing: border-box;
+        }
+        .card-modal-panel {
+            background: #2a2a2a; border: 1px solid #444; border-radius: 10px;
+            width: 100%; max-width: 760px; max-height: 84vh; display: flex;
+            flex-direction: column; box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+        }
+        .card-modal-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 18px; border-bottom: 1px solid #444;
+        }
+        .card-modal-header h2 { margin: 0; font-size: 17px; color: #fff; }
+        .card-modal-close {
+            background: none; border: none; color: #bbb; font-size: 24px;
+            cursor: pointer; line-height: 1; padding: 0 4px;
+        }
+        .card-modal-close:hover { color: #fff; }
+        .card-modal-hint { margin: 0; padding: 10px 18px 0; font-size: 11px; color: #999; line-height: 1.5; }
+        .card-modal-body { padding: 12px 18px 18px; overflow-y: auto; }
+        .card-modal-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .card-modal-bar .system-label { color: #ccc; }
+        .card-modal-bar .system-select {
+            padding: 5px 8px; font-size: 12px; width: auto;
+            background: #1e1e1e; color: #fff; border: 1px solid #555; border-radius: 4px;
+        }
+        .new-card-btn { background: #2ecc71; margin-left: auto; }
+        .new-card-btn:hover { background: #27ae60; }
+        .card-empty { color: #888; font-size: 12px; font-style: italic; }
+
+        .card-row { background: #222; border: 1px solid #3a3a3a; border-radius: 6px; margin-bottom: 8px; }
+        .card-row-head { display: flex; align-items: center; gap: 8px; padding: 9px 12px; }
+        .card-row-name { font-size: 13px; font-weight: bold; color: #fff; flex: 1; }
+        .card-row-uses {
+            font-size: 10px; color: #aaa; background: #1a1a1a;
+            border: 1px solid #444; border-radius: 10px; padding: 2px 8px; white-space: nowrap;
+        }
+        .card-edit-form {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+            padding: 0 12px 12px; border-top: 1px solid #333; padding-top: 10px;
+        }
+        .card-edit-cell { display: flex; flex-direction: column; }
+        .card-edit-cell label { font-size: 10px; font-weight: bold; color: #999; margin-bottom: 3px; text-transform: uppercase; }
+        .card-edit-cell input, .card-edit-cell select, .card-edit-cell textarea {
+            padding: 6px; font-size: 12px; border: 1px solid #555; border-radius: 4px;
+            background: #1a1a1a; color: #eee; box-sizing: border-box;
+            font-family: inherit; width: 100%; resize: vertical;
+        }
+        .card-edit-cell input:focus, .card-edit-cell select:focus, .card-edit-cell textarea:focus {
+            outline: none; border-color: #3498db;
+        }
+
+        /* ==================================================================
+           SHEET 2 - printed Action Card reference
+           ================================================================== */
+        .cards-page { display: none; color: black; font-family: sans-serif; }
+        .cards-page h2 { margin-top: 0; border-bottom: 2px solid #ccc; padding-bottom: 10px; color: #333; }
+        .card-pawn-block { margin-bottom: 16px; }
+        .card-pawn-title {
+            margin: 0 0 6px 0; font-size: 14px; color: #222;
+            border-bottom: 1px solid #bbb; padding-bottom: 4px;
+            display: flex; align-items: baseline; gap: 8px;
+        }
+        .card-pawn-sys { font-size: 10px; font-weight: normal; color: #777; }
+        .card-pawn-cards { display: flex; flex-wrap: wrap; gap: 8px; }
+        .action-card {
+            border: 1px solid #999; border-left: 4px solid #555; border-radius: 4px;
+            padding: 7px 9px; flex: 1 1 46%; min-width: 240px; box-sizing: border-box;
+            background: #fcfcfc;
+        }
+        .action-card-head { border-bottom: 1px solid #ddd; padding-bottom: 4px; margin-bottom: 5px; }
+        .action-card-name { font-size: 12.5px; font-weight: bold; color: #111; }
+        .acf-override-name { color: #a04000; }
+        .action-card-body { display: flex; flex-direction: column; gap: 2px; }
+        .acf { display: flex; gap: 8px; font-size: 11px; line-height: 1.35; }
+        .acf-label { color: #666; min-width: 88px; flex-shrink: 0; }
+        .acf-value { color: #000; font-weight: bold; }
+        /* Overridden values are marked on the printed sheet too, so the GM knows
+           this pawn deviates from the library card. */
+        .acf-override .acf-value { color: #a04000; }
+        .acf-override .acf-value::after { content: ' *'; font-weight: bold; }
+        .acf-empty { font-size: 11px; font-style: italic; color: #888; }
+
+        /* ==================================================================
+           PRINT
+           ================================================================== */
+        @media print {
+            /* Sheet 2 always starts a fresh page... */
+            .cards-page { page-break-before: always; }
+            /* ...unless it's the only thing printing, which would otherwise
+               emit a blank leading page. */
+            .print-hide-pawns.print-hide-table .cards-page { page-break-before: auto; }
+            .print-hide-cards .cards-page { display: none !important; }
+
+            .card-pawn-block, .action-card, .res-row { page-break-inside: avoid; }
+            .card-modal { display: none !important; }
+            .attach-row, .attached-card { display: none !important; }
+
+            .action-card { background: #fff; }
+            /* Force box outlines to survive "background graphics off" printing. */
+            .track-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+
+        /* PWA install affordance + update toast */
+        .install-btn { background: #16a085; border: none; cursor: pointer; font-family: inherit; }
+        .install-btn:hover { background: #117a65; }
+        .pwa-toast {
+            position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+            background: #1e1e1e; color: #eee; border: 1px solid #555; border-radius: 8px;
+            padding: 10px 14px; display: flex; align-items: center; gap: 10px;
+            font-size: 13px; z-index: 400; box-shadow: 0 6px 24px rgba(0,0,0,0.6);
+        }
+        .pwa-toast button {
+            background: #3498db; color: white; border: none; border-radius: 4px;
+            padding: 5px 10px; font-size: 12px; font-weight: bold; cursor: pointer;
+        }
+        .pwa-toast button:hover { background: #2980b9; }
+        .pwa-toast .pwa-toast-dismiss { background: none; color: #999; font-size: 18px; padding: 0 4px; }
+        @media print { .pwa-toast, .install-btn { display: none !important; } }
     </style>
 </head>
 <body>
@@ -503,6 +732,7 @@
                 <img class="header-qr" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0nMS4wJyBlbmNvZGluZz0nVVRGLTgnPz4KPHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzdtbSIgaGVpZ2h0PSIzN21tIiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNW1tIiB5PSI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE2bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI3bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI4bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTVtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzJtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMW1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOW1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iN21tIiB5PSI3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIwbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI4bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjhtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTVtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjJtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzBtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzJtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyM21tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI1bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTJtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMThtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIwbW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMm1tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjRtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMG1tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIxMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMTFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjExbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMTFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjExbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIxMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMTFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjExbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSIxMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTJtbSIgeT0iMTJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNG1tIiB5PSIxMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iMTJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIxMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjJtbSIgeT0iMTJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIxMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjdtbSIgeT0iMTJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjVtbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjExbW0iIHk9IjEzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIxM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjEzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIxM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjEzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSIxM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjEzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTFtbSIgeT0iMTRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMTRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMTRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMTRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMW1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNW1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTJtbSIgeT0iMTVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjE1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxN21tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMTVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjE1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMTVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjE1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMW1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEybW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMThtbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMW1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNW1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iN21tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMTdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjE3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMTdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjE3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMTdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIxbW0iIHk9IjE3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMm1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMTdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjE3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iN21tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMThtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEybW0iIHk9IjE4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTVtbSIgeT0iMThtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjE4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOG1tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjVtbSIgeT0iMThtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjE4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMG1tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMThtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjE4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMTltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTltbSIgeT0iMTltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIxbW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMm1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMTltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI1bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMTltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMW1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMjBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjExbW0iIHk9IjIwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMjBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjIwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxN21tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMjBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjIwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMjBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjVtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjExbW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIxbW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI3bW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOW1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzJtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjltbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMThtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjJtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI1bW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjdtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIyM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMjNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE2bW0iIHk9IjIzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOG1tIiB5PSIyM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMjNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjIzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSIyM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMjNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjIzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIyM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEybW0iIHk9IjI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNG1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iMjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjVtbSIgeT0iMjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iMjVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjI1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIyNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMjVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjI1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIyNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzBtbSIgeT0iMjVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjI1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIyNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNW1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iN21tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMjZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMjZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIxbW0iIHk9IjI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iMjZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI4bW0iIHk9IjI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMW1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIyN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEybW0iIHk9IjI3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOG1tIiB5PSIyN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTltbSIgeT0iMjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjI3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIyN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjI3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIwbW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMW1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjJtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI3bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjhtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIyOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIyOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMG1tIiB5PSIyOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzJtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjhtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjMwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIzMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjMwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIzMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjMwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIzMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjMwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIzMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjMxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNG1tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTVtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjMxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjMxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyM21tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjRtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI1bW0iIHk9IjMxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjVtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjhtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjltbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjMybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIzMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTltbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjMybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSIzMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjVtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI3bW0iIHk9IjMybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIzMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PC9zdmc+" alt="Static QR Code for tools.gameportal.win" title="https://tools.gameportal.win">
             </a>
             <a href="https://tools.gameportal.win" target="_blank" class="header-link-btn">Visit GamePortal</a>
+            <button id="install-app-btn" class="header-link-btn install-btn" style="display:none" onclick="triggerInstall()">Install App</button>
         </div>
         <div class="header-titles">
             <h1>The Tri-Fold Pawn Maker</h1>
@@ -523,6 +753,11 @@
             <div class="page pawn-page" id="page"></div>
             
             <div class="page tracker-page" id="tracker-page"></div>
+
+            <!-- Sheet 2: Action Card reference. A separate top-level .page (not
+                 nested in the tracker) is what lets page-break-before actually
+                 start a fresh sheet. -->
+            <div class="page cards-page" id="cards-page"></div>
         </div>
 
         <footer class="credits-footer">
@@ -556,6 +791,12 @@
                         <input type="file" id="load-file-input" style="display:none" accept=".json" onchange="handleFileLoad(event)">
                     </div>
                 </div>
+                <div class="footer-block" style="padding-top: 5px;">
+                    <label>3b. Action Cards</label>
+                    <button class="secondary" onclick="openCardManager()">
+                        Manage Library <span id="card-count-badge">(0)</span>
+                    </button>
+                </div>
             </div>
 
             <div class="footer-col">
@@ -584,11 +825,16 @@
                             <input type="checkbox" id="toggle-table" onchange="toggleTable(event)"> 
                             Append Tracker Sheet
                         </label>
+                        <label style="font-size: 12px; cursor: pointer; color: white;">
+                            <input type="checkbox" id="toggle-cards" onchange="toggleCards(event)">
+                            Append Action Card Sheet
+                        </label>
 
                         <button class="primary" style="margin-top: 2px;" onclick="handlePrint('all')">Print Sheet(s)</button>
                         <div style="display:flex; gap:5px;">
                             <button class="secondary" style="flex:1; padding: 6px;" onclick="handlePrint('pawns')">Pawns Only</button>
                             <button class="secondary" style="flex:1; padding: 6px;" onclick="handlePrint('table')">Table Only</button>
+                            <button class="secondary" style="flex:1; padding: 6px;" onclick="handlePrint('cards')">Cards Only</button>
                         </div>
                         <div style="display:flex; gap:5px;">
                             <button class="primary word-btn" style="flex:1; padding: 6px; font-size: 12px;" onclick="exportWord()">Word (.doc)</button>
@@ -599,10 +845,36 @@
             </div>
 
         </footer>
+
+        <!-- Global Action Card library. Hidden by default and never printed. -->
+        <div class="card-modal" id="card-modal">
+            <div class="card-modal-panel">
+                <div class="card-modal-header">
+                    <h2>Action Card Library</h2>
+                    <button class="card-modal-close" onclick="closeCardManager()" title="Close">&times;</button>
+                </div>
+                <p class="card-modal-hint">
+                    Cards defined here are the defaults. Attach one to a pawn from its
+                    Edit Controls panel, then override individual values per pawn.
+                </p>
+                <div class="card-modal-body" id="card-modal-body"></div>
+            </div>
+        </div>
     </div>
 
     <script>
-        const state = { pawns: [], pawnWidth: 1.0, pawnHeight: 1.5, showTable: false };
+        const state = {
+            pawns: [], pawnWidth: 1.0, pawnHeight: 1.5,
+            showTable: false,
+            // Action Cards: a global library of abilities that individual pawns
+            // attach by id and then override field-by-field. Kept flat and
+            // id-keyed (never index-keyed) because renderAll() re-sorts
+            // state.pawns on every render, which invalidates positions.
+            showCards: false,
+            actionCards: [],
+            // Default HP tracker mode applied to newly added pawns.
+            hpMode: 'standard'
+        };
         let styleClipboard = null; 
         const STAT_KEYS = ["Init", "AC", "HP", "P.D.", "C.D.", "S.D.", "Inv.", "Foc"];
 
@@ -611,7 +883,27 @@
         // pawns keep the original free-form STAT_KEYS above and the classic tracker
         // table. Systems with dedicated support (D&D 5th Edition, Cosmere System)
         // each get a purpose-built stat entry form and DM tracker layout.
-        const SYSTEMS = ["Generic", "D&D 5th Edition", "Cosmere System"];
+        // NOTE: these strings are the persisted storage keys - the three
+        // original entries must keep their exact spelling so v1 project files
+        // continue to resolve to the right system on load.
+        const SYSTEMS = [
+            "Generic",
+            "D&D 5th Edition",
+            "D&D 4th Edition",
+            "Daggerheart",
+            "Savage Worlds",
+            "Cosmere System"
+        ];
+
+        // Maps a system name to the pawn property holding its stat block.
+        const SYSTEM_STAT_KEYS = {
+            'Generic': 'stats',
+            'D&D 5th Edition': 'dnd5e',
+            'D&D 4th Edition': 'dnd4e',
+            'Daggerheart': 'daggerheart',
+            'Savage Worlds': 'savage',
+            'Cosmere System': 'cosmere'
+        };
 
         function emptyDnd5eStats() {
             return {
@@ -630,6 +922,65 @@
                 strength: '', finesse: '', intellect: '', willpower: '', awareness: '', presence: ''
             };
         }
+
+        function emptyDnd4eStats() {
+            return {
+                hp: '', bloodied: '', surges: '', actionPoints: '', speed: '',
+                ac: '', fort: '', ref: '', will: ''
+            };
+        }
+
+        function emptyDaggerheartStats() {
+            return {
+                hp: '', stress: '', armorScore: '', evasion: '',
+                hope: '', fear: '',
+                thrMinor: '', thrMajor: '', thrSevere: ''
+            };
+        }
+
+        function emptySavageStats() {
+            // No hit points in Savage Worlds - damage is tracked as Wounds
+            // (3 + Incapacitated) and Fatigue (2), both fixed-size clusters.
+            return {
+                pace: '', parry: '', toughness: '', armor: '',
+                bennies: '', powerPoints: ''
+            };
+        }
+
+        // Shared across every system, stored as pawn.traits rather than being
+        // duplicated into each system's stat block - written once, read once.
+        function emptyTraits() {
+            return { immunities: '', resistances: '', vulnerabilities: '', skills: '' };
+        }
+
+        // Central registry so adding a system later touches one place.
+        const SYSTEM_STAT_FACTORIES = {
+            'D&D 5th Edition': emptyDnd5eStats,
+            'D&D 4th Edition': emptyDnd4eStats,
+            'Daggerheart': emptyDaggerheartStats,
+            'Savage Worlds': emptySavageStats,
+            'Cosmere System': emptyCosmereStats
+        };
+
+        // Guarantees every stat block, traits block and actions array exists on
+        // a pawn. Called after load, after a system switch, and defensively
+        // before any render, so partial/legacy pawns can never throw.
+        function ensurePawnShape(pawn) {
+            if (!pawn.stats) {
+                pawn.stats = {};
+                STAT_KEYS.forEach(k => pawn.stats[k] = '');
+            }
+            Object.keys(SYSTEM_STAT_FACTORIES).forEach(sysName => {
+                const key = SYSTEM_STAT_KEYS[sysName];
+                if (!pawn[key]) pawn[key] = SYSTEM_STAT_FACTORIES[sysName]();
+            });
+            if (!pawn.traits) pawn.traits = emptyTraits();
+            if (!Array.isArray(pawn.actions)) pawn.actions = [];
+            if (!pawn.hpMode) pawn.hpMode = 'standard';
+            if (!SYSTEMS.includes(pawn.system)) pawn.system = 'Generic';
+            return pawn;
+        }
+
 
         // Recharge abilities (like a dragon's breath weapon) recharge on a d6 roll at
         // or above a threshold. 'value' is stored on the pawn; 'label' is what's shown.
@@ -701,18 +1052,19 @@
                 const emptyStats = {};
                 STAT_KEYS.forEach(key => emptyStats[key] = '');
 
-                state.pawns.push({
+                state.pawns.push(ensurePawnShape({
                     img: img, dataUrl: dataUrl, name: '', number: '', isEditing: false,
                     isDark: calculateDarkness(img), isFlipped: false, showBorder: false, 
                     borderColor: '#000000', textColor: '#000000', textBgColor: '#FFFFFFEE',
                     scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0,
                     pawnWidth: state.pawnWidth, pawnHeight: state.pawnHeight,
-                    trackerScale: 1, 
+                    trackerScale: 1,
+                    hpMode: state.hpMode || 'standard',
                     system: 'Generic',
                     stats: emptyStats,
-                    dnd5e: emptyDnd5eStats(),
-                    cosmere: emptyCosmereStats()
-                });
+                    traits: emptyTraits(),
+                    actions: []
+                }));
             }
             if(e.target.id === 'file-input') e.target.value = ''; 
             renderAll();
@@ -739,9 +1091,8 @@
         }
 
         function removePawn(index) { state.pawns.splice(index, 1); renderAll(); }
-
         function duplicatePawn(index) {
-            const original = state.pawns[index];
+            const original = ensurePawnShape(state.pawns[index]);
             let newNumber = original.number;
 
             if (newNumber && newNumber.trim() !== '' && !isNaN(newNumber)) {
@@ -752,21 +1103,34 @@
                 newNumber = targetNum.toString();
             }
 
-            const newStats = { ...original.stats };
-            const newDnd5e = { ...(original.dnd5e || emptyDnd5eStats()) };
-            const newCosmere = { ...(original.cosmere || emptyCosmereStats()) };
-            const copy = { ...original, number: newNumber, isEditing: false, stats: newStats, dnd5e: newDnd5e, cosmere: newCosmere }; 
+            const copy = { ...original, number: newNumber, isEditing: false };
+            // Every mutable sub-object must be cloned, or the duplicate shares
+            // state with its original and edits bleed across pawns. The actions
+            // array needs a two-level clone: the attachment wrappers AND their
+            // overrides objects.
+            copy.stats = { ...original.stats };
+            Object.values(SYSTEM_STAT_KEYS).forEach(key => {
+                if (key !== 'stats' && original[key]) copy[key] = { ...original[key] };
+            });
+            copy.traits = { ...original.traits };
+            copy.actions = original.actions.map(a => ({
+                cardId: a.cardId,
+                overrides: { ...(a.overrides || {}) }
+            }));
+
             state.pawns.push(copy);
             renderAll();
         }
-
         function copyStyle(index) {
             const p = state.pawns[index];
+            // Style only - stats, traits and action attachments are deliberately
+            // excluded so pasting appearance never clobbers a pawn's mechanics.
             styleClipboard = {
                 borderColor: p.borderColor, textColor: p.textColor, textBgColor: p.textBgColor,
                 showBorder: p.showBorder, isDark: p.isDark, isFlipped: p.isFlipped,
                 scale: p.scale, rotation: p.rotation, offsetX: p.offsetX, offsetY: p.offsetY,
-                pawnWidth: p.pawnWidth, pawnHeight: p.pawnHeight, trackerScale: p.trackerScale
+                pawnWidth: p.pawnWidth, pawnHeight: p.pawnHeight,
+                trackerScale: p.trackerScale, hpMode: p.hpMode || 'standard'
             };
             renderAll(); 
         }
@@ -801,11 +1165,33 @@
             renderSinglePawn(index);
             if (state.showTable) renderTable();
         }
-
         function updatePawnSystem(index, value) {
             state.pawns[index].system = value;
-            if (!state.pawns[index].dnd5e) state.pawns[index].dnd5e = emptyDnd5eStats();
-            if (!state.pawns[index].cosmere) state.pawns[index].cosmere = emptyCosmereStats();
+            ensurePawnShape(state.pawns[index]);
+            // Attachments whose card belongs to a different system are dropped -
+            // a 5e save-DC card has no meaning on a Savage Worlds pawn.
+            state.pawns[index].actions = state.pawns[index].actions.filter(a => {
+                const card = getActionCard(a.cardId);
+                return card && card.system === value;
+            });
+            renderAll();
+        }
+
+        // Generic stat-block setter used by the newer systems' entry forms.
+        function updatePawnSystemStat(index, systemName, key, value) {
+            const pawn = ensurePawnShape(state.pawns[index]);
+            pawn[SYSTEM_STAT_KEYS[systemName]][key] = value;
+            if (state.showTable) renderTable();
+        }
+
+        function updatePawnTrait(index, key, value) {
+            const pawn = ensurePawnShape(state.pawns[index]);
+            pawn.traits[key] = value;
+            if (state.showTable) renderTable();
+        }
+
+        function updatePawnHpMode(index, value) {
+            state.pawns[index].hpMode = value;
             renderAll();
         }
 
@@ -869,34 +1255,50 @@
             if (others > 0) baseName += ` (and ${others} other${others > 1 ? 's' : ''})`;
             return baseName.replace(/[<>:"/\\|?*]/g, '') + extension;
         }
-
         function saveProject() {
             if (state.pawns.length === 0) { alert("Please add at least one pawn before saving."); return; }
             const projectData = {
-                pawnWidth: state.pawnWidth, pawnHeight: state.pawnHeight, showTable: state.showTable,
-                pawns: state.pawns.map(p => ({
-                    dataUrl: p.dataUrl, name: p.name, number: p.number,
-                    borderColor: p.borderColor, textColor: p.textColor, textBgColor: p.textBgColor,
-                    isDark: p.isDark, isFlipped: p.isFlipped, showBorder: p.showBorder, 
-                    scale: p.scale, rotation: p.rotation, offsetX: p.offsetX, offsetY: p.offsetY,
-                    pawnWidth: p.pawnWidth || state.pawnWidth, pawnHeight: p.pawnHeight || state.pawnHeight,
-                    trackerScale: p.trackerScale || 1,
-                    system: p.system || 'Generic',
-                    stats: p.stats,
-                    dnd5e: p.dnd5e || emptyDnd5eStats(),
-                    cosmere: p.cosmere || emptyCosmereStats()
-                }))
+                version: 2,
+                pawnWidth: state.pawnWidth, pawnHeight: state.pawnHeight,
+                showTable: state.showTable, showCards: state.showCards,
+                hpMode: state.hpMode || 'standard',
+                actionCards: state.actionCards.map(c => ({
+                    id: c.id, system: c.system, name: c.name, fields: { ...c.fields }
+                })),
+                pawns: state.pawns.map(p => {
+                    ensurePawnShape(p);
+                    return {
+                        dataUrl: p.dataUrl, name: p.name, number: p.number,
+                        borderColor: p.borderColor, textColor: p.textColor, textBgColor: p.textBgColor,
+                        isDark: p.isDark, isFlipped: p.isFlipped, showBorder: p.showBorder,
+                        scale: p.scale, rotation: p.rotation, offsetX: p.offsetX, offsetY: p.offsetY,
+                        pawnWidth: p.pawnWidth || state.pawnWidth, pawnHeight: p.pawnHeight || state.pawnHeight,
+                        trackerScale: p.trackerScale || 1,
+                        hpMode: p.hpMode || 'standard',
+                        system: p.system || 'Generic',
+                        stats: p.stats,
+                        dnd5e: p.dnd5e, dnd4e: p.dnd4e,
+                        daggerheart: p.daggerheart, savage: p.savage, cosmere: p.cosmere,
+                        traits: { ...p.traits },
+                        actions: p.actions.map(a => ({ cardId: a.cardId, overrides: { ...(a.overrides || {}) } }))
+                    };
+                })
             };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projectData));
             const a = document.createElement('a'); a.href = dataStr; 
             a.download = getExportFilename('.json');
             document.body.appendChild(a); a.click(); a.remove();
         }
-
+        // Accepts both v1 (pre-Action-Cards) and v2 project files. Anything the
+        // file doesn't carry is filled from the empty-factory defaults, so an
+        // old .json opens cleanly with blank traits / no cards rather than
+        // throwing on a missing key.
         async function loadProjectFromJSON(projectData) {
             state.pawnWidth = projectData.pawnWidth || 1.0; 
             state.pawnHeight = projectData.pawnHeight || 1.5;
             state.showTable = projectData.showTable || false;
+            state.showCards = projectData.showCards || false;
+            state.hpMode = projectData.hpMode || 'standard';
 
             const select = document.getElementById('size-select');
             if (state.pawnWidth === 0.75) select.value = 'small';
@@ -904,29 +1306,31 @@
             if (state.pawnWidth === 1.25) select.value = 'large';
 
             document.getElementById('toggle-table').checked = state.showTable;
+            const cardsToggle = document.getElementById('toggle-cards');
+            if (cardsToggle) cardsToggle.checked = state.showCards;
+
+            // Cards load first so attachment validation below has a library to
+            // check against. Malformed entries are skipped rather than fatal.
+            state.actionCards = [];
+            if (Array.isArray(projectData.actionCards)) {
+                projectData.actionCards.forEach(c => {
+                    if (!c || !c.id) return;
+                    state.actionCards.push({
+                        id: c.id,
+                        system: SYSTEMS.includes(c.system) ? c.system : 'Generic',
+                        name: c.name || 'Untitled Action',
+                        fields: { ...(c.fields || {}) }
+                    });
+                });
+            }
+            const knownCardIds = new Set(state.actionCards.map(c => c.id));
 
             state.pawns = [];
             for (let p of projectData.pawns) {
                 const img = new Image(); 
-                await new Promise(r => { img.onload = r; img.src = p.dataUrl; });
-                
-                const loadedStats = p.stats || {};
-                const safeStats = {};
-                STAT_KEYS.forEach(key => safeStats[key] = loadedStats[key] || '');
+                await new Promise(r => { img.onload = r; img.onerror = r; img.src = p.dataUrl; });
 
-                const loadedDnd5e = p.dnd5e || {};
-                const safeDnd5e = emptyDnd5eStats();
-                Object.keys(safeDnd5e).forEach(key => {
-                    if (loadedDnd5e[key] !== undefined) safeDnd5e[key] = loadedDnd5e[key];
-                });
-
-                const loadedCosmere = p.cosmere || {};
-                const safeCosmere = emptyCosmereStats();
-                Object.keys(safeCosmere).forEach(key => {
-                    if (loadedCosmere[key] !== undefined) safeCosmere[key] = loadedCosmere[key];
-                });
-
-                state.pawns.push({
+                const pawn = ensurePawnShape({
                     img: img, dataUrl: p.dataUrl, name: p.name || '', number: p.number || '', isEditing: false,
                     borderColor: p.borderColor || '#000000', textColor: p.textColor || '#000000', textBgColor: p.textBgColor || '#FFFFFFEE',
                     isDark: p.isDark !== undefined ? p.isDark : calculateDarkness(img),
@@ -934,11 +1338,36 @@
                     scale: p.scale || 1.0, rotation: p.rotation || 0, offsetX: p.offsetX || 0, offsetY: p.offsetY || 0,
                     pawnWidth: p.pawnWidth || state.pawnWidth, pawnHeight: p.pawnHeight || state.pawnHeight,
                     trackerScale: p.trackerScale || 1,
-                    system: p.system || 'Generic',
-                    stats: safeStats,
-                    dnd5e: safeDnd5e,
-                    cosmere: safeCosmere
+                    hpMode: p.hpMode || 'standard',
+                    system: p.system || 'Generic'
                 });
+
+                // Merge each saved block over its empty factory result, so keys
+                // added in later versions simply stay blank on older files.
+                const loadedStats = p.stats || {};
+                STAT_KEYS.forEach(key => pawn.stats[key] = loadedStats[key] || '');
+
+                Object.keys(SYSTEM_STAT_FACTORIES).forEach(sysName => {
+                    const key = SYSTEM_STAT_KEYS[sysName];
+                    const loaded = p[key] || {};
+                    Object.keys(pawn[key]).forEach(f => {
+                        if (loaded[f] !== undefined) pawn[key][f] = loaded[f];
+                    });
+                });
+
+                const loadedTraits = p.traits || {};
+                Object.keys(pawn.traits).forEach(f => {
+                    if (loadedTraits[f] !== undefined) pawn.traits[f] = loadedTraits[f];
+                });
+
+                // Drop attachments pointing at cards that no longer exist -
+                // otherwise a hand-edited file could render undefined values.
+                pawn.actions = Array.isArray(p.actions)
+                    ? p.actions.filter(a => a && knownCardIds.has(a.cardId))
+                               .map(a => ({ cardId: a.cardId, overrides: { ...(a.overrides || {}) } }))
+                    : [];
+
+                state.pawns.push(pawn);
             }
             renderAll();
         }
@@ -954,26 +1383,45 @@
             };
             reader.readAsText(file); e.target.value = ''; 
         }
-
         function handlePrint(mode) {
             if (state.pawns.length === 0) { alert("Please add at least one pawn before printing."); return; }
+
+            const hasAttachedCards = state.pawns.some(p => (p.actions || []).length > 0);
             const originalTitle = document.title;
             document.title = getExportFilename('');
+            const hide = [];
 
             if (mode === 'pawns') {
-                document.body.classList.add('print-hide-table');
+                hide.push('print-hide-table', 'print-hide-cards');
             } else if (mode === 'table') {
                 if (!state.showTable) { alert("Please enable 'Append Tracker Sheet' to print the table."); document.title = originalTitle; return; }
-                document.body.classList.add('print-hide-pawns');
-            } else if (mode === 'all') {
-                 if (!state.showTable) document.body.classList.add('print-hide-table');
+                hide.push('print-hide-pawns', 'print-hide-cards');
+            } else if (mode === 'cards') {
+                if (!state.showCards) { alert("Please enable 'Append Action Card Sheet' to print the cards."); document.title = originalTitle; return; }
+                if (!hasAttachedCards) { alert("No pawn has an Action Card attached yet."); document.title = originalTitle; return; }
+                hide.push('print-hide-pawns', 'print-hide-table');
+            } else { // 'all'
+                if (!state.showTable) hide.push('print-hide-table');
+                if (!state.showCards || !hasAttachedCards) hide.push('print-hide-cards');
             }
 
+            hide.forEach(c => document.body.classList.add(c));
             window.print();
             setTimeout(() => { 
                 document.title = originalTitle; 
-                document.body.classList.remove('print-hide-table', 'print-hide-pawns');
+                document.body.classList.remove('print-hide-table', 'print-hide-pawns', 'print-hide-cards');
             }, 500);
+        }
+
+        function toggleCards(e) {
+            state.showCards = e.target.checked;
+            renderCardsPage();
+        }
+
+        // Keeps the footer launcher's count badge honest.
+        function updateCardCountBadge() {
+            const badge = document.getElementById('card-count-badge');
+            if (badge) badge.innerText = `(${state.actionCards.length})`;
         }
 
         function exportWord() {
@@ -1283,23 +1731,15 @@
         // Combines the pawn's number and name into one compact cell, e.g. "#1
         // Adult Red Dragon" - saves a whole column versus separate Name/# cells.
         function buildComboNameNumberCell(pawn) {
-            const name = pawn.name || '-';
+            const name = esc(pawn.name || '-');
             const num = (pawn.number || '').toString().trim();
-            return num ? `<span class="dnd-combo-num">#${num}</span> ${name}` : name;
+            return num ? `<span class="dnd-combo-num">#${esc(num)}</span> ${name}` : name;
         }
 
         // Renders the full-width HP box row that goes directly under a pawn's
         // main data row, spanning every column so the boxes have the whole table
         // width to flow across before wrapping back to the left margin - instead
         // of being squeezed into one narrow trailing column.
-        function buildTrackerHpSubRowHtml(pawn, hpValue, colspanTotal) {
-            const n = parseInt(hpValue, 10);
-            if (isNaN(n) || n <= 0) return '';
-            const scale = pawn.trackerScale || 1;
-            const boxesHtml = renderScaledBoxes(n, scale);
-            if (!boxesHtml) return '';
-            return `<tr class="dnd-hp-row"><td colspan="${colspanTotal}"><span class="dnd-hp-label">HP</span>${boxesHtml}</td></tr>`;
-        }
 
         // Builds one header row's worth of <th> cells for a system tracker table,
         // merging consecutive columns that share a superHeader (e.g. "Stats /
@@ -1323,38 +1763,6 @@
                 }
             }
             return row;
-        }
-
-        function renderDnd5eTrackerTable(pawnList) {
-            // Only keep columns at least one pawn actually uses.
-            const activeCols = DND5E_COLUMN_DEFS.filter(col =>
-                col.fields.some(f => pawnList.some(p => dnd5eFieldHasValue(p, f)))
-            );
-
-            const totalCols = 1 + activeCols.length;
-            const headerRow = buildTrackerHeaderRow(activeCols);
-
-            let html = `<table class="tracker-table"><thead>`;
-            html += `<tr>${headerRow}</tr>`;
-            html += `</thead><tbody>`;
-
-            pawnList.forEach(p => {
-                html += `<tr>
-                    <td style="font-weight:bold;">${buildComboNameNumberCell(p)}</td>`;
-                activeCols.forEach(col => {
-                    html += `<td class="dnd-stack-cell">`;
-                    col.fields.forEach(f => { html += dnd5eFieldRowHtml(p, f); });
-                    html += `</td>`;
-                });
-                html += `</tr>`;
-                html += buildTrackerHpSubRowHtml(p, (p.dnd5e || {}).hp, totalCols);
-            });
-            html += `</tbody>`;
-            // Legend lives only here, at the very bottom of the table (tfoot) -
-            // it does not repeat inside the column headers or between data rows.
-            html += `<tfoot>${buildDnd5eLegendRowHtml(totalCols)}</tfoot>`;
-            html += `</table>`;
-            return html;
         }
 
         // Icons for the Cosmere System tracker. Strength/Intellect/Awareness and
@@ -1437,60 +1845,37 @@
                 <span class="dnd-legend-items">${items}</span>
             </td></tr>`;
         }
-
-        function renderCosmereTrackerTable(pawnList) {
-            const activeCols = COSMERE_COLUMN_DEFS.filter(col =>
-                col.fields.some(f => pawnList.some(p => cosmereFieldHasValue(p, f)))
-            );
-
-            const totalCols = 1 + activeCols.length;
-            const headerRow = buildTrackerHeaderRow(activeCols);
-
-            let html = `<table class="tracker-table"><thead><tr>${headerRow}</tr></thead><tbody>`;
-
-            pawnList.forEach(p => {
-                html += `<tr>
-                    <td style="font-weight:bold;">${buildComboNameNumberCell(p)}</td>`;
-                activeCols.forEach(col => {
-                    html += `<td class="dnd-stack-cell">`;
-                    col.fields.forEach(f => { html += cosmereFieldRowHtml(p, f); });
-                    html += `</td>`;
-                });
-                html += `</tr>`;
-                html += buildTrackerHpSubRowHtml(p, (p.cosmere || {}).hp, totalCols);
-            });
-            html += `</tbody>`;
-            html += `<tfoot>${buildCosmereLegendRowHtml(totalCols)}</tfoot>`;
-            html += `</table>`;
-            return html;
-        }
-
         function renderTable() {
             const tablePage = document.getElementById('tracker-page');
-            if (!state.showTable || state.pawns.length === 0) { tablePage.style.display = 'none'; return; }
+            state.pawns.forEach(ensurePawnShape);
 
-            const genericPawns = state.pawns.filter(p => (p.system || 'Generic') === 'Generic');
-            const dnd5ePawns = state.pawns.filter(p => (p.system || 'Generic') === 'D&D 5th Edition');
-            const cosmerePawns = state.pawns.filter(p => (p.system || 'Generic') === 'Cosmere System');
+            if (!state.showTable || state.pawns.length === 0) {
+                tablePage.style.display = 'none';
+                renderCardsPage();
+                return;
+            }
 
             tablePage.style.display = 'block';
             let html = `<h2>Encounter Stat Tracker</h2>`;
 
-            if (genericPawns.length > 0) {
-                html += renderGenericTrackerTable(genericPawns);
-            }
+            const genericPawns = state.pawns.filter(p => (p.system || 'Generic') === 'Generic');
+            if (genericPawns.length > 0) html += renderGenericTrackerTable(genericPawns);
 
-            if (dnd5ePawns.length > 0) {
-                html += `<h3 class="dnd-section-header">D&D 5th Edition Monsters</h3>`;
-                html += renderDnd5eTrackerTable(dnd5ePawns);
-            }
-
-            if (cosmerePawns.length > 0) {
-                html += `<h3 class="dnd-section-header">Cosmere System Characters</h3>`;
-                html += renderCosmereTrackerTable(cosmerePawns);
-            }
+            // Data-driven: one section per system that has pawns, in SYSTEMS order.
+            SYSTEMS.forEach(sysName => {
+                if (sysName === 'Generic') return;
+                const list = state.pawns.filter(p => p.system === sysName);
+                if (list.length === 0) return;
+                const cfg = SYSTEM_TRACKER_CONFIGS[sysName];
+                if (!cfg) return;
+                html += `<h3 class="dnd-section-header">${esc(cfg.heading)}</h3>`;
+                html += renderSystemTrackerTable(list, cfg);
+            });
 
             tablePage.innerHTML = html;
+            // Sheet 2 always regenerates alongside Sheet 1 so the two can never
+            // drift out of sync.
+            renderCardsPage();
         }
 
         function renderScaledBoxes(num, scale) {
@@ -1509,37 +1894,57 @@
             boxes += '</div>';
             return boxes;
         }
-
         function renderGenericTrackerTable(pawnList) {
-            const activeStatKeys = STAT_KEYS.filter(key => {
-                return pawnList.some(p => p.stats[key] && p.stats[key].trim() !== '');
-            });
+            const activeStatKeys = STAT_KEYS.filter(key =>
+                pawnList.some(p => p.stats[key] && p.stats[key].trim() !== '')
+            );
+            const activeTraits = TRAIT_FIELDS.filter(f =>
+                pawnList.some(p => hasText((p.traits || {})[f.key]))
+            );
+
+            const totalCols = 1 + activeStatKeys.length + (activeTraits.length ? 1 : 0);
 
             let html = `<table class="tracker-table"><thead><tr>
                 <th style="width: 22%;">#/Name</th>`;
-            
-            activeStatKeys.forEach(k => html += `<th>${k}</th>`);
+            activeStatKeys.forEach(k => html += `<th>${esc(k)}</th>`);
+            if (activeTraits.length) html += `<th style="width: 18%;">Traits</th>`;
             html += `</tr></thead><tbody>`;
 
             pawnList.forEach(p => {
-                html += `<tr>
-                    <td style="font-weight:bold;">${buildComboNameNumberCell(p)}</td>`;
-                
-                const hpScale = p.trackerScale || 1;
+                ensurePawnShape(p);
+                html += `<tr><td style="font-weight:bold;">${buildComboNameNumberCell(p)}</td>`;
 
                 activeStatKeys.forEach(k => {
-                    let val = p.stats[k] || '';
-                    if ((k === 'HP' || k === 'Inv.' || k === 'Foc') && val.trim() !== '') {
-                        const num = parseInt(val, 10);
-                        if (!isNaN(num) && num > 0) {
-                            const scale = (k === 'HP') ? hpScale : 1;
-                            val = renderScaledBoxes(num, scale);
-                        }
+                    const raw = p.stats[k] || '';
+                    let cell = esc(raw);
+                    // HP moved to the full-width sub-row below (consistent with
+                    // every other system, and the only way Adaptive HP fits).
+                    if ((k === 'Inv.' || k === 'Foc') && hasText(raw)) {
+                        const num = parseInt(raw, 10);
+                        if (!isNaN(num) && num > 0) cell = renderScaledBoxes(num, 1);
                     }
-                    html += `<td>${val}</td>`;
+                    html += `<td>${cell}</td>`;
                 });
+
+                if (activeTraits.length) {
+                    html += `<td class="dnd-stack-cell traits-cell">`;
+                    activeTraits.forEach(f => {
+                        if (!hasText(p.traits[f.key])) return;
+                        html += `<div class="dnd-stack-row trait-row">` +
+                                `<span class="dnd-stack-icon" title="${esc(f.label)}">${TRAIT_ICONS[f.key]}</span>` +
+                                `<span class="dnd-stack-value"><span class="trait-text">${esc(p.traits[f.key])}</span></span></div>`;
+                    });
+                    html += `</td>`;
+                }
                 html += `</tr>`;
+
+                const hpBoxes = renderHpBoxes(p, p.stats['HP']);
+                if (hpBoxes) {
+                    html += `<tr class="dnd-hp-row"><td colspan="${totalCols}">` +
+                            `<div class="res-row">${buildResourceClusterHtml('HP', hpBoxes)}</div></td></tr>`;
+                }
             });
+
             html += `</tbody></table>`;
             return html;
         }
@@ -1553,6 +1958,7 @@
 
             pageEl.innerHTML = '';
             state.pawns.forEach((pawn, index) => {
+                ensurePawnShape(pawn);
                 const wrapper = document.createElement('div'); wrapper.className = 'pawn-wrapper'; wrapper.id = `pawn-wrapper-${index}`;
                 
                 const leftActions = document.createElement('div'); leftActions.className = 'action-group-left';
@@ -1599,10 +2005,9 @@
                 systemRow.appendChild(systemLabel); systemRow.appendChild(systemSel);
                 settingsDiv.appendChild(systemRow);
 
-                if ((pawn.system || 'Generic') === 'D&D 5th Edition') {
-                    settingsDiv.appendChild(buildDnd5eStatsUI(index, pawn));
-                } else if ((pawn.system || 'Generic') === 'Cosmere System') {
-                    settingsDiv.appendChild(buildCosmereStatsUI(index, pawn));
+                const systemBuilder = SYSTEM_UI_BUILDERS[pawn.system];
+                if (systemBuilder) {
+                    settingsDiv.appendChild(systemBuilder(index, pawn));
                 } else {
                     const statsTitle = document.createElement('div'); statsTitle.className = 'field-section-title'; statsTitle.innerText = 'Stats';
                     settingsDiv.appendChild(statsTitle);
@@ -1618,6 +2023,10 @@
                     });
                     settingsDiv.appendChild(statsContainer);
                 }
+
+                // Traits and Action Cards apply to every system, Generic included.
+                settingsDiv.appendChild(buildTraitsUI(index, pawn));
+                settingsDiv.appendChild(buildPawnActionsUI(index, pawn));
 
                 const optionsRow = document.createElement('div'); optionsRow.className = 'pawn-options';
                 const borderHexLabel = document.createElement('label');
@@ -1649,6 +2058,20 @@
                 sizeSel.onchange = (e) => updatePawnSize(index, e.target.value);
                 sizeLabel.appendChild(sizeSel);
 
+                // HP tracker mode. Adaptive distributes the pool into 10/5/2/1
+                // boxes and therefore ignores the fixed x1/x5/x10 scale, so that
+                // control is disabled (not hidden) to show why it stopped applying.
+                const hpModeLabel = document.createElement('label'); hpModeLabel.style.marginLeft = "10px";
+                const hpModeSel = document.createElement('select'); hpModeSel.style.width = "auto"; hpModeSel.style.padding = "2px";
+                const pHpMode = pawn.hpMode || 'standard';
+                hpModeSel.innerHTML = `
+                    <option value="standard" ${pHpMode === 'standard' ? 'selected' : ''}>Standard HP</option>
+                    <option value="adaptive" ${pHpMode === 'adaptive' ? 'selected' : ''}>Adaptive HP</option>
+                `;
+                hpModeSel.title = 'Adaptive splits large HP pools into 10/5/2/1 point boxes.';
+                hpModeSel.onchange = (e) => updatePawnHpMode(index, e.target.value);
+                hpModeLabel.appendChild(hpModeSel);
+
                 // Individual Tracker Scale
                 const scaleLabel = document.createElement('label'); scaleLabel.style.marginLeft = "10px";
                 const scaleSel = document.createElement('select'); scaleSel.style.width = "auto"; scaleSel.style.padding = "2px";
@@ -1662,9 +2085,14 @@
                     state.pawns[index].trackerScale = parseInt(e.target.value, 10);
                     if (state.showTable) renderTable();
                 };
+                if (pHpMode === 'adaptive') {
+                    scaleSel.disabled = true;
+                    scaleSel.title = 'Adaptive HP ignores the fixed box scale.';
+                    scaleLabel.style.opacity = '0.45';
+                }
                 scaleLabel.appendChild(scaleSel);
 
-                optionsRow.appendChild(borderHexLabel); optionsRow.appendChild(textHexLabel); optionsRow.appendChild(textBgHexLabel); optionsRow.appendChild(sizeLabel); optionsRow.appendChild(scaleLabel);
+                optionsRow.appendChild(borderHexLabel); optionsRow.appendChild(textHexLabel); optionsRow.appendChild(textBgHexLabel); optionsRow.appendChild(sizeLabel); optionsRow.appendChild(hpModeLabel); optionsRow.appendChild(scaleLabel);
                 settingsDiv.appendChild(optionsRow);
 
                 const checksRow = document.createElement('div'); checksRow.className = 'pawn-options';
@@ -1699,6 +2127,11 @@
                 renderSinglePawn(index);
             });
             renderTable();
+            // Usage badges in the library reflect attachment counts, so the
+            // modal refreshes whenever pawns do - but only while it's open.
+            updateCardCountBadge();
+            const modal = document.getElementById('card-modal');
+            if (modal && modal.style.display === 'flex') renderCardManager();
         }
 
         function renderSinglePawn(index) {
@@ -1867,24 +2300,50 @@
             </svg>`;
             return 'data:image/svg+xml;base64,' + btoa(svg);
         }
-
         function getFallbackProjectData() {
             const genericImg = createPlaceholderDataUrl('#2c3e50', 'G');
             const dndImg = createPlaceholderDataUrl('#8e0000', 'D');
+            const dhImg = createPlaceholderDataUrl('#5b2c6f', 'H');
+            const swImg = createPlaceholderDataUrl('#7e5109', 'S');
+
+            // Sample library. Ids are literals here (not generated) so the demo
+            // attachments below can reference them deterministically.
+            const cards = [
+                { id: 'demo_5e_breath', system: 'D&D 5th Edition', name: 'Fire Breath',
+                  fields: { actionType: 'Action', range: '60 ft. cone', atk: '',
+                            targetDef: 'AC', saveStat: 'DEX', saveDc: '21',
+                            damage: '18d6 fire', recharge: '5' } },
+                { id: 'demo_5e_bite', system: 'D&D 5th Edition', name: 'Bite',
+                  fields: { actionType: 'Action', range: '10 ft.', atk: '+11',
+                            targetDef: 'AC', saveStat: '', saveDc: '',
+                            damage: '2d10+6 piercing + 2d6 fire', recharge: '' } },
+                { id: 'demo_dh_claw', system: 'Daggerheart', name: 'Rending Claw',
+                  fields: { range: 'Very Close', atk: '+3', targetDef: 'Evasion',
+                            damageType: 'Physical', damage: '2d8+3' } },
+                { id: 'demo_sw_blade', system: 'Savage Worlds', name: 'Great Sword',
+                  fields: { skill: 'Fighting', targetDef: 'Parry', ap: '2',
+                            damage: 'Str+d10', effect: 'Two hands; Shaken on a raise' } }
+            ];
 
             return {
+                version: 2,
                 pawnWidth: 1.0,
                 pawnHeight: 1.5,
                 showTable: false,
+                showCards: false,
+                hpMode: 'standard',
+                actionCards: cards,
                 pawns: [
                     {
                         dataUrl: genericImg, name: 'Goblin', number: '1',
                         borderColor: '#27ae60', textColor: '#000000', textBgColor: '#FFFFFFEE',
                         isDark: true, isFlipped: false, showBorder: true,
                         scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0,
-                        pawnWidth: 1.0, pawnHeight: 1.5, trackerScale: 1,
+                        pawnWidth: 1.0, pawnHeight: 1.5, trackerScale: 1, hpMode: 'standard',
                         system: 'Generic',
-                        stats: { Init: '+2', AC: '15', HP: '7', 'P.D.': '', 'C.D.': '', 'S.D.': '', 'Inv.': '', Foc: '' }
+                        stats: { Init: '+2', AC: '15', HP: '7', 'P.D.': '', 'C.D.': '', 'S.D.': '', 'Inv.': '', Foc: '' },
+                        traits: { immunities: '', resistances: '', vulnerabilities: '', skills: 'Stealth +6' },
+                        actions: []
                     },
                     {
                         dataUrl: dndImg, name: 'Adult Red Dragon', number: '1',
@@ -1892,16 +2351,1078 @@
                         isDark: true, isFlipped: false, showBorder: true,
                         scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0,
                         pawnWidth: 1.25, pawnHeight: 2.0, trackerScale: 5,
+                        // 256 HP is exactly the case Adaptive mode exists for:
+                        // 61 boxes instead of 256.
+                        hpMode: 'adaptive',
                         system: 'D&D 5th Edition',
                         stats: { Init: '', AC: '', HP: '', 'P.D.': '', 'C.D.': '', 'S.D.': '', 'Inv.': '', Foc: '' },
                         dnd5e: {
                             hp: '256', ac: '19', init: '+2', prof: '+5', lairActions: true, legRes: '3', recharge: '5',
                             str: '+6', dex: '+2', con: '+6', int: '+2', wis: '+2', cha: '+5',
                             strSave: '+11', dexSave: '+7', conSave: '+11', intSave: '+7', wisSave: '+7', chaSave: '+10'
-                        }
+                        },
+                        traits: {
+                            immunities: 'fire', resistances: '', vulnerabilities: '',
+                            skills: 'Perception +13, Stealth +7'
+                        },
+                        // Demonstrates an override: this alpha hits harder than
+                        // the library card's baseline.
+                        actions: [
+                            { cardId: 'demo_5e_breath', overrides: { saveDc: '23' } },
+                            { cardId: 'demo_5e_bite', overrides: {} }
+                        ]
+                    },
+                    {
+                        dataUrl: dhImg, name: 'Chittering Horde', number: '1',
+                        borderColor: '#5b2c6f', textColor: '#000000', textBgColor: '#FFFFFFEE',
+                        isDark: true, isFlipped: false, showBorder: true,
+                        scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0,
+                        pawnWidth: 1.0, pawnHeight: 1.5, trackerScale: 1, hpMode: 'standard',
+                        system: 'Daggerheart',
+                        daggerheart: {
+                            hp: '8', stress: '4', armorScore: '3', evasion: '13',
+                            hope: '', fear: '2',
+                            thrMinor: '7', thrMajor: '14', thrSevere: '20'
+                        },
+                        traits: { immunities: '', resistances: 'physical', vulnerabilities: 'magic', skills: '' },
+                        actions: [ { cardId: 'demo_dh_claw', overrides: {} } ]
+                    },
+                    {
+                        dataUrl: swImg, name: 'Bandit Chief', number: '1',
+                        borderColor: '#7e5109', textColor: '#000000', textBgColor: '#FFFFFFEE',
+                        isDark: true, isFlipped: false, showBorder: true,
+                        scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0,
+                        pawnWidth: 1.0, pawnHeight: 1.5, trackerScale: 1, hpMode: 'standard',
+                        system: 'Savage Worlds',
+                        savage: { pace: '6', parry: '7', toughness: '8', armor: '2', bennies: '3', powerPoints: '' },
+                        traits: { immunities: '', resistances: '', vulnerabilities: '', skills: 'Fighting d10, Notice d6, Intimidation d8' },
+                        actions: [ { cardId: 'demo_sw_blade', overrides: { ap: '4' } } ]
                     }
                 ]
             };
+        }
+
+
+        /* ==================================================================
+           ADAPTIVE HP + CONSUMABLE RESOURCE TRACKING
+           ================================================================== */
+
+        // Escapes user-entered text before it goes into an innerHTML string.
+        // Traits, card names and card field values are all free-text, so a
+        // stray "<" would otherwise silently eat the rest of the sheet.
+        function esc(v) {
+            return String(v === undefined || v === null ? '' : v)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function hasText(v) {
+            return v !== undefined && v !== null && String(v).trim() !== '';
+        }
+
+        // Distributes a total HP pool into 10 / 5 / 2 / 1 point boxes so a
+        // 250 HP monster becomes ~60 boxes instead of 250. Lossless by
+        // construction: tens*10 + fives*5 + twos*2 + ones === total, always.
+        //   256 HP -> 12 tens, 13 fives, 35 twos, 1 one  (61 boxes)
+        //     7 HP ->  0 tens,  0 fives,  3 twos, 1 one  ( 4 boxes)
+        function computeAdaptiveHp(total) {
+            let remaining = total;
+            const tens = Math.floor((total * 0.5) / 10);
+            remaining = total - (tens * 10);
+            const fives = Math.floor((remaining * 0.5) / 5);
+            remaining = remaining - (fives * 5);
+            const twos = Math.floor(remaining / 2);
+            remaining = remaining - (twos * 2);
+            return { tens: tens, fives: fives, twos: twos, ones: remaining, total: total };
+        }
+
+        // Boxes are labelled with their denomination rather than a running
+        // total, because in Adaptive mode the GM crosses them off in whatever
+        // order the incoming damage suits - there is no fixed sequence.
+        function renderAdaptiveBoxes(total) {
+            const d = computeAdaptiveHp(total);
+            const tiers = [
+                { count: d.tens,  value: 10, cls: 'hp-box-10' },
+                { count: d.fives, value: 5,  cls: 'hp-box-5'  },
+                { count: d.twos,  value: 2,  cls: 'hp-box-2'  },
+                { count: d.ones,  value: 1,  cls: 'hp-box-1'  }
+            ];
+            let html = '<div class="track-box-container adaptive-hp">';
+            let any = false;
+            tiers.forEach(t => {
+                for (let i = 0; i < t.count; i++) {
+                    if (i % 5 === 0) {
+                        if (i > 0) html += '</div>';
+                        html += '<div class="track-box-group">';
+                    }
+                    html += `<span class="track-box ${t.cls}">${t.value}</span>`;
+                    any = true;
+                }
+                if (t.count > 0) html += '</div>';
+            });
+            html += '</div>';
+            return any ? html : '';
+        }
+
+        // Chooses Standard (existing 1x/5x/10x scaling) or Adaptive per pawn.
+        function renderHpBoxes(pawn, rawValue) {
+            const n = parseInt(rawValue, 10);
+            if (isNaN(n) || n <= 0) return '';
+            if ((pawn.hpMode || 'standard') === 'adaptive') return renderAdaptiveBoxes(n);
+            return renderScaledBoxes(n, pawn.trackerScale || 1);
+        }
+
+        // Plain 1-per-point boxes for small consumables (surges, stress,
+        // bennies...). Capped so a fat-fingered "500" can't blow up the sheet.
+        const RESOURCE_BOX_CAP = 60;
+        function renderCountBoxes(rawValue, extraCls) {
+            const n = parseInt(rawValue, 10);
+            if (isNaN(n) || n <= 0) return '';
+            const shown = Math.min(n, RESOURCE_BOX_CAP);
+            let html = '<div class="track-box-container">';
+            for (let i = 0; i < shown; i++) {
+                if (i % 5 === 0) {
+                    if (i > 0) html += '</div>';
+                    html += '<div class="track-box-group">';
+                }
+                html += `<span class="track-box ${extraCls || ''}"></span>`;
+            }
+            html += '</div>';
+            if (n > shown) html += `<span class="res-overflow">+${n - shown}</span>`;
+            html += '</div>';
+            return html;
+        }
+
+        // Fixed-size clusters whose boxes carry meaning by position, e.g.
+        // Savage Worlds Wounds: -1 / -2 / -3 / INC.
+        function renderFixedBoxes(labels, extraCls) {
+            let html = '<div class="track-box-container"><div class="track-box-group">';
+            labels.forEach(l => {
+                html += `<span class="track-box ${extraCls || ''}">${esc(l)}</span>`;
+            });
+            html += '</div></div>';
+            return html;
+        }
+
+        function buildResourceClusterHtml(label, boxesHtml) {
+            if (!boxesHtml) return '';
+            return `<div class="res-cluster"><span class="res-label">${esc(label)}</span>${boxesHtml}</div>`;
+        }
+
+        // The full-width row that sits directly beneath a pawn's stat row and
+        // spans every column, so consumable boxes get the whole table width to
+        // flow across before wrapping instead of being crushed into one cell.
+        function buildResourceSubRowHtml(pawn, cfg, colspanTotal) {
+            const specs = cfg.resources || [];
+            if (!specs.length) return '';
+            const data = pawn[cfg.statKey] || {};
+            let clusters = '';
+
+            specs.forEach(spec => {
+                if (spec.kind === 'hp') {
+                    clusters += buildResourceClusterHtml(spec.label, renderHpBoxes(pawn, data[spec.key]));
+                } else if (spec.kind === 'count') {
+                    clusters += buildResourceClusterHtml(spec.label, renderCountBoxes(data[spec.key], spec.cls));
+                } else if (spec.kind === 'fixed') {
+                    clusters += buildResourceClusterHtml(spec.label, renderFixedBoxes(spec.labels, spec.cls));
+                }
+            });
+
+            if (!clusters) return '';
+            return `<tr class="dnd-hp-row"><td colspan="${colspanTotal}"><div class="res-row">${clusters}</div></td></tr>`;
+        }
+
+        /* ==================================================================
+           ICONS FOR THE NEW SYSTEMS + SHARED TRAIT ICONS
+           ================================================================== */
+
+        const TRAIT_ICONS = {
+            immunities: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M8 1 L14 3.2 V7.5 C14 11 11.5 13.6 8 15 C4.5 13.6 2 11 2 7.5 V3.2 Z" fill="currentColor"/></svg>',
+            resistances: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M8 1 L14 3.2 V7.5 C14 11 11.5 13.6 8 15 C4.5 13.6 2 11 2 7.5 V3.2 Z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5 8 H11" stroke="currentColor" stroke-width="1.6"/></svg>',
+            vulnerabilities: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M8 1 L14 3.2 V7.5 C14 11 11.5 13.6 8 15 C4.5 13.6 2 11 2 7.5 V3.2 Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2.5 2"/><path d="M5.5 5.5 L10.5 10.5 M10.5 5.5 L5.5 10.5" stroke="currentColor" stroke-width="1.5"/></svg>',
+            skills: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M2 12 L9 5 M6 2 H14 V10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="4" cy="13" r="2" fill="currentColor"/></svg>'
+        };
+
+        const DND4E_ICONS = {
+            ac: DND5E_ICONS.ac,
+            fort: '<svg viewBox="0 0 16 16" width="13" height="13"><rect x="2" y="5" width="12" height="8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M2 5 L8 1 L14 5" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>',
+            ref: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M14 2 C8 4 4 8 2 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><polygon points="2,14 6,13 3,10" fill="currentColor"/></svg>',
+            will: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M8 2 C11 2 13 4 13 7 C13 9 11.5 10 11.5 12 H4.5 C4.5 10 3 9 3 7 C3 4 5 2 8 2 Z" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 14 H10.5" stroke="currentColor" stroke-width="1.3"/></svg>',
+            speed: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M1 5 H8 M1 8 H11 M1 11 H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><polygon points="12,3 15,8 12,13" fill="currentColor"/></svg>',
+            bloodied: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M8 1 C11 6 13 8 13 10.5 C13 13 10.8 15 8 15 C5.2 15 3 13 3 10.5 C3 8 5 6 8 1 Z" fill="currentColor"/></svg>',
+            surges: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M8 14 C3 10.5 1 8 1 5.3 C1 3 3 1.3 5.2 1.3 C6.6 1.3 7.6 2 8 2.8 C8.4 2 9.4 1.3 10.8 1.3 C13 1.3 15 3 15 5.3 C15 8 13 10.5 8 14 Z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5 7.5 H11 M8 4.5 V10.5" stroke="currentColor" stroke-width="1.3"/></svg>',
+            actionPoints: DND5E_ICONS.init
+        };
+
+        const DAGGERHEART_ICONS = {
+            evasion: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M8 1 C4 5 4 11 8 15 C12 11 12 5 8 1 Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 2"/></svg>',
+            armorScore: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M8 1 L14 3.2 V7.5 C14 11 11.5 13.6 8 15 C4.5 13.6 2 11 2 7.5 V3.2 Z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 4 V12" stroke="currentColor" stroke-width="1.2"/></svg>',
+            thrMinor: '<svg viewBox="0 0 16 16" width="13" height="13"><rect x="2" y="10" width="12" height="3" fill="currentColor"/></svg>',
+            thrMajor: '<svg viewBox="0 0 16 16" width="13" height="13"><rect x="2" y="10" width="12" height="3" fill="currentColor"/><rect x="2" y="6" width="12" height="3" fill="currentColor"/></svg>',
+            thrSevere: '<svg viewBox="0 0 16 16" width="13" height="13"><rect x="2" y="10" width="12" height="3" fill="currentColor"/><rect x="2" y="6" width="12" height="3" fill="currentColor"/><rect x="2" y="2" width="12" height="3" fill="currentColor"/></svg>',
+            hope: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M8 1 L9.6 6.2 L15 6.2 L10.7 9.4 L12.3 14.6 L8 11.4 L3.7 14.6 L5.3 9.4 L1 6.2 L6.4 6.2 Z" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>',
+            fear: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M8 1 L9.6 6.2 L15 6.2 L10.7 9.4 L12.3 14.6 L8 11.4 L3.7 14.6 L5.3 9.4 L1 6.2 L6.4 6.2 Z" fill="currentColor"/></svg>',
+            stress: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M9 1 L3 9 H7 L6 15 L13 6 H9 Z" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>'
+        };
+
+        const SAVAGE_ICONS = {
+            pace: DND4E_ICONS.speed,
+            parry: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M3 13 L11 5 M9 3 L13 3 L13 7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M2 11 L5 14" stroke="currentColor" stroke-width="1.5"/></svg>',
+            toughness: '<svg viewBox="0 0 16 16" width="13" height="13"><path d="M8 1 L14 3.2 V7.5 C14 11 11.5 13.6 8 15 C4.5 13.6 2 11 2 7.5 V3.2 Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+            bennies: '<svg viewBox="0 0 16 16" width="13" height="13"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2.5" fill="currentColor"/></svg>',
+            powerPoints: DND5E_ICONS.cha
+        };
+
+        /* ==================================================================
+           SHARED TRAITS COLUMN
+           ================================================================== */
+
+        // Rides the existing column mechanism rather than a bespoke sub-row, so
+        // the "hide columns nobody uses" filter applies to it for free.
+        function traitsColumnDef() {
+            return { superHeader: null, header: 'Traits', width: '18%', fields: [
+                { key: 'immunities',      label: 'Immunities',      icon: 'immunities',      kind: 'trait' },
+                { key: 'resistances',     label: 'Resistances',     icon: 'resistances',     kind: 'trait' },
+                { key: 'vulnerabilities', label: 'Vulnerabilities', icon: 'vulnerabilities', kind: 'trait' },
+                { key: 'skills',          label: 'Skills / Prof.',  icon: 'skills',          kind: 'trait' }
+            ] };
+        }
+
+        const TRAIT_LEGEND_ITEMS = [
+            { icon: 'immunities', label: 'Immunities' },
+            { icon: 'resistances', label: 'Resistances' },
+            { icon: 'vulnerabilities', label: 'Vulnerabilities' },
+            { icon: 'skills', label: 'Skills / Proficiencies' }
+        ];
+
+        /* ==================================================================
+           COLUMN DEFINITIONS FOR THE THREE NEW SYSTEMS
+           ================================================================== */
+
+        const DND4E_COLUMN_DEFS = [
+            { superHeader: null, header: 'Defenses', fields: [
+                { key: 'ac',   label: 'Armor Class', icon: 'ac' },
+                { key: 'fort', label: 'Fortitude',   icon: 'fort' },
+                { key: 'ref',  label: 'Reflex',      icon: 'ref' },
+                { key: 'will', label: 'Will',        icon: 'will' }
+            ] },
+            { superHeader: null, header: 'Basic', fields: [
+                { key: 'speed',    label: 'Speed',          icon: 'speed' },
+                { key: 'bloodied', label: 'Bloodied Value', icon: 'bloodied' }
+            ] }
+        ];
+
+        const DAGGERHEART_COLUMN_DEFS = [
+            { superHeader: null, header: 'Basic', fields: [
+                { key: 'evasion',    label: 'Evasion',     icon: 'evasion' },
+                { key: 'armorScore', label: 'Armor Score', icon: 'armorScore' }
+            ] },
+            { superHeader: null, header: 'Thresholds', fields: [
+                { key: 'thrMinor',  label: 'Minor Threshold',  icon: 'thrMinor' },
+                { key: 'thrMajor',  label: 'Major Threshold',  icon: 'thrMajor' },
+                { key: 'thrSevere', label: 'Severe Threshold', icon: 'thrSevere' }
+            ] }
+        ];
+
+        const SAVAGE_COLUMN_DEFS = [
+            { superHeader: null, header: 'Basic', fields: [
+                { key: 'pace',      label: 'Pace',      icon: 'pace' },
+                { key: 'parry',     label: 'Parry',     icon: 'parry' },
+                // Toughness prints as "8 (2)" - total with armor in parentheses,
+                // which is how every Savage Worlds stat block writes it.
+                { key: 'toughness', label: 'Toughness (Armor)', icon: 'toughness', kind: 'toughness', armorKey: 'armor' }
+            ] }
+        ];
+
+        /* ==================================================================
+           ONE TRACKER RENDERER, SIX CONFIGURATIONS
+           ================================================================== */
+
+        const SYSTEM_TRACKER_CONFIGS = {
+            'D&D 5th Edition': {
+                heading: 'D&D 5th Edition Monsters',
+                statKey: 'dnd5e',
+                columns: DND5E_COLUMN_DEFS,
+                icons: DND5E_ICONS,
+                legend: DND5E_LEGEND_ITEMS,
+                legendNote: 'Ability icons show Modifier / Saving Throw.',
+                resources: [ { kind: 'hp', key: 'hp', label: 'HP' } ]
+            },
+            'D&D 4th Edition': {
+                heading: 'D&D 4th Edition Monsters',
+                statKey: 'dnd4e',
+                columns: DND4E_COLUMN_DEFS,
+                icons: DND4E_ICONS,
+                legend: [
+                    { icon: 'ac', label: 'Armor Class' },
+                    { icon: 'fort', label: 'Fortitude' },
+                    { icon: 'ref', label: 'Reflex' },
+                    { icon: 'will', label: 'Will' },
+                    { icon: 'speed', label: 'Speed' },
+                    { icon: 'bloodied', label: 'Bloodied Value' }
+                ],
+                legendNote: 'Bloodied triggers at half the printed HP total.',
+                resources: [
+                    { kind: 'hp',    key: 'hp',           label: 'HP' },
+                    { kind: 'count', key: 'surges',       label: 'Healing Surges', cls: 'surge-box' },
+                    { kind: 'count', key: 'actionPoints', label: 'Action Points',  cls: 'ap-box' }
+                ]
+            },
+            'Daggerheart': {
+                heading: 'Daggerheart Adversaries',
+                statKey: 'daggerheart',
+                columns: DAGGERHEART_COLUMN_DEFS,
+                icons: DAGGERHEART_ICONS,
+                legend: [
+                    { icon: 'evasion', label: 'Evasion' },
+                    { icon: 'armorScore', label: 'Armor Score' },
+                    { icon: 'thrMinor', label: 'Minor Threshold' },
+                    { icon: 'thrMajor', label: 'Major Threshold' },
+                    { icon: 'thrSevere', label: 'Severe Threshold' }
+                ],
+                legendNote: 'Damage at or above a threshold marks that many HP.',
+                resources: [
+                    { kind: 'hp',    key: 'hp',         label: 'HP' },
+                    { kind: 'count', key: 'stress',     label: 'Stress',      cls: 'stress-box' },
+                    { kind: 'count', key: 'armorScore', label: 'Armor Slots', cls: 'armor-box' },
+                    { kind: 'count', key: 'hope',       label: 'Hope',        cls: 'hope-box' },
+                    { kind: 'count', key: 'fear',       label: 'Fear',        cls: 'fear-box' }
+                ]
+            },
+            'Savage Worlds': {
+                heading: 'Savage Worlds Extras & Wild Cards',
+                statKey: 'savage',
+                columns: SAVAGE_COLUMN_DEFS,
+                icons: SAVAGE_ICONS,
+                legend: [
+                    { icon: 'pace', label: 'Pace' },
+                    { icon: 'parry', label: 'Parry' },
+                    { icon: 'toughness', label: 'Toughness (Armor)' }
+                ],
+                legendNote: 'Wounds and Fatigue are fixed tracks; the 4th Wound box is Incapacitated.',
+                resources: [
+                    { kind: 'fixed', labels: ['-1', '-2', '-3', 'INC'], label: 'Wounds',  cls: 'wound-box' },
+                    { kind: 'fixed', labels: ['-1', '-2'],              label: 'Fatigue', cls: 'fatigue-box' },
+                    { kind: 'count', key: 'bennies',     label: 'Bennies',      cls: 'benny-box' },
+                    { kind: 'count', key: 'powerPoints', label: 'Power Points', cls: 'pp-box' }
+                ]
+            },
+            'Cosmere System': {
+                heading: 'Cosmere System Characters',
+                statKey: 'cosmere',
+                columns: COSMERE_COLUMN_DEFS,
+                icons: COSMERE_ICONS,
+                legend: COSMERE_LEGEND_ITEMS,
+                legendNote: '',
+                resources: [ { kind: 'hp', key: 'hp', label: 'HP' } ]
+            }
+        };
+
+        // Traits apply to every system, so the column is appended once here
+        // rather than repeated in each definition above.
+        Object.keys(SYSTEM_TRACKER_CONFIGS).forEach(sysName => {
+            const cfg = SYSTEM_TRACKER_CONFIGS[sysName];
+            cfg.columns = cfg.columns.concat([traitsColumnDef()]);
+            cfg.icons = Object.assign({}, cfg.icons, TRAIT_ICONS);
+            cfg.legend = cfg.legend.concat(TRAIT_LEGEND_ITEMS);
+        });
+
+        function systemFieldHasValue(pawn, field, cfg) {
+            if (field.kind === 'trait') return hasText((pawn.traits || {})[field.key]);
+            const d = pawn[cfg.statKey] || {};
+            const v = d[field.key];
+            if (field.kind === 'icon') return !!v;
+            if (field.kind === 'checkboxes') { const n = parseInt(v, 10); return !isNaN(n) && n > 0; }
+            if (field.kind === 'recharge') return !!v;
+            if (field.kind === 'modsave') return hasText(v) || hasText(d[field.saveKey]);
+            if (field.kind === 'toughness') return hasText(v) || hasText(d[field.armorKey]);
+            return hasText(v);
+        }
+
+        function systemFieldValueHtml(pawn, field, cfg) {
+            if (field.kind === 'trait') {
+                return `<span class="trait-text">${esc((pawn.traits || {})[field.key])}</span>`;
+            }
+            const d = pawn[cfg.statKey] || {};
+            const v = d[field.key];
+            if (field.kind === 'icon') return v ? '<span class="dnd-yes-mark">&#10003;</span>' : '';
+            if (field.kind === 'checkboxes') {
+                const n = parseInt(v, 10);
+                if (isNaN(n) || n <= 0) return '';
+                let boxes = '<span class="dnd-inline-boxes">';
+                for (let i = 0; i < n; i++) boxes += '<span class="track-box"></span>';
+                return boxes + '</span>';
+            }
+            if (field.kind === 'recharge') {
+                if (!v) return '';
+                const opt = RECHARGE_OPTIONS.find(o => o.value === v);
+                return `<span class="track-box recharge-box">${esc(opt ? opt.label : v)}</span>`;
+            }
+            if (field.kind === 'modsave') {
+                const parts = [];
+                if (hasText(v)) parts.push(esc(String(v).trim()));
+                if (hasText(d[field.saveKey])) parts.push(esc(String(d[field.saveKey]).trim()));
+                return parts.join(' / ');
+            }
+            if (field.kind === 'toughness') {
+                const t = hasText(v) ? esc(String(v).trim()) : '-';
+                const a = d[field.armorKey];
+                return hasText(a) ? `${t} <span class="tough-armor">(${esc(String(a).trim())})</span>` : t;
+            }
+            return esc(v);
+        }
+
+        function systemFieldRowHtml(pawn, field, cfg) {
+            const icon = cfg.icons[field.icon] || '';
+            const cls = field.kind === 'trait' ? 'dnd-stack-row trait-row' : 'dnd-stack-row';
+            return `<div class="${cls}"><span class="dnd-stack-icon" title="${esc(field.label)}">${icon}</span>` +
+                   `<span class="dnd-stack-value">${systemFieldValueHtml(pawn, field, cfg)}</span></div>`;
+        }
+
+        function buildSystemLegendRowHtml(cfg, activeCols, colspanTotal) {
+            // Only advertise icons for columns actually on the page, otherwise
+            // the legend explains symbols the GM can't see anywhere.
+            const activeIcons = new Set();
+            activeCols.forEach(col => col.fields.forEach(f => activeIcons.add(f.icon)));
+            const items = cfg.legend.filter(it => activeIcons.has(it.icon)).map(it =>
+                `<span class="dnd-legend-item">${cfg.icons[it.icon] || ''}<span>${esc(it.label)}</span></span>`
+            ).join('');
+            if (!items) return '';
+            const note = cfg.legendNote
+                ? `<span class="dnd-legend-note">${esc(cfg.legendNote)}</span>` : '';
+            return `<tr class="dnd-legend-row"><td colspan="${colspanTotal}">
+                <span class="dnd-legend-title">Legend:</span>
+                <span class="dnd-legend-items">${items}</span>
+                ${note}
+            </td></tr>`;
+        }
+
+        // Single renderer for all five non-Generic systems. Replaces the
+        // near-identical renderDnd5eTrackerTable / renderCosmereTrackerTable
+        // pair; adding a system is now a config entry, not a new function.
+        function renderSystemTrackerTable(pawnList, cfg) {
+            const activeCols = cfg.columns.filter(col =>
+                col.fields.some(f => pawnList.some(p => systemFieldHasValue(p, f, cfg)))
+            );
+
+            const totalCols = 1 + activeCols.length;
+            const headerRow = buildTrackerHeaderRow(activeCols);
+
+            let html = `<table class="tracker-table"><thead><tr>${headerRow}</tr></thead><tbody>`;
+
+            pawnList.forEach(p => {
+                ensurePawnShape(p);
+                html += `<tr><td style="font-weight:bold;">${buildComboNameNumberCell(p)}</td>`;
+                activeCols.forEach(col => {
+                    html += `<td class="dnd-stack-cell${col.header === 'Traits' ? ' traits-cell' : ''}">`;
+                    col.fields.forEach(f => {
+                        if (systemFieldHasValue(p, f, cfg)) html += systemFieldRowHtml(p, f, cfg);
+                    });
+                    html += `</td>`;
+                });
+                html += `</tr>`;
+                html += buildResourceSubRowHtml(p, cfg, totalCols);
+            });
+
+            html += `</tbody><tfoot>${buildSystemLegendRowHtml(cfg, activeCols, totalCols)}</tfoot></table>`;
+            return html;
+        }
+
+        /* ==================================================================
+           STAT ENTRY FORMS FOR THE NEW SYSTEMS (declarative)
+           ================================================================== */
+
+        // The three new systems are plain text fields throughout, so instead of
+        // three more hand-built DOM functions they share one schema-driven
+        // builder. D&D 5e and Cosmere keep their bespoke builders because they
+        // carry checkbox and select controls.
+        const SYSTEM_FORM_SCHEMAS = {
+            'D&D 4th Edition': [
+                { title: 'Core Stats', cols: 2, fields: [
+                    { key: 'hp', label: 'Hit Points', full: true },
+                    { key: 'bloodied', label: 'Bloodied Value' },
+                    { key: 'speed', label: 'Speed' },
+                    { key: 'surges', label: 'Healing Surges (#)' },
+                    { key: 'actionPoints', label: 'Action Points (#)' }
+                ] },
+                { title: 'Defenses', cols: 2, fields: [
+                    { key: 'ac', label: 'AC' },
+                    { key: 'fort', label: 'Fortitude' },
+                    { key: 'ref', label: 'Reflex' },
+                    { key: 'will', label: 'Will' }
+                ] }
+            ],
+            'Daggerheart': [
+                { title: 'Core Stats', cols: 2, fields: [
+                    { key: 'hp', label: 'Hit Points', full: true },
+                    { key: 'stress', label: 'Stress (#)' },
+                    { key: 'armorScore', label: 'Armor Score' },
+                    { key: 'evasion', label: 'Evasion' },
+                    { key: 'hope', label: 'Hope (#)' },
+                    { key: 'fear', label: 'Fear (#)' }
+                ] },
+                { title: 'Damage Thresholds', cols: 3, fields: [
+                    { key: 'thrMinor', label: 'Minor' },
+                    { key: 'thrMajor', label: 'Major' },
+                    { key: 'thrSevere', label: 'Severe' }
+                ] }
+            ],
+            'Savage Worlds': [
+                { title: 'Core Stats', cols: 2, fields: [
+                    { key: 'pace', label: 'Pace' },
+                    { key: 'parry', label: 'Parry' },
+                    { key: 'toughness', label: 'Toughness (total)' },
+                    { key: 'armor', label: 'Armor (of that total)' }
+                ] },
+                { title: 'Resources', cols: 2, fields: [
+                    { key: 'bennies', label: 'Bennies (#)' },
+                    { key: 'powerPoints', label: 'Power Points (#)' }
+                ] }
+            ]
+        };
+
+        function buildSchemaStatsUI(index, pawn, systemName) {
+            ensurePawnShape(pawn);
+            const data = pawn[SYSTEM_STAT_KEYS[systemName]];
+            const wrap = document.createElement('div'); wrap.className = 'dnd5e-stats-grid';
+
+            SYSTEM_FORM_SCHEMAS[systemName].forEach((section, si) => {
+                const title = document.createElement('div');
+                title.className = 'dnd5e-section-title';
+                if (si === 0) title.style.marginTop = '0';
+                title.innerText = section.title;
+                wrap.appendChild(title);
+
+                const grid = document.createElement('div');
+                grid.className = 'dnd5e-stats-section';
+                grid.style.gridTemplateColumns = `repeat(${section.cols}, 1fr)`;
+
+                section.fields.forEach(f => {
+                    const cell = document.createElement('div');
+                    if (f.full) cell.style.gridColumn = '1 / -1';
+                    const label = document.createElement('label'); label.innerText = f.label;
+                    const input = document.createElement('input'); input.type = 'text';
+                    input.value = data[f.key] || ''; input.placeholder = '-';
+                    input.oninput = (e) => updatePawnSystemStat(index, systemName, f.key, e.target.value);
+                    cell.appendChild(label); cell.appendChild(input);
+                    grid.appendChild(cell);
+                });
+                wrap.appendChild(grid);
+            });
+            return wrap;
+        }
+
+        // Dispatch table replaces the previous if/else chain in renderAll.
+        const SYSTEM_UI_BUILDERS = {
+            'D&D 5th Edition': (i, p) => buildDnd5eStatsUI(i, p),
+            'Cosmere System':  (i, p) => buildCosmereStatsUI(i, p),
+            'D&D 4th Edition': (i, p) => buildSchemaStatsUI(i, p, 'D&D 4th Edition'),
+            'Daggerheart':     (i, p) => buildSchemaStatsUI(i, p, 'Daggerheart'),
+            'Savage Worlds':   (i, p) => buildSchemaStatsUI(i, p, 'Savage Worlds')
+        };
+
+        /* ==================================================================
+           TRAITS UI - shown for every system including Generic
+           ================================================================== */
+
+        const TRAIT_FIELDS = [
+            { key: 'immunities',      label: 'Immunities',            placeholder: 'poison, charmed...' },
+            { key: 'resistances',     label: 'Resistances',           placeholder: 'fire, non-magical B/P/S...' },
+            { key: 'vulnerabilities', label: 'Vulnerabilities',       placeholder: 'radiant, cold...' },
+            { key: 'skills',          label: 'Skills / Proficiencies',placeholder: 'Perception +6, Stealth +4...' }
+        ];
+
+        function buildTraitsUI(index, pawn) {
+            ensurePawnShape(pawn);
+            const wrap = document.createElement('div'); wrap.className = 'dnd5e-stats-grid traits-grid';
+
+            const title = document.createElement('div');
+            title.className = 'dnd5e-section-title'; title.style.marginTop = '0';
+            title.innerText = 'Immunities / Resistances / Skills';
+            wrap.appendChild(title);
+
+            const grid = document.createElement('div');
+            grid.className = 'dnd5e-stats-section';
+            grid.style.gridTemplateColumns = '1fr';
+
+            TRAIT_FIELDS.forEach(f => {
+                const cell = document.createElement('div');
+                const label = document.createElement('label'); label.innerText = f.label;
+                const input = document.createElement('textarea');
+                input.className = 'trait-input'; input.rows = 2;
+                input.value = pawn.traits[f.key] || ''; input.placeholder = f.placeholder;
+                input.oninput = (e) => updatePawnTrait(index, f.key, e.target.value);
+                cell.appendChild(label); cell.appendChild(input);
+                grid.appendChild(cell);
+            });
+            wrap.appendChild(grid);
+            return wrap;
+        }
+
+        /* ==================================================================
+           ACTION CARDS - global library, per-pawn attachment + overrides
+           ================================================================== */
+
+        // One table drives everything: the card creator inputs, the per-pawn
+        // override inputs, and the printed reference sheet. Adding a system
+        // means adding one entry here, nothing else.
+        const SAVE_STAT_OPTIONS = ['', 'STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
+
+        const ACTION_CARD_SCHEMAS = {
+            'D&D 5th Edition': [
+                { key: 'actionType', label: 'Action Type', type: 'select', options: ['Action', 'Bonus Action', 'Reaction', 'Legendary Action', 'Lair Action'] },
+                { key: 'range',      label: 'Range',       type: 'text',   placeholder: '60 ft. cone' },
+                { key: 'atk',        label: 'Attack Bonus (+To Hit)', type: 'text', placeholder: '+11' },
+                { key: 'targetDef',  label: 'Target Defense', type: 'select', options: ['AC'] },
+                { key: 'saveStat',   label: 'Save Stat',   type: 'select', options: SAVE_STAT_OPTIONS },
+                { key: 'saveDc',     label: 'Save DC',     type: 'text',   placeholder: '21' },
+                { key: 'damage',     label: 'Damage',      type: 'text',   placeholder: '18d6 fire' },
+                { key: 'recharge',   label: 'Recharge (d6)', type: 'recharge' }
+            ],
+            'D&D 4th Edition': [
+                { key: 'powerType', label: 'Power Type',  type: 'select', options: ['At-Will', 'Encounter', 'Daily'] },
+                { key: 'range',     label: 'Range / Area', type: 'text',  placeholder: 'Close burst 2' },
+                { key: 'atk',       label: 'Attack Bonus', type: 'text',  placeholder: '+12' },
+                { key: 'targetDef', label: 'Target Defense', type: 'select', options: ['AC', 'Fortitude', 'Reflex', 'Will'] },
+                { key: 'damage',    label: 'Damage / Effect', type: 'text', placeholder: '2d8+5 fire, and ongoing 5' },
+                { key: 'recharge',  label: 'Recharge (d6)', type: 'recharge' }
+            ],
+            'Daggerheart': [
+                { key: 'range',      label: 'Range', type: 'select', options: ['Melee', 'Very Close', 'Close', 'Far', 'Very Far'] },
+                { key: 'atk',        label: 'Attack Modifier', type: 'text', placeholder: '+3' },
+                { key: 'targetDef',  label: 'Target Defense',  type: 'select', options: ['Evasion'] },
+                { key: 'damageType', label: 'Damage Type',     type: 'select', options: ['Physical', 'Magic'] },
+                { key: 'damage',     label: 'Damage Roll',     type: 'text', placeholder: '2d8+3' }
+            ],
+            'Savage Worlds': [
+                { key: 'skill',     label: 'Linked Skill', type: 'select', options: ['Fighting', 'Shooting', 'Athletics', 'Spellcasting', 'Faith', 'Focus', 'Intimidation', 'Taunt', 'Notice', 'Other'] },
+                { key: 'targetDef', label: 'Target Defense', type: 'select', options: ['Parry', 'Toughness'] },
+                { key: 'ap',        label: 'Armor Piercing (AP)', type: 'text', placeholder: '2' },
+                { key: 'damage',    label: 'Damage Roll', type: 'text', placeholder: 'Str+d6' },
+                { key: 'effect',    label: 'Trapping / Effect', type: 'text', placeholder: 'Shaken on raise' }
+            ],
+            'Cosmere System': [
+                { key: 'actionType', label: 'Action Type', type: 'select', options: ['Action', 'Reaction', 'Free Action', 'Activity'] },
+                { key: 'range',      label: 'Range', type: 'text', placeholder: '5 ft.' },
+                { key: 'targetDef',  label: 'Target Defense', type: 'select', options: ['Physical', 'Cognitive', 'Spiritual'] },
+                { key: 'damage',     label: 'Damage Roll', type: 'text', placeholder: '2d6+2' },
+                { key: 'effect',     label: 'Effect', type: 'text', placeholder: 'Target is knocked prone' }
+            ],
+            'Generic': [
+                { key: 'type',        label: 'Type', type: 'text', placeholder: 'Attack / Ability' },
+                { key: 'atk',         label: 'Attack Bonus', type: 'text', placeholder: '+5' },
+                { key: 'damage',      label: 'Damage', type: 'text', placeholder: '1d8+3' },
+                { key: 'description', label: 'Description', type: 'textarea', placeholder: 'What the ability does...' }
+            ]
+        };
+
+        function actionSchemaFor(systemName) {
+            return ACTION_CARD_SCHEMAS[systemName] || ACTION_CARD_SCHEMAS['Generic'];
+        }
+
+        function newCardId() {
+            return 'ac_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+        }
+
+        function getActionCard(cardId) {
+            return state.actionCards.find(c => c.id === cardId) || null;
+        }
+
+        // Resolved view of an attachment: base card values with the pawn's
+        // overrides layered on top. Also reports which keys were overridden so
+        // the UI and the printed sheet can flag them.
+        function resolveAction(attachment) {
+            const card = getActionCard(attachment.cardId);
+            if (!card) return null;
+            const overrides = attachment.overrides || {};
+            return {
+                card: card,
+                name: hasText(overrides.name) ? overrides.name : card.name,
+                fields: Object.assign({}, card.fields, overrides),
+                isOverridden: (key) => Object.prototype.hasOwnProperty.call(overrides, key)
+            };
+        }
+
+        function createActionCard(systemName) {
+            const card = {
+                id: newCardId(),
+                system: SYSTEMS.includes(systemName) ? systemName : 'Generic',
+                name: 'New Action',
+                fields: {}
+            };
+            actionSchemaFor(card.system).forEach(f => {
+                card.fields[f.key] = (f.type === 'select' && f.options && f.options[0]) ? f.options[0] : '';
+            });
+            state.actionCards.push(card);
+            cardUi.editingId = card.id;
+            renderCardManager();
+            renderAll();
+            return card;
+        }
+
+        function updateActionCard(cardId, key, value) {
+            const card = getActionCard(cardId);
+            if (!card) return;
+            if (key === 'name') card.name = value; else card.fields[key] = value;
+            // Re-render attached pawn rows so non-overridden values track the
+            // base card live, but don't rebuild the modal (it would steal focus
+            // from the input being typed into).
+            renderAll();
+        }
+
+        function duplicateActionCard(cardId) {
+            const card = getActionCard(cardId);
+            if (!card) return;
+            const copy = { id: newCardId(), system: card.system, name: card.name + ' (copy)', fields: { ...card.fields } };
+            state.actionCards.push(copy);
+            cardUi.editingId = copy.id;
+            renderCardManager();
+            renderAll();
+        }
+
+        function deleteActionCard(cardId) {
+            const card = getActionCard(cardId);
+            if (!card) return;
+            const usedBy = state.pawns.filter(p => (p.actions || []).some(a => a.cardId === cardId)).length;
+            const msg = usedBy > 0
+                ? `Delete "${card.name}"? It is attached to ${usedBy} pawn${usedBy > 1 ? 's' : ''}, and those attachments will be removed too.`
+                : `Delete "${card.name}"?`;
+            if (!confirm(msg)) return;
+            state.actionCards = state.actionCards.filter(c => c.id !== cardId);
+            // Cascade, or pawns would hold dangling references.
+            state.pawns.forEach(p => {
+                p.actions = (p.actions || []).filter(a => a.cardId !== cardId);
+            });
+            if (cardUi.editingId === cardId) cardUi.editingId = null;
+            renderCardManager();
+            renderAll();
+        }
+
+        /* ---------- per-pawn attachment ---------- */
+
+        function attachActionCard(index, cardId) {
+            if (!cardId) return;
+            const pawn = ensurePawnShape(state.pawns[index]);
+            pawn.actions.push({ cardId: cardId, overrides: {} });
+            renderAll();
+        }
+
+        function detachActionCard(index, position) {
+            const pawn = ensurePawnShape(state.pawns[index]);
+            pawn.actions.splice(position, 1);
+            renderAll();
+        }
+
+        // Only genuinely different values are stored. Setting a field back to
+        // the card's base value deletes the override rather than storing a
+        // duplicate, which keeps saved files clean and makes "is overridden?"
+        // a simple key check.
+        function setActionOverride(index, position, key, value) {
+            const pawn = ensurePawnShape(state.pawns[index]);
+            const attachment = pawn.actions[position];
+            if (!attachment) return;
+            const card = getActionCard(attachment.cardId);
+            if (!card) return;
+            const baseValue = key === 'name' ? card.name : (card.fields[key] || '');
+            if (String(value) === String(baseValue)) delete attachment.overrides[key];
+            else attachment.overrides[key] = value;
+            if (state.showCards) renderCardsPage();
+        }
+
+        function clearActionOverride(index, position, key) {
+            const pawn = ensurePawnShape(state.pawns[index]);
+            const attachment = pawn.actions[position];
+            if (!attachment) return;
+            delete attachment.overrides[key];
+            renderAll();
+        }
+
+        function buildPawnActionsUI(index, pawn) {
+            ensurePawnShape(pawn);
+            const systemName = pawn.system || 'Generic';
+            const wrap = document.createElement('div'); wrap.className = 'dnd5e-stats-grid actions-grid';
+
+            const title = document.createElement('div');
+            title.className = 'dnd5e-section-title'; title.style.marginTop = '0';
+            title.innerText = 'Action Cards';
+            wrap.appendChild(title);
+
+            const library = state.actionCards.filter(c => c.system === systemName);
+
+            const attachRow = document.createElement('div'); attachRow.className = 'attach-row';
+            const sel = document.createElement('select'); sel.className = 'attach-select';
+            if (library.length === 0) {
+                const o = document.createElement('option');
+                o.value = ''; o.innerText = `— No ${systemName} cards yet —`;
+                sel.appendChild(o); sel.disabled = true;
+            } else {
+                const o = document.createElement('option'); o.value = ''; o.innerText = '— Select a card —';
+                sel.appendChild(o);
+                library.forEach(c => {
+                    const opt = document.createElement('option'); opt.value = c.id; opt.innerText = c.name;
+                    sel.appendChild(opt);
+                });
+            }
+            const addBtn = document.createElement('button');
+            addBtn.className = 'attach-btn'; addBtn.innerText = 'Attach';
+            addBtn.disabled = library.length === 0;
+            addBtn.onclick = () => attachActionCard(index, sel.value);
+
+            const manageBtn = document.createElement('button');
+            manageBtn.className = 'attach-btn manage-btn'; manageBtn.innerText = 'Library…';
+            manageBtn.title = 'Open the global Action Card library';
+            manageBtn.onclick = () => openCardManager(systemName);
+
+            attachRow.appendChild(sel); attachRow.appendChild(addBtn); attachRow.appendChild(manageBtn);
+            wrap.appendChild(attachRow);
+
+            pawn.actions.forEach((attachment, position) => {
+                const resolved = resolveAction(attachment);
+                if (!resolved) return;
+
+                const block = document.createElement('div'); block.className = 'attached-card';
+
+                const head = document.createElement('div'); head.className = 'attached-card-head';
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'attached-card-name'; nameSpan.innerText = resolved.name;
+                const delBtn = document.createElement('button');
+                delBtn.className = 'attached-del'; delBtn.innerHTML = '&times;';
+                delBtn.title = 'Detach this card';
+                delBtn.onclick = () => detachActionCard(index, position);
+                head.appendChild(nameSpan); head.appendChild(delBtn);
+                block.appendChild(head);
+
+                const fieldsWrap = document.createElement('div'); fieldsWrap.className = 'override-fields';
+
+                // Name is overridable too - handy for "Fire Breath (Alpha)".
+                const schema = [{ key: 'name', label: 'Name', type: 'text' }].concat(actionSchemaFor(systemName));
+
+                schema.forEach(f => {
+                    const cell = document.createElement('div'); cell.className = 'override-cell';
+                    const label = document.createElement('label'); label.innerText = f.label;
+
+                    const controlRow = document.createElement('div'); controlRow.className = 'override-control';
+                    const value = f.key === 'name' ? resolved.name : (resolved.fields[f.key] || '');
+                    let input;
+
+                    if (f.type === 'select' || f.type === 'recharge') {
+                        input = document.createElement('select');
+                        const opts = f.type === 'recharge'
+                            ? RECHARGE_OPTIONS
+                            : f.options.map(o => ({ value: o, label: o || '— None —' }));
+                        opts.forEach(o => {
+                            const opt = document.createElement('option');
+                            opt.value = o.value; opt.innerText = o.label;
+                            if (String(value) === String(o.value)) opt.selected = true;
+                            input.appendChild(opt);
+                        });
+                        input.onchange = (e) => { setActionOverride(index, position, f.key, e.target.value); renderAll(); };
+                    } else if (f.type === 'textarea') {
+                        input = document.createElement('textarea'); input.rows = 2;
+                        input.value = value;
+                        input.oninput = (e) => setActionOverride(index, position, f.key, e.target.value);
+                    } else {
+                        input = document.createElement('input'); input.type = 'text';
+                        input.value = value; input.placeholder = f.placeholder || '-';
+                        input.oninput = (e) => setActionOverride(index, position, f.key, e.target.value);
+                    }
+
+                    if (resolved.isOverridden(f.key)) input.classList.add('override-active');
+                    controlRow.appendChild(input);
+
+                    if (resolved.isOverridden(f.key)) {
+                        const reset = document.createElement('button');
+                        reset.className = 'reset-slider-btn override-reset';
+                        reset.innerHTML = '↺';
+                        reset.title = 'Revert to the library card value';
+                        reset.onclick = () => clearActionOverride(index, position, f.key);
+                        controlRow.appendChild(reset);
+                    }
+
+                    cell.appendChild(label); cell.appendChild(controlRow);
+                    fieldsWrap.appendChild(cell);
+                });
+
+                block.appendChild(fieldsWrap);
+                wrap.appendChild(block);
+            });
+
+            return wrap;
+        }
+
+        /* ---------- global card library modal ---------- */
+
+        // Keyed by card id, never by list position, because state.actionCards
+        // can be reordered/filtered underneath an open modal.
+        let cardUi = { system: 'D&D 5th Edition', editingId: null };
+
+        function openCardManager(systemName) {
+            if (systemName && SYSTEMS.includes(systemName)) cardUi.system = systemName;
+            document.getElementById('card-modal').style.display = 'flex';
+            renderCardManager();
+        }
+
+        function closeCardManager() {
+            document.getElementById('card-modal').style.display = 'none';
+            cardUi.editingId = null;
+        }
+
+        function renderCardManager() {
+            const body = document.getElementById('card-modal-body');
+            if (!body) return;
+            body.innerHTML = '';
+
+            const bar = document.createElement('div'); bar.className = 'card-modal-bar';
+            const sysLabel = document.createElement('label');
+            sysLabel.className = 'system-label'; sysLabel.innerText = 'System:';
+            const sysSel = document.createElement('select'); sysSel.className = 'system-select';
+            SYSTEMS.forEach(sys => {
+                const o = document.createElement('option'); o.value = sys; o.innerText = sys;
+                if (cardUi.system === sys) o.selected = true;
+                sysSel.appendChild(o);
+            });
+            sysSel.onchange = (e) => { cardUi.system = e.target.value; cardUi.editingId = null; renderCardManager(); };
+
+            const newBtn = document.createElement('button');
+            newBtn.className = 'attach-btn new-card-btn'; newBtn.innerText = '+ New Card';
+            newBtn.onclick = () => createActionCard(cardUi.system);
+
+            bar.appendChild(sysLabel); bar.appendChild(sysSel); bar.appendChild(newBtn);
+            body.appendChild(bar);
+
+            const cards = state.actionCards.filter(c => c.system === cardUi.system);
+            if (cards.length === 0) {
+                const empty = document.createElement('p'); empty.className = 'card-empty';
+                empty.innerText = `No ${cardUi.system} cards yet. Create one, then attach it to any ${cardUi.system} pawn.`;
+                body.appendChild(empty);
+                return;
+            }
+
+            cards.forEach(card => {
+                const row = document.createElement('div'); row.className = 'card-row';
+
+                const head = document.createElement('div'); head.className = 'card-row-head';
+                const name = document.createElement('span'); name.className = 'card-row-name'; name.innerText = card.name;
+                const uses = state.pawns.filter(p => (p.actions || []).some(a => a.cardId === card.id)).length;
+                const badge = document.createElement('span'); badge.className = 'card-row-uses';
+                badge.innerText = uses ? `${uses} pawn${uses > 1 ? 's' : ''}` : 'unused';
+
+                const editBtn = document.createElement('button'); editBtn.className = 'attach-btn';
+                editBtn.innerText = cardUi.editingId === card.id ? 'Close' : 'Edit';
+                editBtn.onclick = () => {
+                    cardUi.editingId = cardUi.editingId === card.id ? null : card.id;
+                    renderCardManager();
+                };
+                const dupBtn = document.createElement('button'); dupBtn.className = 'attach-btn';
+                dupBtn.innerText = 'Duplicate'; dupBtn.onclick = () => duplicateActionCard(card.id);
+                const delBtn = document.createElement('button'); delBtn.className = 'attach-btn danger-btn';
+                delBtn.innerText = 'Delete'; delBtn.onclick = () => deleteActionCard(card.id);
+
+                head.appendChild(name); head.appendChild(badge);
+                head.appendChild(editBtn); head.appendChild(dupBtn); head.appendChild(delBtn);
+                row.appendChild(head);
+
+                if (cardUi.editingId === card.id) {
+                    const form = document.createElement('div'); form.className = 'card-edit-form';
+                    const schema = [{ key: 'name', label: 'Card Name', type: 'text' }].concat(actionSchemaFor(card.system));
+
+                    schema.forEach(f => {
+                        const cell = document.createElement('div'); cell.className = 'card-edit-cell';
+                        const label = document.createElement('label'); label.innerText = f.label;
+                        const value = f.key === 'name' ? card.name : (card.fields[f.key] || '');
+                        let input;
+
+                        if (f.type === 'select' || f.type === 'recharge') {
+                            input = document.createElement('select');
+                            const opts = f.type === 'recharge'
+                                ? RECHARGE_OPTIONS
+                                : f.options.map(o => ({ value: o, label: o || '— None —' }));
+                            opts.forEach(o => {
+                                const opt = document.createElement('option');
+                                opt.value = o.value; opt.innerText = o.label;
+                                if (String(value) === String(o.value)) opt.selected = true;
+                                input.appendChild(opt);
+                            });
+                            input.onchange = (e) => updateActionCard(card.id, f.key, e.target.value);
+                        } else if (f.type === 'textarea') {
+                            input = document.createElement('textarea'); input.rows = 3; input.value = value;
+                            input.oninput = (e) => updateActionCard(card.id, f.key, e.target.value);
+                        } else {
+                            input = document.createElement('input'); input.type = 'text';
+                            input.value = value; input.placeholder = f.placeholder || '-';
+                            input.oninput = (e) => {
+                                updateActionCard(card.id, f.key, e.target.value);
+                                if (f.key === 'name') name.innerText = e.target.value;
+                            };
+                        }
+
+                        cell.appendChild(label); cell.appendChild(input);
+                        form.appendChild(cell);
+                    });
+                    row.appendChild(form);
+                }
+                body.appendChild(row);
+            });
+        }
+
+        /* ---------- Sheet 2: printed Action Card reference ---------- */
+
+        function renderCardsPage() {
+            const page = document.getElementById('cards-page');
+            if (!page) return;
+
+            const withActions = state.pawns.filter(p => (p.actions || []).length > 0);
+            if (!state.showCards || withActions.length === 0) {
+                page.style.display = 'none';
+                page.innerHTML = '';
+                return;
+            }
+
+            page.style.display = 'block';
+            let html = `<h2>Action Card Reference</h2>`;
+
+            withActions.forEach(pawn => {
+                const systemName = pawn.system || 'Generic';
+                const schema = actionSchemaFor(systemName);
+
+                let cardsHtml = '';
+                pawn.actions.forEach(attachment => {
+                    const resolved = resolveAction(attachment);
+                    if (!resolved) return;
+
+                    let fieldsHtml = '';
+                    schema.forEach(f => {
+                        const raw = resolved.fields[f.key];
+                        if (!hasText(raw)) return;
+                        let shown = raw;
+                        if (f.type === 'recharge') {
+                            const opt = RECHARGE_OPTIONS.find(o => o.value === raw);
+                            shown = 'Recharge ' + (opt ? opt.label : raw);
+                        }
+                        const overCls = resolved.isOverridden(f.key) ? ' acf-override' : '';
+                        fieldsHtml += `<div class="acf${overCls}">` +
+                            `<span class="acf-label">${esc(f.label)}</span>` +
+                            `<span class="acf-value">${esc(shown)}</span></div>`;
+                    });
+
+                    const nameCls = resolved.isOverridden('name') ? ' acf-override-name' : '';
+                    cardsHtml += `<div class="action-card">
+                        <div class="action-card-head">
+                            <span class="action-card-name${nameCls}">${esc(resolved.name)}</span>
+                        </div>
+                        <div class="action-card-body">${fieldsHtml || '<div class="acf-empty">No values set.</div>'}</div>
+                    </div>`;
+                });
+
+                if (!cardsHtml) return;
+                html += `<div class="card-pawn-block">
+                    <h3 class="card-pawn-title">${buildComboNameNumberCell(pawn)}
+                        <span class="card-pawn-sys">${esc(systemName)}</span></h3>
+                    <div class="card-pawn-cards">${cardsHtml}</div>
+                </div>`;
+            });
+
+            page.innerHTML = html;
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
@@ -1919,16 +3440,89 @@
             await loadProjectFromJSON(getFallbackProjectData());
         });
 
-        // PWA: register the service worker so the app can be installed and used
-        // offline. Registration failures (e.g. served over plain http, or the
-        // file simply isn't present on this deployment) are logged, not fatal -
-        // the app still works normally, it just won't be installable/offline.
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('service-worker.js')
-                    .catch((err) => console.log('Service worker registration failed:', err));
+        /* ==================================================================
+           PWA
+           Service workers require a secure origin - https, or localhost. Opened
+           straight off disk (file://) registration always throws, so it is
+           skipped rather than logging a scary error every load. The app is
+           fully functional either way; the worker only adds offline support.
+           ================================================================== */
+        function initServiceWorker() {
+            if (!('serviceWorker' in navigator)) return;
+            if (!window.isSecureContext || location.protocol === 'file:') {
+                console.log('Offline support needs https (or localhost). Running without a service worker.');
+                return;
+            }
+
+            navigator.serviceWorker.register('service-worker.js').then(reg => {
+                // Surface a new build instead of stranding the user on a cached
+                // one until every tab is closed.
+                reg.addEventListener('updatefound', () => {
+                    const incoming = reg.installing;
+                    if (!incoming) return;
+                    incoming.addEventListener('statechange', () => {
+                        if (incoming.state === 'installed' && navigator.serviceWorker.controller) {
+                            showUpdateToast(reg);
+                        }
+                    });
+                });
+            }).catch(err => console.log('Service worker registration failed:', err));
+
+            let reloading = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (reloading) return;
+                reloading = true;
+                location.reload();
             });
         }
+
+        function showUpdateToast(reg) {
+            if (document.getElementById('pwa-update-toast')) return;
+            const toast = document.createElement('div');
+            toast.id = 'pwa-update-toast';
+            toast.className = 'pwa-toast';
+            toast.innerHTML = '<span>A new version is ready.</span>';
+            const btn = document.createElement('button');
+            btn.innerText = 'Reload';
+            btn.onclick = () => {
+                if (reg.waiting) reg.waiting.postMessage('SKIP_WAITING');
+                else location.reload();
+            };
+            const dismiss = document.createElement('button');
+            dismiss.className = 'pwa-toast-dismiss';
+            dismiss.innerHTML = '&times;';
+            dismiss.title = 'Dismiss';
+            dismiss.onclick = () => toast.remove();
+            toast.appendChild(btn); toast.appendChild(dismiss);
+            document.body.appendChild(toast);
+        }
+
+        // Chrome fires this instead of showing its own install affordance in
+        // some contexts; capturing it lets the header button drive the prompt.
+        let deferredInstallPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+            const btn = document.getElementById('install-app-btn');
+            if (btn) btn.style.display = 'inline-block';
+        });
+
+        async function triggerInstall() {
+            if (!deferredInstallPrompt) return;
+            deferredInstallPrompt.prompt();
+            await deferredInstallPrompt.userChoice;
+            deferredInstallPrompt = null;
+            const btn = document.getElementById('install-app-btn');
+            if (btn) btn.style.display = 'none';
+        }
+
+        window.addEventListener('appinstalled', () => {
+            deferredInstallPrompt = null;
+            const btn = document.getElementById('install-app-btn');
+            if (btn) btn.style.display = 'none';
+        });
+
+        initServiceWorker();
     </script>
 </body>
 </html>
