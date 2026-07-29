@@ -29,6 +29,15 @@ An **Install App** button appears in the header once the browser signals the app
 installable. When a new build is deployed, an "A new version is ready" prompt appears
 rather than leaving you on a stale cached copy.
 
+## Editing pawns
+
+The editor slides in from the **right side of the window** rather than expanding
+underneath a pawn, so the grid never reflows while you work and the pawn stays
+visible beside its own settings. One pawn is open at a time; `Esc` closes it.
+
+Panel order follows dependency: **System** first (it decides which stat fields exist),
+then Name/Number, stats, traits, Action Cards, appearance, and image position.
+
 ## Systems supported
 
 Generic · D&D 5th Edition · D&D 4th Edition · Daggerheart · Savage Worlds · Cosmere "Plotweaver"
@@ -53,6 +62,23 @@ Denominations differ by border weight, box size *and* printed number, so they st
 distinguishable on a cheap laser printer.
 
 The distribution is lossless: the boxes always sum to exactly the stated HP total.
+
+The HP controls only appear where they mean something. Savage Worlds has no HP stat
+at all (Wounds and Fatigue are fixed-length tracks), so neither control shows.
+Daggerheart and Cosmere keep Standard/Adaptive but hide the x1/x5/x10 box scaling,
+since their pools are already small. A previously saved scale value is preserved even
+while the control is hidden.
+
+Savage Worlds **Power Points are numbered** (1..N) — pools run to 15-20, and unnumbered
+squares are unreadable mid-fight. Bennies stay blank, since three boxes need no labels.
+
+## Empty projects
+
+With no pawns loaded you get a start-here panel including a **Load the sample
+encounter** button. That sample is also what loads on first run: eight pawns spanning
+all six systems, all three pawn sizes, both HP modes, traits, and Action Cards with
+per-pawn overrides — with both output sheets already enabled so the tracker and card
+reference are visible immediately.
 
 ## Project files
 

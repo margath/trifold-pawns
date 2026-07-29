@@ -722,6 +722,93 @@
         .pwa-toast button:hover { background: #2980b9; }
         .pwa-toast .pwa-toast-dismiss { background: none; color: #999; font-size: 18px; padding: 0 4px; }
         @media print { .pwa-toast, .install-btn { display: none !important; } }
+
+        /* ==================================================================
+           PAWN EDITOR SIDE DRAWER
+           Replaces the old inline panel that expanded underneath a pawn and
+           shoved the rest of the grid around on every open/close.
+           ================================================================== */
+        .edit-drawer {
+            position: fixed; top: 70px; right: 0; bottom: 0;
+            width: 410px; max-width: 94vw;
+            background: #f5f5f5; color: #222;
+            border-left: 1px solid #999;
+            box-shadow: -10px 0 32px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column;
+            transform: translateX(102%);
+            transition: transform 0.22s ease-out;
+            z-index: 160;
+        }
+        body.drawer-open .edit-drawer { transform: translateX(0); }
+
+        .edit-drawer-header {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 10px; padding: 12px 14px;
+            background: #1e1e1e; color: #fff;
+            border-bottom: 1px solid #444; flex-shrink: 0;
+        }
+        .edit-drawer-header h2 {
+            margin: 0; font-size: 15px; font-weight: bold;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .edit-drawer-close {
+            background: none; border: none; color: #bbb; font-size: 26px;
+            line-height: 1; cursor: pointer; padding: 0 4px; flex-shrink: 0;
+        }
+        .edit-drawer-close:hover { color: #fff; }
+
+        .edit-drawer-body {
+            overflow-y: auto; overflow-x: hidden;
+            padding: 12px 14px 40px; flex: 1;
+        }
+        /* Inside the drawer the panel is the whole surface, so it drops the
+           divider and top margin it needed when it lived under a pawn. */
+        .edit-drawer .pawn-settings { margin-top: 0; border-top: none; padding-top: 0; }
+
+        /* The system picker leads the panel and is visually promoted, because it
+           determines which stat fields exist beneath it. */
+        .drawer-system-row {
+            background: #e8eef3; border: 1px solid #c5d3de; border-radius: 6px;
+            padding: 8px 10px; gap: 10px; align-items: center;
+        }
+        .drawer-system-row .system-label { font-size: 12px; color: #34495e; }
+        .drawer-system-row .system-select { flex: 1; padding: 6px; font-size: 13px; font-weight: bold; }
+
+        /* Wide screens get the page nudged clear of the drawer; narrower ones let
+           it overlay, which beats forcing a horizontal scrollbar. */
+        @media (min-width: 1500px) {
+            body.drawer-open .content-wrapper { padding-right: 410px; transition: padding-right 0.22s ease-out; }
+        }
+
+        /* Marks which pawn the drawer is currently editing. */
+        .pawn-wrapper.is-editing {
+            outline: 2px solid #3498db;
+            outline-offset: 2px;
+            background: #eef6fc;
+        }
+
+        /* ==================================================================
+           EMPTY PROJECT STATE
+           ================================================================== */
+        .empty-state {
+            width: 100%; text-align: center; color: #555;
+            padding: 60px 20px; box-sizing: border-box;
+        }
+        .empty-state-icon { font-size: 46px; line-height: 1; margin-bottom: 6px; }
+        .empty-state h2 { margin: 0 0 8px 0; font-size: 20px; color: #333; }
+        .empty-state p { margin: 0 auto 16px; font-size: 13px; max-width: 420px; line-height: 1.6; color: #666; }
+        .empty-state-btn { width: auto !important; padding: 10px 22px !important; font-size: 14px !important; }
+        .empty-state-hint { font-size: 11px !important; color: #999 !important; margin-top: 12px !important; font-style: italic; }
+
+        /* Numbered Power Point boxes need room for two digits. */
+        .pp-box { min-width: 21px; font-size: 9px; color: #5b2c6f; }
+
+        @media print {
+            .edit-drawer { display: none !important; }
+            body.drawer-open .content-wrapper { padding-right: 0 !important; }
+            .pawn-wrapper.is-editing { outline: none !important; background: transparent !important; }
+            .empty-state { display: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -845,6 +932,16 @@
             </div>
 
         </footer>
+
+        <!-- Pawn editor. Slides in from the right so the pawn stays visible and
+             the grid never reflows around an expanding inline panel. -->
+        <aside class="edit-drawer" id="edit-drawer" aria-label="Pawn editor">
+            <div class="edit-drawer-header">
+                <h2 id="edit-drawer-title">Pawn</h2>
+                <button class="edit-drawer-close" onclick="closeEditDrawer()" title="Close editor (Esc)">&times;</button>
+            </div>
+            <div class="edit-drawer-body" id="edit-drawer-body"></div>
+        </aside>
 
         <!-- Global Action Card library. Hidden by default and never printed. -->
         <div class="card-modal" id="card-modal">
@@ -1140,18 +1237,54 @@
             Object.assign(state.pawns[index], styleClipboard);
             renderAll(); 
         }
-
+        // Only one pawn can be open at a time - the drawer is a single surface,
+        // and editing two pawns at once was never possible in the old inline UI
+        // in any useful way either.
         function toggleEdit(index) {
-            state.pawns[index].isEditing = !state.pawns[index].isEditing;
-            const settingsDiv = document.getElementById(`settings-${index}`);
-            const editBtn = document.getElementById(`edit-btn-${index}`);
-            if (state.pawns[index].isEditing) {
-                settingsDiv.style.display = 'flex';
-                editBtn.innerHTML = '▲ Hide Controls';
-            } else {
-                settingsDiv.style.display = 'none';
-                editBtn.innerHTML = '▼ Edit Controls';
+            const wasEditing = state.pawns[index].isEditing;
+            state.pawns.forEach(p => p.isEditing = false);
+            state.pawns[index].isEditing = !wasEditing;
+            refreshEditButtons();
+            renderEditDrawer();
+        }
+
+        function closeEditDrawer() {
+            state.pawns.forEach(p => p.isEditing = false);
+            refreshEditButtons();
+            renderEditDrawer();
+        }
+
+        // Cheaper than a full renderAll just to relabel buttons and move a
+        // highlight, and it avoids re-rasterising every pawn canvas.
+        function refreshEditButtons() {
+            state.pawns.forEach((pawn, i) => {
+                const btn = document.getElementById(`edit-btn-${i}`);
+                if (btn) btn.innerHTML = pawn.isEditing ? '✕ Close Editor' : '✎ Edit Pawn';
+                const wrap = document.getElementById(`pawn-wrapper-${i}`);
+                if (wrap) wrap.classList[pawn.isEditing ? 'add' : 'remove']('is-editing');
+            });
+        }
+
+        function renderEditDrawer() {
+            const drawer = document.getElementById('edit-drawer');
+            const body = document.getElementById('edit-drawer-body');
+            const titleEl = document.getElementById('edit-drawer-title');
+            if (!drawer || !body) return;
+
+            const index = state.pawns.findIndex(p => p.isEditing);
+            if (index === -1) {
+                document.body.classList.remove('drawer-open');
+                body.innerHTML = '';
+                return;
             }
+
+            const pawn = ensurePawnShape(state.pawns[index]);
+            const num = (pawn.number || '').toString().trim();
+            titleEl.innerText = (num ? `#${num} ` : '') + (pawn.name || 'Unnamed pawn');
+
+            body.innerHTML = '';
+            body.appendChild(buildPawnSettings(index, pawn));
+            document.body.classList.add('drawer-open');
         }
 
         function updatePawnValue(index, field, value) {
@@ -1948,7 +2081,6 @@
             html += `</tbody></table>`;
             return html;
         }
-
         function renderAll() {
             state.pawns.sort((a, b) => {
                 const widthA = a.pawnWidth || state.pawnWidth;
@@ -1957,10 +2089,17 @@
             });
 
             pageEl.innerHTML = '';
+
+            if (state.pawns.length === 0) {
+                pageEl.appendChild(buildEmptyState());
+            }
+
             state.pawns.forEach((pawn, index) => {
                 ensurePawnShape(pawn);
-                const wrapper = document.createElement('div'); wrapper.className = 'pawn-wrapper'; wrapper.id = `pawn-wrapper-${index}`;
-                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'pawn-wrapper' + (pawn.isEditing ? ' is-editing' : '');
+                wrapper.id = `pawn-wrapper-${index}`;
+
                 const leftActions = document.createElement('div'); leftActions.className = 'action-group-left';
                 const dupBtn = document.createElement('button'); dupBtn.className = 'circle-btn btn-dup'; dupBtn.innerHTML = '+';
                 dupBtn.title = 'Duplicate Pawn'; dupBtn.onclick = () => duplicatePawn(index); leftActions.appendChild(dupBtn);
@@ -1980,90 +2119,153 @@
                 wrapper.appendChild(canvasContainer);
 
                 const editBtn = document.createElement('button'); editBtn.className = 'edit-toggle-btn'; editBtn.id = `edit-btn-${index}`;
-                editBtn.innerHTML = pawn.isEditing ? '▲ Hide Controls' : '▼ Edit Controls';
+                editBtn.innerHTML = pawn.isEditing ? '✕ Close Editor' : '✎ Edit Pawn';
                 editBtn.onclick = () => toggleEdit(index); wrapper.appendChild(editBtn);
 
-                const settingsDiv = document.createElement('div'); settingsDiv.className = 'pawn-settings';
-                settingsDiv.id = `settings-${index}`; settingsDiv.style.display = pawn.isEditing ? 'flex' : 'none';
+                pageEl.appendChild(wrapper);
+                renderSinglePawn(index);
+            });
 
-                const inputs = document.createElement('div'); inputs.className = 'pawn-inputs';
-                const nameInput = document.createElement('input'); nameInput.type = 'text'; nameInput.className = 'input-name';
-                nameInput.placeholder = 'Name...'; nameInput.value = pawn.name; nameInput.oninput = (e) => updatePawnValue(index, 'name', e.target.value);
-                const numInput = document.createElement('input'); numInput.type = 'text'; numInput.className = 'input-number';
-                numInput.placeholder = '#'; numInput.value = pawn.number; numInput.oninput = (e) => updatePawnValue(index, 'number', e.target.value);
-                inputs.appendChild(nameInput); inputs.appendChild(numInput); settingsDiv.appendChild(inputs);
+            renderTable();
+            // The drawer is rebuilt from scratch after every structural change,
+            // because the sort above invalidates the indices its handlers close
+            // over. pawn.isEditing (not an index) is the source of truth for
+            // which pawn is open, so it survives reordering.
+            renderEditDrawer();
 
-                const systemRow = document.createElement('div'); systemRow.className = 'pawn-inputs system-row';
-                const systemLabel = document.createElement('label'); systemLabel.className = 'system-label'; systemLabel.innerText = 'System:';
-                const systemSel = document.createElement('select'); systemSel.className = 'system-select';
-                SYSTEMS.forEach(sys => {
-                    const opt = document.createElement('option'); opt.value = sys; opt.innerText = sys;
-                    if ((pawn.system || 'Generic') === sys) opt.selected = true;
-                    systemSel.appendChild(opt);
+            updateCardCountBadge();
+            const modal = document.getElementById('card-modal');
+            if (modal && modal.style.display === 'flex') renderCardManager();
+        }
+
+        // Shown when a project has no pawns at all - an empty white page gives no
+        // clue what the tool does or how to start.
+        function buildEmptyState() {
+            const box = document.createElement('div');
+            box.className = 'empty-state';
+            box.innerHTML = `
+                <div class="empty-state-icon">🎲</div>
+                <h2>No pawns yet</h2>
+                <p>Drop transparent PNGs anywhere on this page, paste from your clipboard,
+                   or browse for files using the panel below.</p>
+            `;
+            const btn = document.createElement('button');
+            btn.className = 'primary empty-state-btn';
+            btn.innerText = 'Load the sample encounter';
+            btn.onclick = () => loadProjectFromJSON(getFallbackProjectData());
+            box.appendChild(btn);
+            const hint = document.createElement('p');
+            hint.className = 'empty-state-hint';
+            hint.innerText = 'The sample covers all six systems, Adaptive HP, and Action Cards with overrides.';
+            box.appendChild(hint);
+            return box;
+        }
+
+        // Extracted from renderAll so the same panel can be built into the side
+        // drawer. Order follows the system picker downwards, because the chosen
+        // system determines which stat fields exist below it.
+        function buildPawnSettings(index, pawn) {
+            const settingsDiv = document.createElement('div');
+            settingsDiv.className = 'pawn-settings';
+            settingsDiv.id = `settings-${index}`;
+
+            // --- 1. System (first: it decides the shape of everything below) ---
+            const systemRow = document.createElement('div'); systemRow.className = 'pawn-inputs system-row drawer-system-row';
+            const systemLabel = document.createElement('label'); systemLabel.className = 'system-label'; systemLabel.innerText = 'System';
+            const systemSel = document.createElement('select'); systemSel.className = 'system-select';
+            SYSTEMS.forEach(sys => {
+                const opt = document.createElement('option'); opt.value = sys; opt.innerText = sys;
+                if ((pawn.system || 'Generic') === sys) opt.selected = true;
+                systemSel.appendChild(opt);
+            });
+            systemSel.onchange = (e) => updatePawnSystem(index, e.target.value);
+            systemRow.appendChild(systemLabel); systemRow.appendChild(systemSel);
+            settingsDiv.appendChild(systemRow);
+
+            // --- 2. Identity ---
+            const idTitle = document.createElement('div');
+            idTitle.className = 'field-section-title'; idTitle.innerText = 'Name & Number';
+            settingsDiv.appendChild(idTitle);
+            const inputs = document.createElement('div'); inputs.className = 'pawn-inputs';
+            const nameInput = document.createElement('input'); nameInput.type = 'text'; nameInput.className = 'input-name';
+            nameInput.placeholder = 'Name...'; nameInput.value = pawn.name;
+            nameInput.oninput = (e) => { updatePawnValue(index, 'name', e.target.value); syncDrawerTitle(index); };
+            const numInput = document.createElement('input'); numInput.type = 'text'; numInput.className = 'input-number';
+            numInput.placeholder = '#'; numInput.value = pawn.number;
+            numInput.oninput = (e) => { updatePawnValue(index, 'number', e.target.value); syncDrawerTitle(index); };
+            inputs.appendChild(nameInput); inputs.appendChild(numInput);
+            settingsDiv.appendChild(inputs);
+
+            // --- 3. System stats ---
+            const systemBuilder = SYSTEM_UI_BUILDERS[pawn.system];
+            if (systemBuilder) {
+                settingsDiv.appendChild(systemBuilder(index, pawn));
+            } else {
+                const statsTitle = document.createElement('div'); statsTitle.className = 'field-section-title'; statsTitle.innerText = 'Stats';
+                settingsDiv.appendChild(statsTitle);
+                const statsContainer = document.createElement('div'); statsContainer.className = 'pawn-stats-grid';
+                STAT_KEYS.forEach(key => {
+                    const statWrapper = document.createElement('div');
+                    const statLabel = document.createElement('label'); statLabel.innerText = key;
+                    const statInput = document.createElement('input'); statInput.type = 'text';
+                    statInput.value = pawn.stats[key]; statInput.placeholder = '-';
+                    statInput.oninput = (e) => updatePawnStat(index, key, e.target.value);
+                    statWrapper.appendChild(statLabel); statWrapper.appendChild(statInput);
+                    statsContainer.appendChild(statWrapper);
                 });
-                systemSel.onchange = (e) => updatePawnSystem(index, e.target.value);
-                systemRow.appendChild(systemLabel); systemRow.appendChild(systemSel);
-                settingsDiv.appendChild(systemRow);
+                settingsDiv.appendChild(statsContainer);
+            }
 
-                const systemBuilder = SYSTEM_UI_BUILDERS[pawn.system];
-                if (systemBuilder) {
-                    settingsDiv.appendChild(systemBuilder(index, pawn));
-                } else {
-                    const statsTitle = document.createElement('div'); statsTitle.className = 'field-section-title'; statsTitle.innerText = 'Stats';
-                    settingsDiv.appendChild(statsTitle);
-                    const statsContainer = document.createElement('div'); statsContainer.className = 'pawn-stats-grid';
-                    STAT_KEYS.forEach(key => {
-                        const statWrapper = document.createElement('div');
-                        const statLabel = document.createElement('label'); statLabel.innerText = key;
-                        const statInput = document.createElement('input'); statInput.type = 'text';
-                        statInput.value = pawn.stats[key]; statInput.placeholder = '-';
-                        statInput.oninput = (e) => updatePawnStat(index, key, e.target.value);
-                        statWrapper.appendChild(statLabel); statWrapper.appendChild(statInput);
-                        statsContainer.appendChild(statWrapper);
-                    });
-                    settingsDiv.appendChild(statsContainer);
-                }
+            // --- 4. Traits + Action Cards (every system) ---
+            settingsDiv.appendChild(buildTraitsUI(index, pawn));
+            settingsDiv.appendChild(buildPawnActionsUI(index, pawn));
 
-                // Traits and Action Cards apply to every system, Generic included.
-                settingsDiv.appendChild(buildTraitsUI(index, pawn));
-                settingsDiv.appendChild(buildPawnActionsUI(index, pawn));
+            // --- 5. Appearance ---
+            const apTitle = document.createElement('div');
+            apTitle.className = 'field-section-title'; apTitle.innerText = 'Appearance & Tracker';
+            settingsDiv.appendChild(apTitle);
 
-                const optionsRow = document.createElement('div'); optionsRow.className = 'pawn-options';
-                const borderHexLabel = document.createElement('label');
-                const borderHexInput = document.createElement('input'); borderHexInput.type = 'color'; borderHexInput.className = 'input-color';
-                borderHexInput.value = pawn.borderColor; borderHexInput.title = "Color for Border, 'X', and Outline"; 
-                borderHexInput.oninput = (e) => updatePawnColor(index, 'borderColor', e.target.value);
-                borderHexLabel.appendChild(borderHexInput); borderHexLabel.appendChild(document.createTextNode('Border/X'));
+            const optionsRow = document.createElement('div'); optionsRow.className = 'pawn-options';
+            const borderHexLabel = document.createElement('label');
+            const borderHexInput = document.createElement('input'); borderHexInput.type = 'color'; borderHexInput.className = 'input-color';
+            borderHexInput.value = pawn.borderColor; borderHexInput.title = "Color for Border, 'X', and Outline"; 
+            borderHexInput.oninput = (e) => updatePawnColor(index, 'borderColor', e.target.value);
+            borderHexLabel.appendChild(borderHexInput); borderHexLabel.appendChild(document.createTextNode('Border/X'));
 
-                const textHexLabel = document.createElement('label');
-                const textHexInput = document.createElement('input'); textHexInput.type = 'color'; textHexInput.className = 'input-color';
-                textHexInput.value = pawn.textColor; textHexInput.title = "Color for Name & Number text"; 
-                textHexInput.oninput = (e) => updatePawnColor(index, 'textColor', e.target.value);
-                textHexLabel.appendChild(textHexInput); textHexLabel.appendChild(document.createTextNode('Text'));
+            const textHexLabel = document.createElement('label');
+            const textHexInput = document.createElement('input'); textHexInput.type = 'color'; textHexInput.className = 'input-color';
+            textHexInput.value = pawn.textColor; textHexInput.title = "Color for Name & Number text"; 
+            textHexInput.oninput = (e) => updatePawnColor(index, 'textColor', e.target.value);
+            textHexLabel.appendChild(textHexInput); textHexLabel.appendChild(document.createTextNode('Text'));
 
-                const textBgHexLabel = document.createElement('label');
-                const textBgHexInput = document.createElement('input'); textBgHexInput.type = 'color'; textBgHexInput.className = 'input-color';
-                textBgHexInput.value = pawn.textBgColor.slice(0,7); textBgHexInput.title = "Color for bar behind text"; 
-                textBgHexInput.oninput = (e) => updatePawnColor(index, 'textBgColor', e.target.value, true); 
-                textBgHexLabel.appendChild(textBgHexInput); textBgHexLabel.appendChild(document.createTextNode('T-Bg'));
+            const textBgHexLabel = document.createElement('label');
+            const textBgHexInput = document.createElement('input'); textBgHexInput.type = 'color'; textBgHexInput.className = 'input-color';
+            textBgHexInput.value = pawn.textBgColor.slice(0,7); textBgHexInput.title = "Color for bar behind text"; 
+            textBgHexInput.oninput = (e) => updatePawnColor(index, 'textBgColor', e.target.value, true); 
+            textBgHexLabel.appendChild(textBgHexInput); textBgHexLabel.appendChild(document.createTextNode('T-Bg'));
 
-                const sizeLabel = document.createElement('label'); sizeLabel.style.marginLeft = "10px";
-                const sizeSel = document.createElement('select'); sizeSel.style.width = "auto"; sizeSel.style.padding = "2px";
-                const pWidth = pawn.pawnWidth || state.pawnWidth;
-                sizeSel.innerHTML = `
-                    <option value="small" ${pWidth === 0.75 ? 'selected' : ''}>Sm Size</option>
-                    <option value="medium" ${pWidth === 1.0 ? 'selected' : ''}>Md Size</option>
-                    <option value="large" ${pWidth === 1.25 ? 'selected' : ''}>Lg Size</option>
-                `;
-                sizeSel.onchange = (e) => updatePawnSize(index, e.target.value);
-                sizeLabel.appendChild(sizeSel);
+            const sizeLabel = document.createElement('label');
+            const sizeSel = document.createElement('select'); sizeSel.style.width = "auto"; sizeSel.style.padding = "2px";
+            const pWidth = pawn.pawnWidth || state.pawnWidth;
+            sizeSel.innerHTML = `
+                <option value="small" ${pWidth === 0.75 ? 'selected' : ''}>Sm Size</option>
+                <option value="medium" ${pWidth === 1.0 ? 'selected' : ''}>Md Size</option>
+                <option value="large" ${pWidth === 1.25 ? 'selected' : ''}>Lg Size</option>
+            `;
+            sizeSel.onchange = (e) => updatePawnSize(index, e.target.value);
+            sizeLabel.appendChild(sizeSel);
 
-                // HP tracker mode. Adaptive distributes the pool into 10/5/2/1
-                // boxes and therefore ignores the fixed x1/x5/x10 scale, so that
-                // control is disabled (not hidden) to show why it stopped applying.
-                const hpModeLabel = document.createElement('label'); hpModeLabel.style.marginLeft = "10px";
+            optionsRow.appendChild(borderHexLabel); optionsRow.appendChild(textHexLabel);
+            optionsRow.appendChild(textBgHexLabel); optionsRow.appendChild(sizeLabel);
+
+            const systemName = pawn.system || 'Generic';
+            const pHpMode = pawn.hpMode || 'standard';
+
+            // HP controls are only meaningful where the system actually has an
+            // open-ended HP pool; see SYSTEMS_WITHOUT_HP_* for the reasoning.
+            if (systemSupportsHpMode(systemName)) {
+                const hpModeLabel = document.createElement('label');
                 const hpModeSel = document.createElement('select'); hpModeSel.style.width = "auto"; hpModeSel.style.padding = "2px";
-                const pHpMode = pawn.hpMode || 'standard';
                 hpModeSel.innerHTML = `
                     <option value="standard" ${pHpMode === 'standard' ? 'selected' : ''}>Standard HP</option>
                     <option value="adaptive" ${pHpMode === 'adaptive' ? 'selected' : ''}>Adaptive HP</option>
@@ -2071,9 +2273,11 @@
                 hpModeSel.title = 'Adaptive splits large HP pools into 10/5/2/1 point boxes.';
                 hpModeSel.onchange = (e) => updatePawnHpMode(index, e.target.value);
                 hpModeLabel.appendChild(hpModeSel);
+                optionsRow.appendChild(hpModeLabel);
+            }
 
-                // Individual Tracker Scale
-                const scaleLabel = document.createElement('label'); scaleLabel.style.marginLeft = "10px";
+            if (systemSupportsHpScaling(systemName)) {
+                const scaleLabel = document.createElement('label');
                 const scaleSel = document.createElement('select'); scaleSel.style.width = "auto"; scaleSel.style.padding = "2px";
                 const pScale = pawn.trackerScale || 1;
                 scaleSel.innerHTML = `
@@ -2085,53 +2289,62 @@
                     state.pawns[index].trackerScale = parseInt(e.target.value, 10);
                     if (state.showTable) renderTable();
                 };
+                // Adaptive computes its own denominations, so the fixed scale is
+                // disabled rather than hidden - that shows why it stopped applying.
                 if (pHpMode === 'adaptive') {
                     scaleSel.disabled = true;
                     scaleSel.title = 'Adaptive HP ignores the fixed box scale.';
                     scaleLabel.style.opacity = '0.45';
                 }
                 scaleLabel.appendChild(scaleSel);
+                optionsRow.appendChild(scaleLabel);
+            }
 
-                optionsRow.appendChild(borderHexLabel); optionsRow.appendChild(textHexLabel); optionsRow.appendChild(textBgHexLabel); optionsRow.appendChild(sizeLabel); optionsRow.appendChild(hpModeLabel); optionsRow.appendChild(scaleLabel);
-                settingsDiv.appendChild(optionsRow);
+            settingsDiv.appendChild(optionsRow);
 
-                const checksRow = document.createElement('div'); checksRow.className = 'pawn-options';
-                checksRow.style.paddingTop = '0';
-                const borderLabel = document.createElement('label');
-                const borderCheckbox = document.createElement('input'); borderCheckbox.type = 'checkbox';
-                borderCheckbox.checked = pawn.showBorder; borderCheckbox.onchange = (e) => updatePawnValue(index, 'showBorder', e.target.checked);
-                borderLabel.appendChild(borderCheckbox); borderLabel.appendChild(document.createTextNode("Draw Border"));
+            const checksRow = document.createElement('div'); checksRow.className = 'pawn-options';
+            checksRow.style.paddingTop = '0';
+            const borderLabel = document.createElement('label');
+            const borderCheckbox = document.createElement('input'); borderCheckbox.type = 'checkbox';
+            borderCheckbox.checked = pawn.showBorder; borderCheckbox.onchange = (e) => updatePawnValue(index, 'showBorder', e.target.checked);
+            borderLabel.appendChild(borderCheckbox); borderLabel.appendChild(document.createTextNode("Draw Border"));
 
-                const darkLabel = document.createElement('label');
-                const darkCheckbox = document.createElement('input'); darkCheckbox.type = 'checkbox';
-                darkCheckbox.checked = pawn.isDark; darkCheckbox.onchange = (e) => updatePawnValue(index, 'isDark', e.target.checked);
-                darkLabel.appendChild(darkCheckbox); darkLabel.appendChild(document.createTextNode("'X' Back"));
+            const darkLabel = document.createElement('label');
+            const darkCheckbox = document.createElement('input'); darkCheckbox.type = 'checkbox';
+            darkCheckbox.checked = pawn.isDark; darkCheckbox.onchange = (e) => updatePawnValue(index, 'isDark', e.target.checked);
+            darkLabel.appendChild(darkCheckbox); darkLabel.appendChild(document.createTextNode("'X' Back"));
 
-                const flipLabel = document.createElement('label');
-                const flipCheckbox = document.createElement('input'); flipCheckbox.type = 'checkbox';
-                flipCheckbox.checked = pawn.isFlipped; flipCheckbox.onchange = (e) => updatePawnValue(index, 'isFlipped', e.target.checked);
-                flipLabel.appendChild(flipCheckbox); flipLabel.appendChild(document.createTextNode("Flip Image"));
-                
-                checksRow.appendChild(borderLabel); checksRow.appendChild(darkLabel); checksRow.appendChild(flipLabel);
-                settingsDiv.appendChild(checksRow);
+            const flipLabel = document.createElement('label');
+            const flipCheckbox = document.createElement('input'); flipCheckbox.type = 'checkbox';
+            flipCheckbox.checked = pawn.isFlipped; flipCheckbox.onchange = (e) => updatePawnValue(index, 'isFlipped', e.target.checked);
+            flipLabel.appendChild(flipCheckbox); flipLabel.appendChild(document.createTextNode("Flip Image"));
 
-                const controls = document.createElement('div'); controls.className = 'pawn-controls';
-                controls.appendChild(createSliderGroup(index, 'Image Scale', 'scale', 0.2, 3.0, 0.05, 1.0));
-                controls.appendChild(createSliderGroup(index, 'Rotate', 'rotation', -180, 180, 1, 0));
-                controls.appendChild(createSliderGroup(index, 'X-Pos', 'offsetX', -300, 300, 2, 0));
-                controls.appendChild(createSliderGroup(index, 'Y-Pos', 'offsetY', -300, 300, 2, 0));
-                settingsDiv.appendChild(controls);
+            checksRow.appendChild(borderLabel); checksRow.appendChild(darkLabel); checksRow.appendChild(flipLabel);
+            settingsDiv.appendChild(checksRow);
 
-                wrapper.appendChild(settingsDiv);
-                pageEl.appendChild(wrapper);
-                renderSinglePawn(index);
-            });
-            renderTable();
-            // Usage badges in the library reflect attachment counts, so the
-            // modal refreshes whenever pawns do - but only while it's open.
-            updateCardCountBadge();
-            const modal = document.getElementById('card-modal');
-            if (modal && modal.style.display === 'flex') renderCardManager();
+            // --- 6. Image transform ---
+            const trTitle = document.createElement('div');
+            trTitle.className = 'field-section-title'; trTitle.innerText = 'Image Position';
+            settingsDiv.appendChild(trTitle);
+            const controls = document.createElement('div'); controls.className = 'pawn-controls';
+            controls.appendChild(createSliderGroup(index, 'Image Scale', 'scale', 0.2, 3.0, 0.05, 1.0));
+            controls.appendChild(createSliderGroup(index, 'Rotate', 'rotation', -180, 180, 1, 0));
+            controls.appendChild(createSliderGroup(index, 'X-Pos', 'offsetX', -300, 300, 2, 0));
+            controls.appendChild(createSliderGroup(index, 'Y-Pos', 'offsetY', -300, 300, 2, 0));
+            settingsDiv.appendChild(controls);
+
+            return settingsDiv;
+        }
+
+        // Live-updates the drawer heading while typing, without rebuilding the
+        // panel (which would drop focus out of the input mid-word).
+        function syncDrawerTitle(index) {
+            const titleEl = document.getElementById('edit-drawer-title');
+            if (!titleEl) return;
+            const pawn = state.pawns[index];
+            if (!pawn) return;
+            const num = (pawn.number || '').toString().trim();
+            titleEl.innerText = (num ? `#${num} ` : '') + (pawn.name || 'Unnamed pawn');
         }
 
         function renderSinglePawn(index) {
@@ -2300,15 +2513,22 @@
             </svg>`;
             return 'data:image/svg+xml;base64,' + btoa(svg);
         }
+        // Loaded when there is no default-pawns.json and no saved project. This
+        // doubles as the app's demo: one pawn per supported system, three pawn
+        // sizes, Standard *and* Adaptive HP, traits, and Action Cards with
+        // per-pawn overrides - so a first-time user can see what the tool does
+        // without typing anything. Both output sheets start enabled for the
+        // same reason.
         function getFallbackProjectData() {
-            const genericImg = createPlaceholderDataUrl('#2c3e50', 'G');
-            const dndImg = createPlaceholderDataUrl('#8e0000', 'D');
-            const dhImg = createPlaceholderDataUrl('#5b2c6f', 'H');
-            const swImg = createPlaceholderDataUrl('#7e5109', 'S');
+            const img = (color, label) => createPlaceholderDataUrl(color, label);
 
-            // Sample library. Ids are literals here (not generated) so the demo
-            // attachments below can reference them deterministically.
+            // Ids are literals (not generated) so the attachments below can
+            // reference them deterministically.
             const cards = [
+                { id: 'demo_gen_bite', system: 'Generic', name: 'Bite',
+                  fields: { type: 'Attack', atk: '+4', damage: '2d4+2 piercing',
+                            description: 'On a hit the target must succeed a Strength check or be knocked prone.' } },
+
                 { id: 'demo_5e_breath', system: 'D&D 5th Edition', name: 'Fire Breath',
                   fields: { actionType: 'Action', range: '60 ft. cone', atk: '',
                             targetDef: 'AC', saveStat: 'DEX', saveDc: '21',
@@ -2317,87 +2537,140 @@
                   fields: { actionType: 'Action', range: '10 ft.', atk: '+11',
                             targetDef: 'AC', saveStat: '', saveDc: '',
                             damage: '2d10+6 piercing + 2d6 fire', recharge: '' } },
+                { id: 'demo_5e_wing', system: 'D&D 5th Edition', name: 'Wing Attack',
+                  fields: { actionType: 'Legendary Action', range: '15 ft.', atk: '',
+                            targetDef: 'AC', saveStat: 'DEX', saveDc: '19',
+                            damage: '2d6+6 bludgeoning, then fly half speed', recharge: '' } },
+                { id: 'demo_5e_longsword', system: 'D&D 5th Edition', name: 'Longsword',
+                  fields: { actionType: 'Action', range: '5 ft.', atk: '+5',
+                            targetDef: 'AC', saveStat: '', saveDc: '',
+                            damage: '1d8+3 slashing', recharge: '' } },
+
+                { id: 'demo_4e_garrote', system: 'D&D 4th Edition', name: 'Strangle',
+                  fields: { powerType: 'Encounter', range: 'Melee 1', atk: '+12',
+                            targetDef: 'Reflex', damage: '2d8+5 and the target is grabbed', recharge: '' } },
+                { id: 'demo_4e_claw', system: 'D&D 4th Edition', name: 'Claw',
+                  fields: { powerType: 'At-Will', range: 'Melee 1', atk: '+14',
+                            targetDef: 'AC', damage: '1d10+6 damage', recharge: '' } },
+
                 { id: 'demo_dh_claw', system: 'Daggerheart', name: 'Rending Claw',
                   fields: { range: 'Very Close', atk: '+3', targetDef: 'Evasion',
                             damageType: 'Physical', damage: '2d8+3' } },
-                { id: 'demo_sw_blade', system: 'Savage Worlds', name: 'Great Sword',
-                  fields: { skill: 'Fighting', targetDef: 'Parry', ap: '2',
-                            damage: 'Str+d10', effect: 'Two hands; Shaken on a raise' } }
+                { id: 'demo_dh_swarm', system: 'Daggerheart', name: 'Swarm Over',
+                  fields: { range: 'Close', atk: '+1', targetDef: 'Evasion',
+                            damageType: 'Physical', damage: '1d6+2 and mark a Stress' } },
+
+                { id: 'demo_sw_bolt', system: 'Savage Worlds', name: 'Bolt',
+                  fields: { skill: 'Spellcasting', targetDef: 'Toughness', ap: '0',
+                            damage: '2d6', effect: '1 Power Point; +2 damage dice for 2 more PP' } },
+                { id: 'demo_sw_blade', system: 'Savage Worlds', name: 'Short Sword',
+                  fields: { skill: 'Fighting', targetDef: 'Parry', ap: '0',
+                            damage: 'Str+d6', effect: 'Shaken on a raise' } },
+
+                { id: 'demo_cos_lash', system: 'Cosmere System', name: 'Lashing Strike',
+                  fields: { actionType: 'Action', range: '5 ft.', targetDef: 'Physical',
+                            damage: '2d6+3', effect: 'Spend 1 Investiture to push the target 10 ft.' } },
+                { id: 'demo_cos_bind', system: 'Cosmere System', name: 'Binding Command',
+                  fields: { actionType: 'Action', range: '30 ft.', targetDef: 'Spiritual',
+                            damage: '', effect: 'Target is restrained until the end of your next turn.' } }
             ];
+
+            const base = {
+                borderColor: '#000000', textColor: '#000000', textBgColor: '#FFFFFFEE',
+                isFlipped: false, showBorder: true,
+                scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0,
+                pawnWidth: 1.0, pawnHeight: 1.5, trackerScale: 1, hpMode: 'standard'
+            };
+            const blankTraits = { immunities: '', resistances: '', vulnerabilities: '', skills: '' };
 
             return {
                 version: 2,
-                pawnWidth: 1.0,
-                pawnHeight: 1.5,
-                showTable: false,
-                showCards: false,
+                pawnWidth: 1.0, pawnHeight: 1.5,
+                showTable: true,      // both sheets on, so the demo shows its work
+                showCards: true,
                 hpMode: 'standard',
                 actionCards: cards,
                 pawns: [
-                    {
-                        dataUrl: genericImg, name: 'Goblin', number: '1',
-                        borderColor: '#27ae60', textColor: '#000000', textBgColor: '#FFFFFFEE',
-                        isDark: true, isFlipped: false, showBorder: true,
-                        scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0,
-                        pawnWidth: 1.0, pawnHeight: 1.5, trackerScale: 1, hpMode: 'standard',
-                        system: 'Generic',
-                        stats: { Init: '+2', AC: '15', HP: '7', 'P.D.': '', 'C.D.': '', 'S.D.': '', 'Inv.': '', Foc: '' },
-                        traits: { immunities: '', resistances: '', vulnerabilities: '', skills: 'Stealth +6' },
-                        actions: []
-                    },
-                    {
-                        dataUrl: dndImg, name: 'Adult Red Dragon', number: '1',
-                        borderColor: '#c0392b', textColor: '#000000', textBgColor: '#FFFFFFEE',
-                        isDark: true, isFlipped: false, showBorder: true,
-                        scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0,
-                        pawnWidth: 1.25, pawnHeight: 2.0, trackerScale: 5,
-                        // 256 HP is exactly the case Adaptive mode exists for:
-                        // 61 boxes instead of 256.
-                        hpMode: 'adaptive',
-                        system: 'D&D 5th Edition',
-                        stats: { Init: '', AC: '', HP: '', 'P.D.': '', 'C.D.': '', 'S.D.': '', 'Inv.': '', Foc: '' },
-                        dnd5e: {
-                            hp: '256', ac: '19', init: '+2', prof: '+5', lairActions: true, legRes: '3', recharge: '5',
-                            str: '+6', dex: '+2', con: '+6', int: '+2', wis: '+2', cha: '+5',
-                            strSave: '+11', dexSave: '+7', conSave: '+11', intSave: '+7', wisSave: '+7', chaSave: '+10'
-                        },
-                        traits: {
-                            immunities: 'fire', resistances: '', vulnerabilities: '',
-                            skills: 'Perception +13, Stealth +7'
-                        },
-                        // Demonstrates an override: this alpha hits harder than
-                        // the library card's baseline.
-                        actions: [
-                            { cardId: 'demo_5e_breath', overrides: { saveDc: '23' } },
-                            { cardId: 'demo_5e_bite', overrides: {} }
-                        ]
-                    },
-                    {
-                        dataUrl: dhImg, name: 'Chittering Horde', number: '1',
-                        borderColor: '#5b2c6f', textColor: '#000000', textBgColor: '#FFFFFFEE',
-                        isDark: true, isFlipped: false, showBorder: true,
-                        scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0,
-                        pawnWidth: 1.0, pawnHeight: 1.5, trackerScale: 1, hpMode: 'standard',
-                        system: 'Daggerheart',
-                        daggerheart: {
-                            hp: '8', stress: '4', armorScore: '3', evasion: '13',
-                            hope: '', fear: '2',
-                            thrMinor: '7', thrMajor: '14', thrSevere: '20'
-                        },
-                        traits: { immunities: '', resistances: 'physical', vulnerabilities: 'magic', skills: '' },
-                        actions: [ { cardId: 'demo_dh_claw', overrides: {} } ]
-                    },
-                    {
-                        dataUrl: swImg, name: 'Bandit Chief', number: '1',
-                        borderColor: '#7e5109', textColor: '#000000', textBgColor: '#FFFFFFEE',
-                        isDark: true, isFlipped: false, showBorder: true,
-                        scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0,
-                        pawnWidth: 1.0, pawnHeight: 1.5, trackerScale: 1, hpMode: 'standard',
-                        system: 'Savage Worlds',
-                        savage: { pace: '6', parry: '7', toughness: '8', armor: '2', bennies: '3', powerPoints: '' },
-                        traits: { immunities: '', resistances: '', vulnerabilities: '', skills: 'Fighting d10, Notice d6, Intimidation d8' },
-                        actions: [ { cardId: 'demo_sw_blade', overrides: { ap: '4' } } ]
-                    }
+                    // ---- Generic: the original free-form stat row ----
+                    { ...base, dataUrl: img('#2c3e50', 'W'), name: 'Dire Wolf', number: '1',
+                      borderColor: '#7f8c8d', isDark: true, system: 'Generic',
+                      stats: { Init: '+2', AC: '14', HP: '37', 'P.D.': '', 'C.D.': '', 'S.D.': '', 'Inv.': '', Foc: '' },
+                      traits: { ...blankTraits, skills: 'Perception +5, Stealth +4' },
+                      actions: [ { cardId: 'demo_gen_bite', overrides: {} } ] },
+
+                    // ---- D&D 5e: the Adaptive HP showcase (256 HP -> 61 boxes) ----
+                    { ...base, dataUrl: img('#8e0000', 'D'), name: 'Adult Red Dragon', number: '1',
+                      borderColor: '#c0392b', isDark: true, system: 'D&D 5th Edition',
+                      pawnWidth: 1.25, pawnHeight: 2.0, trackerScale: 5, hpMode: 'adaptive',
+                      dnd5e: { hp: '256', ac: '19', init: '+2', prof: '+5',
+                               lairActions: true, legendaryActions: true, legRes: '3', recharge: '5',
+                               str: '+6', dex: '+2', con: '+6', int: '+2', wis: '+2', cha: '+5',
+                               strSave: '+11', dexSave: '+7', conSave: '+11', intSave: '+7', wisSave: '+7', chaSave: '+10' },
+                      traits: { immunities: 'fire', resistances: '', vulnerabilities: '',
+                                skills: 'Perception +13, Stealth +7' },
+                      // saveDc overridden: this alpha is nastier than the library card
+                      actions: [ { cardId: 'demo_5e_breath', overrides: { saveDc: '23' } },
+                                 { cardId: 'demo_5e_bite', overrides: {} },
+                                 { cardId: 'demo_5e_wing', overrides: {} } ] },
+
+                    // ---- D&D 5e again, small + Standard HP, to contrast ----
+                    { ...base, dataUrl: img('#1e8449', 'g'), name: 'Goblin', number: '1',
+                      borderColor: '#27ae60', isDark: true, system: 'D&D 5th Edition',
+                      pawnWidth: 0.75, pawnHeight: 1.0,
+                      dnd5e: { hp: '7', ac: '15', init: '+2', prof: '+2',
+                               lairActions: false, legendaryActions: false, legRes: '', recharge: '',
+                               str: '-1', dex: '+2', con: '+0', int: '+0', wis: '-1', cha: '-1',
+                               strSave: '', dexSave: '', conSave: '', intSave: '', wisSave: '', chaSave: '' },
+                      traits: { ...blankTraits, skills: 'Stealth +6' },
+                      actions: [ { cardId: 'demo_5e_longsword', overrides: { name: 'Scimitar', damage: '1d6+2 slashing', atk: '+4' } } ] },
+
+                    { ...base, dataUrl: img('#6e2c00', 'H'), name: 'Hobgoblin Captain', number: '1',
+                      borderColor: '#af601a', isDark: true, system: 'D&D 5th Edition',
+                      dnd5e: { hp: '39', ac: '17', init: '+1', prof: '+2',
+                               lairActions: false, legendaryActions: false, legRes: '', recharge: '',
+                               str: '+2', dex: '+1', con: '+2', int: '+1', wis: '+0', cha: '+2',
+                               strSave: '', dexSave: '', conSave: '', intSave: '', wisSave: '', chaSave: '' },
+                      traits: { ...blankTraits, skills: 'Athletics +4' },
+                      actions: [ { cardId: 'demo_5e_longsword', overrides: {} } ] },
+
+                    // ---- D&D 4e: surge / action point clusters ----
+                    { ...base, dataUrl: img('#4a235a', 'B'), name: 'Bugbear Strangler', number: '1',
+                      borderColor: '#7d3c98', isDark: true, system: 'D&D 4th Edition',
+                      dnd4e: { hp: '78', bloodied: '39', surges: '1', actionPoints: '1', speed: '6',
+                               ac: '20', fort: '19', ref: '18', will: '16' },
+                      traits: { ...blankTraits, skills: 'Stealth +12, Thievery +10' },
+                      actions: [ { cardId: 'demo_4e_garrote', overrides: {} },
+                                 { cardId: 'demo_4e_claw', overrides: {} } ] },
+
+                    // ---- Daggerheart: thresholds + stress/fear, no HP scaling ----
+                    { ...base, dataUrl: img('#512e5f', 'C'), name: 'Chittering Horde', number: '1',
+                      borderColor: '#8e44ad', isDark: true, system: 'Daggerheart',
+                      daggerheart: { hp: '8', stress: '4', armorScore: '3', evasion: '13',
+                                     hope: '', fear: '2', thrMinor: '7', thrMajor: '14', thrSevere: '20' },
+                      traits: { immunities: '', resistances: 'physical', vulnerabilities: 'magic', skills: '' },
+                      actions: [ { cardId: 'demo_dh_claw', overrides: {} },
+                                 { cardId: 'demo_dh_swarm', overrides: {} } ] },
+
+                    // ---- Savage Worlds: numbered Power Points, Wounds/Fatigue ----
+                    { ...base, dataUrl: img('#7e5109', 'S'), name: 'Bandit Sorcerer', number: '1',
+                      borderColor: '#d68910', isDark: true, system: 'Savage Worlds',
+                      savage: { pace: '6', parry: '5', toughness: '6', armor: '1',
+                                bennies: '2', powerPoints: '15' },
+                      traits: { ...blankTraits, skills: 'Spellcasting d10, Notice d6, Intimidation d6' },
+                      actions: [ { cardId: 'demo_sw_bolt', overrides: { damage: '3d6' } },
+                                 { cardId: 'demo_sw_blade', overrides: {} } ] },
+
+                    // ---- Cosmere: three defenses, Focus / Essence ----
+                    { ...base, dataUrl: img('#1a5276', 'K'), name: 'Skybreaker Acolyte', number: '1',
+                      borderColor: '#2e86c1', isDark: true, system: 'Cosmere System',
+                      cosmere: { hp: '32', physDef: '13', cogDef: '11', spiritDef: '12',
+                                 focus: '3', essence: '2',
+                                 strength: '+3', finesse: '+2', intellect: '+1',
+                                 willpower: '+2', awareness: '+1', presence: '+0' },
+                      traits: { immunities: '', resistances: '', vulnerabilities: '',
+                                skills: 'Athletics +5, Discipline +4, Insight +3' },
+                      actions: [ { cardId: 'demo_cos_lash', overrides: {} },
+                                 { cardId: 'demo_cos_bind', overrides: { effect: 'Target is restrained until it breaks free (Physical check).' } } ] }
                 ]
             };
         }
@@ -2475,7 +2748,11 @@
         // Plain 1-per-point boxes for small consumables (surges, stress,
         // bennies...). Capped so a fat-fingered "500" can't blow up the sheet.
         const RESOURCE_BOX_CAP = 60;
-        function renderCountBoxes(rawValue, extraCls) {
+        // Plain boxes for small consumables (surges, stress, bennies...).
+        // `numbered` labels each box with its running index, which is what makes
+        // a 10-point Power Point pool usable - the GM can see how many are gone
+        // without counting crossed-off squares.
+        function renderCountBoxes(rawValue, extraCls, numbered) {
             const n = parseInt(rawValue, 10);
             if (isNaN(n) || n <= 0) return '';
             const shown = Math.min(n, RESOURCE_BOX_CAP);
@@ -2485,7 +2762,7 @@
                     if (i > 0) html += '</div>';
                     html += '<div class="track-box-group">';
                 }
-                html += `<span class="track-box ${extraCls || ''}"></span>`;
+                html += `<span class="track-box ${extraCls || ''}">${numbered ? (i + 1) : ''}</span>`;
             }
             html += '</div>';
             if (n > shown) html += `<span class="res-overflow">+${n - shown}</span>`;
@@ -2522,7 +2799,7 @@
                 if (spec.kind === 'hp') {
                     clusters += buildResourceClusterHtml(spec.label, renderHpBoxes(pawn, data[spec.key]));
                 } else if (spec.kind === 'count') {
-                    clusters += buildResourceClusterHtml(spec.label, renderCountBoxes(data[spec.key], spec.cls));
+                    clusters += buildResourceClusterHtml(spec.label, renderCountBoxes(data[spec.key], spec.cls, spec.numbered));
                 } else if (spec.kind === 'fixed') {
                     clusters += buildResourceClusterHtml(spec.label, renderFixedBoxes(spec.labels, spec.cls));
                 }
@@ -2704,7 +2981,9 @@
                     { kind: 'fixed', labels: ['-1', '-2', '-3', 'INC'], label: 'Wounds',  cls: 'wound-box' },
                     { kind: 'fixed', labels: ['-1', '-2'],              label: 'Fatigue', cls: 'fatigue-box' },
                     { kind: 'count', key: 'bennies',     label: 'Bennies',      cls: 'benny-box' },
-                    { kind: 'count', key: 'powerPoints', label: 'Power Points', cls: 'pp-box' }
+                    // Numbered: Power Point pools run to 10-20+, so unlabelled
+                    // squares would be unreadable mid-fight.
+                    { kind: 'count', key: 'powerPoints', label: 'Power Points', cls: 'pp-box', numbered: true }
                 ]
             },
             'Cosmere System': {
@@ -2726,6 +3005,22 @@
             cfg.icons = Object.assign({}, cfg.icons, TRAIT_ICONS);
             cfg.legend = cfg.legend.concat(TRAIT_LEGEND_ITEMS);
         });
+
+        // Systems with small, fixed damage pools have nothing to gain from the
+        // x1/x5/x10 box scaling - Daggerheart HP is single digits, Cosmere pools
+        // stay small, and Savage Worlds has no HP stat at all (Wounds/Fatigue are
+        // fixed-length tracks). Hiding the control beats showing a dead one.
+        const SYSTEMS_WITHOUT_HP_SCALING = ['Savage Worlds', 'Daggerheart', 'Cosmere System'];
+        // Savage Worlds has no HP pool whatsoever, so even Standard vs Adaptive
+        // is meaningless there.
+        const SYSTEMS_WITHOUT_HP_MODE = ['Savage Worlds'];
+
+        function systemSupportsHpScaling(systemName) {
+            return !SYSTEMS_WITHOUT_HP_SCALING.includes(systemName);
+        }
+        function systemSupportsHpMode(systemName) {
+            return !SYSTEMS_WITHOUT_HP_MODE.includes(systemName);
+        }
 
         function systemFieldHasValue(pawn, field, cfg) {
             if (field.kind === 'trait') return hasText((pawn.traits || {})[field.key]);
@@ -3424,6 +3719,15 @@
 
             page.innerHTML = html;
         }
+
+        // Esc closes whichever overlay is on top - the card library sits above
+        // the drawer, so it wins when both are open.
+        window.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            const modal = document.getElementById('card-modal');
+            if (modal && modal.style.display === 'flex') { closeCardManager(); return; }
+            if (document.body.classList.contains('drawer-open')) closeEditDrawer();
+        });
 
         window.addEventListener('DOMContentLoaded', async () => {
             try {
