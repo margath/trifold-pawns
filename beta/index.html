@@ -809,6 +809,38 @@
             .pawn-wrapper.is-editing { outline: none !important; background: transparent !important; }
             .empty-state { display: none !important; }
         }
+
+        /* ==================================================================
+           TRACKER SECTION HEADINGS
+           Rendered as the first row of <thead> instead of a preceding <h3>.
+           A block-level heading can be orphaned at the bottom of a printed page
+           with its table pushed to the next one; a thead row cannot, because no
+           browser breaks between a table header group and its first body row.
+           The heading also reprints at the top of every page a long table spans.
+           ================================================================== */
+        .tracker-table thead { display: table-header-group; }
+        .tracker-table tfoot { display: table-footer-group; }
+        .section-head-row th {
+            background: #333 !important;
+            color: #fff !important;
+            text-align: left !important;
+            font-size: 14px;
+            letter-spacing: 0.3px;
+            padding: 8px 10px !important;
+            border: 1px solid #222 !important;
+        }
+        .tracker-page > .tracker-table { margin-bottom: 18px; }
+        .tracker-table { margin-bottom: 18px; }
+
+        @media print {
+            /* Belt and braces alongside the thead approach above. */
+            .section-head-row { break-inside: avoid; page-break-inside: avoid; }
+            .section-head-row th { break-after: avoid; page-break-after: avoid; }
+            .tracker-table thead { break-inside: avoid; page-break-inside: avoid; }
+        }
+
+        .app-toast { max-width: 460px; }
+        .app-toast span { line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -876,6 +908,11 @@
                         <button class="secondary" onclick="saveProject()">Save</button>
                         <button class="secondary" onclick="document.getElementById('load-file-input').click()">Load</button>
                         <input type="file" id="load-file-input" style="display:none" accept=".json" onchange="handleFileLoad(event)">
+                    </div>
+                    <div class="btn-row">
+                        <button class="secondary" title="Merge another project's pawns into this one instead of replacing it"
+                                onclick="document.getElementById('add-file-input').click()">Add from JSON</button>
+                        <input type="file" id="add-file-input" style="display:none" accept=".json" onchange="handleFileAdd(event)">
                     </div>
                 </div>
                 <div class="footer-block" style="padding-top: 5px;">
@@ -1131,9 +1168,65 @@
             }
         }
 
+        /* ==================================================================
+           IMAGE COMPRESSION ON IMPORT
+
+           Pawn art is embedded in the .json as a base64 data URL, so a handful
+           of 4000px PNGs off an art site produce a project file tens of
+           megabytes wide - slow to save, slow to reload, and awkward to share.
+
+           Pawns print at 300 DPI on a panel at most 1.25" wide. Even at the
+           image-scale slider's 3x maximum that is ~1125px, so 1200px on the
+           longest side is the point past which extra pixels can never reach
+           paper. WebP is used because it keeps the alpha channel that
+           transparent standees depend on while compressing far better than PNG;
+           browsers that cannot encode it hand back a PNG, which still works.
+           ================================================================== */
+        const MAX_IMAGE_DIMENSION = 1200;
+        const IMAGE_QUALITY = 0.92;
+
+        async function compressImage(dataUrl, img) {
+            try {
+                if (!img.width || !img.height) return { dataUrl: dataUrl, saved: 0 };
+
+                const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(img.width, img.height));
+                const w = Math.max(1, Math.round(img.width * scale));
+                const h = Math.max(1, Math.round(img.height * scale));
+
+                const cvs = document.createElement('canvas');
+                cvs.width = w; cvs.height = h;
+                const ctx = cvs.getContext('2d');
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(img, 0, 0, w, h);
+
+                let out = cvs.toDataURL('image/webp', IMAGE_QUALITY);
+                // A browser without WebP encoding silently returns a PNG.
+                if (out.indexOf('data:image/webp') !== 0) out = cvs.toDataURL('image/png');
+
+                // Never let "compression" make a file bigger - small, flat
+                // PNGs frequently beat WebP, and re-encoding those would be a
+                // pure loss of both size and fidelity.
+                if (out.length >= dataUrl.length) return { dataUrl: dataUrl, saved: 0 };
+
+                return { dataUrl: out, saved: dataUrl.length - out.length };
+            } catch (err) {
+                console.warn('Image compression failed; storing the original.', err);
+                return { dataUrl: dataUrl, saved: 0 };
+            }
+        }
+
+        function formatBytes(n) {
+            if (n < 1024) return n + ' B';
+            if (n < 1024 * 1024) return (n / 1024).toFixed(0) + ' KB';
+            return (n / (1024 * 1024)).toFixed(1) + ' MB';
+        }
         async function handleFiles(e) {
             const files = e.target.files;
             if (!files) return;
+
+            let totalSaved = 0, compressedCount = 0;
+
             for (let file of files) {
                 if (!file.type.startsWith('image/')) continue;
                 
@@ -1143,14 +1236,28 @@
                     reader.readAsDataURL(file);
                 });
 
-                const img = new Image();
-                await new Promise(r => { img.onload = r; img.src = dataUrl; });
+                let img = new Image();
+                await new Promise(r => { img.onload = r; img.onerror = r; img.src = dataUrl; });
+
+                // Compress before anything else stores a reference to it, so the
+                // in-memory image and the one written to .json are the same
+                // pixels - otherwise the preview would not match the export.
+                const result = await compressImage(dataUrl, img);
+                let storedUrl = dataUrl;
+                if (result.saved > 0) {
+                    storedUrl = result.dataUrl;
+                    totalSaved += result.saved;
+                    compressedCount++;
+                    const recoded = new Image();
+                    await new Promise(r => { recoded.onload = r; recoded.onerror = r; recoded.src = storedUrl; });
+                    img = recoded;
+                }
 
                 const emptyStats = {};
                 STAT_KEYS.forEach(key => emptyStats[key] = '');
 
                 state.pawns.push(ensurePawnShape({
-                    img: img, dataUrl: dataUrl, name: '', number: '', isEditing: false,
+                    img: img, dataUrl: storedUrl, name: '', number: '', isEditing: false,
                     isDark: calculateDarkness(img), isFlipped: false, showBorder: false, 
                     borderColor: '#000000', textColor: '#000000', textBgColor: '#FFFFFFEE',
                     scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0,
@@ -1163,8 +1270,15 @@
                     actions: []
                 }));
             }
-            if(e.target.id === 'file-input') e.target.value = ''; 
+
+            if (e.target.id === 'file-input') e.target.value = ''; 
             renderAll();
+
+            if (compressedCount > 0) {
+                // base64 is ~4/3 of the byte size it encodes.
+                const approxBytes = Math.round(totalSaved * 0.75);
+                showToast(`Compressed ${compressedCount} image${compressedCount === 1 ? '' : 's'}, saving about ${formatBytes(approxBytes)} in the project file.`);
+            }
         }
 
         function calculateDarkness(img) {
@@ -1426,6 +1540,69 @@
         // file doesn't carry is filled from the empty-factory defaults, so an
         // old .json opens cleanly with blank traits / no cards rather than
         // throwing on a missing key.
+        // Rebuilds one saved pawn into a live one. `mapCardId` lets the importer
+        // redirect attachments when an incoming card had to be given a new id to
+        // avoid colliding with one already in the library.
+        async function hydratePawn(p, knownCardIds, mapCardId) {
+            const img = new Image();
+            await new Promise(r => { img.onload = r; img.onerror = r; img.src = p.dataUrl; });
+
+            const pawn = ensurePawnShape({
+                img: img, dataUrl: p.dataUrl, name: p.name || '', number: p.number || '', isEditing: false,
+                borderColor: p.borderColor || '#000000', textColor: p.textColor || '#000000', textBgColor: p.textBgColor || '#FFFFFFEE',
+                isDark: p.isDark !== undefined ? p.isDark : calculateDarkness(img),
+                isFlipped: p.isFlipped || false, showBorder: p.showBorder || false,
+                scale: p.scale || 1.0, rotation: p.rotation || 0, offsetX: p.offsetX || 0, offsetY: p.offsetY || 0,
+                pawnWidth: p.pawnWidth || state.pawnWidth, pawnHeight: p.pawnHeight || state.pawnHeight,
+                trackerScale: p.trackerScale || 1,
+                hpMode: p.hpMode || 'standard',
+                system: p.system || 'Generic'
+            });
+
+            // Merge each saved block over its empty factory result, so keys
+            // added in later versions simply stay blank on older files.
+            const loadedStats = p.stats || {};
+            STAT_KEYS.forEach(key => pawn.stats[key] = loadedStats[key] || '');
+
+            Object.keys(SYSTEM_STAT_FACTORIES).forEach(sysName => {
+                const key = SYSTEM_STAT_KEYS[sysName];
+                const loaded = p[key] || {};
+                Object.keys(pawn[key]).forEach(f => {
+                    if (loaded[f] !== undefined) pawn[key][f] = loaded[f];
+                });
+            });
+
+            const loadedTraits = p.traits || {};
+            Object.keys(pawn.traits).forEach(f => {
+                if (loadedTraits[f] !== undefined) pawn.traits[f] = loadedTraits[f];
+            });
+
+            // Drop attachments pointing at cards that no longer exist -
+            // otherwise a hand-edited file could render undefined values.
+            pawn.actions = Array.isArray(p.actions)
+                ? p.actions.map(a => {
+                        if (!a) return null;
+                        const id = mapCardId ? (mapCardId[a.cardId] || a.cardId) : a.cardId;
+                        return knownCardIds.has(id) ? { cardId: id, overrides: { ...(a.overrides || {}) } } : null;
+                    }).filter(Boolean)
+                : [];
+
+            return pawn;
+        }
+
+        function normaliseCard(c) {
+            return {
+                id: c.id,
+                system: SYSTEMS.includes(c.system) ? c.system : 'Generic',
+                name: c.name || 'Untitled Action',
+                fields: { ...(c.fields || {}) }
+            };
+        }
+
+        // Accepts both v1 (pre-Action-Cards) and v2 project files. Anything the
+        // file doesn't carry is filled from the empty-factory defaults, so an
+        // old .json opens cleanly with blank traits / no cards rather than
+        // throwing on a missing key.
         async function loadProjectFromJSON(projectData) {
             state.pawnWidth = projectData.pawnWidth || 1.0; 
             state.pawnHeight = projectData.pawnHeight || 1.5;
@@ -1442,67 +1619,73 @@
             const cardsToggle = document.getElementById('toggle-cards');
             if (cardsToggle) cardsToggle.checked = state.showCards;
 
-            // Cards load first so attachment validation below has a library to
-            // check against. Malformed entries are skipped rather than fatal.
+            // Cards load first so attachment validation has a library to check
+            // against. Malformed entries are skipped rather than fatal.
             state.actionCards = [];
             if (Array.isArray(projectData.actionCards)) {
                 projectData.actionCards.forEach(c => {
-                    if (!c || !c.id) return;
-                    state.actionCards.push({
-                        id: c.id,
-                        system: SYSTEMS.includes(c.system) ? c.system : 'Generic',
-                        name: c.name || 'Untitled Action',
-                        fields: { ...(c.fields || {}) }
-                    });
+                    if (c && c.id) state.actionCards.push(normaliseCard(c));
                 });
             }
             const knownCardIds = new Set(state.actionCards.map(c => c.id));
 
             state.pawns = [];
             for (let p of projectData.pawns) {
-                const img = new Image(); 
-                await new Promise(r => { img.onload = r; img.onerror = r; img.src = p.dataUrl; });
-
-                const pawn = ensurePawnShape({
-                    img: img, dataUrl: p.dataUrl, name: p.name || '', number: p.number || '', isEditing: false,
-                    borderColor: p.borderColor || '#000000', textColor: p.textColor || '#000000', textBgColor: p.textBgColor || '#FFFFFFEE',
-                    isDark: p.isDark !== undefined ? p.isDark : calculateDarkness(img),
-                    isFlipped: p.isFlipped || false, showBorder: p.showBorder || false,
-                    scale: p.scale || 1.0, rotation: p.rotation || 0, offsetX: p.offsetX || 0, offsetY: p.offsetY || 0,
-                    pawnWidth: p.pawnWidth || state.pawnWidth, pawnHeight: p.pawnHeight || state.pawnHeight,
-                    trackerScale: p.trackerScale || 1,
-                    hpMode: p.hpMode || 'standard',
-                    system: p.system || 'Generic'
-                });
-
-                // Merge each saved block over its empty factory result, so keys
-                // added in later versions simply stay blank on older files.
-                const loadedStats = p.stats || {};
-                STAT_KEYS.forEach(key => pawn.stats[key] = loadedStats[key] || '');
-
-                Object.keys(SYSTEM_STAT_FACTORIES).forEach(sysName => {
-                    const key = SYSTEM_STAT_KEYS[sysName];
-                    const loaded = p[key] || {};
-                    Object.keys(pawn[key]).forEach(f => {
-                        if (loaded[f] !== undefined) pawn[key][f] = loaded[f];
-                    });
-                });
-
-                const loadedTraits = p.traits || {};
-                Object.keys(pawn.traits).forEach(f => {
-                    if (loadedTraits[f] !== undefined) pawn.traits[f] = loadedTraits[f];
-                });
-
-                // Drop attachments pointing at cards that no longer exist -
-                // otherwise a hand-edited file could render undefined values.
-                pawn.actions = Array.isArray(p.actions)
-                    ? p.actions.filter(a => a && knownCardIds.has(a.cardId))
-                               .map(a => ({ cardId: a.cardId, overrides: { ...(a.overrides || {}) } }))
-                    : [];
-
-                state.pawns.push(pawn);
+                state.pawns.push(await hydratePawn(p, knownCardIds, null));
             }
             renderAll();
+        }
+
+        // Merges a second project into the current one instead of replacing it -
+        // the usual case being "I built my goblins in one file and my dragons in
+        // another, now I need one encounter".
+        //
+        // Card ids can collide between independently-saved files. Identical
+        // cards are silently reused; genuinely different ones sharing an id are
+        // re-issued a fresh id, and that file's attachments are redirected to it,
+        // so neither project's cards are corrupted by the merge.
+        async function addProjectFromJSON(projectData) {
+            if (!projectData || !Array.isArray(projectData.pawns)) {
+                alert('That file does not look like a Tri-Fold Pawn project.');
+                return;
+            }
+
+            const idMap = {};
+            let renamed = 0;
+
+            (projectData.actionCards || []).forEach(raw => {
+                if (!raw || !raw.id) return;
+                const incoming = normaliseCard(raw);
+                const existing = getActionCard(incoming.id);
+
+                if (!existing) { state.actionCards.push(incoming); return; }
+
+                const sameCard = existing.system === incoming.system &&
+                                 existing.name === incoming.name &&
+                                 JSON.stringify(existing.fields) === JSON.stringify(incoming.fields);
+                if (sameCard) return;   // identical definition, reuse in place
+
+                const freshId = newCardId();
+                idMap[incoming.id] = freshId;
+                incoming.id = freshId;
+                incoming.name = incoming.name + ' (imported)';
+                state.actionCards.push(incoming);
+                renamed++;
+            });
+
+            const knownCardIds = new Set(state.actionCards.map(c => c.id));
+
+            let added = 0;
+            for (let p of (projectData.pawns || [])) {
+                state.pawns.push(await hydratePawn(p, knownCardIds, idMap));
+                added++;
+            }
+
+            renderAll();
+
+            let msg = `Added ${added} pawn${added === 1 ? '' : 's'}.`;
+            if (renamed) msg += ` ${renamed} action card${renamed === 1 ? '' : 's'} renamed to avoid an id clash.`;
+            showToast(msg);
         }
 
         async function handleFileLoad(e) {
@@ -1516,6 +1699,19 @@
             };
             reader.readAsText(file); e.target.value = ''; 
         }
+        async function handleFileAdd(e) {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    await addProjectFromJSON(JSON.parse(event.target.result));
+                } catch (error) {
+                    alert('Could not read that project file.');
+                }
+            };
+            reader.readAsText(file); e.target.value = ''; 
+        }
+
         function handlePrint(mode) {
             if (state.pawns.length === 0) { alert("Please add at least one pawn before printing."); return; }
 
@@ -1879,6 +2075,13 @@
         // Saves") into a single colspan cell. No second row of empty sub-column
         // headers is emitted - the group name alone is the header. HP has no
         // header cell of its own; it's a full-width row under each pawn instead.
+        // Full-width band naming the system, rendered as the first row of the
+        // table's <thead> rather than as a separate <h3>. See the note on
+        // orphan control in the print CSS.
+        function buildSectionHeadRowHtml(heading, colspanTotal) {
+            return `<tr class="section-head-row"><th colspan="${colspanTotal}">${esc(heading)}</th></tr>`;
+        }
+
         function buildTrackerHeaderRow(activeCols) {
             let row = `<th style="width: 22%;">#/Name</th>`;
             let i = 0;
@@ -2001,7 +2204,8 @@
                 if (list.length === 0) return;
                 const cfg = SYSTEM_TRACKER_CONFIGS[sysName];
                 if (!cfg) return;
-                html += `<h3 class="dnd-section-header">${esc(cfg.heading)}</h3>`;
+                // Heading now lives in the table's own <thead>; see
+                // buildSectionHeadRowHtml for why.
                 html += renderSystemTrackerTable(list, cfg);
             });
 
@@ -2027,6 +2231,10 @@
             boxes += '</div>';
             return boxes;
         }
+        // Generic pawns get a titled section too, so the sheet reads
+        // consistently when a project mixes them with system-specific ones.
+        const GENERIC_TRACKER_HEADING = 'Generic Creatures';
+
         function renderGenericTrackerTable(pawnList) {
             const activeStatKeys = STAT_KEYS.filter(key =>
                 pawnList.some(p => p.stats[key] && p.stats[key].trim() !== '')
@@ -2037,8 +2245,9 @@
 
             const totalCols = 1 + activeStatKeys.length + (activeTraits.length ? 1 : 0);
 
-            let html = `<table class="tracker-table"><thead><tr>
-                <th style="width: 22%;">#/Name</th>`;
+            let html = `<table class="tracker-table"><thead>` +
+                buildSectionHeadRowHtml(GENERIC_TRACKER_HEADING, totalCols) +
+                `<tr><th style="width: 22%;">#/Name</th>`;
             activeStatKeys.forEach(k => html += `<th>${esc(k)}</th>`);
             if (activeTraits.length) html += `<th style="width: 18%;">Traits</th>`;
             html += `</tr></thead><tbody>`;
@@ -2374,8 +2583,11 @@
             ctx.fillStyle = 'white'; ctx.fillRect(0, 0, internalWidth, internalHeight);
             ctx.strokeStyle = '#888'; ctx.lineWidth = 2; ctx.setLineDash([15, 15]);
 
-            const textHeight = 45; const textPaddingBottom = 15;
-            const hasText = pawn.name.trim() !== '' || pawn.number.trim() !== '';
+            // Proportional to panel width; at the 1" default these evaluate to
+            // 45 and 15, i.e. identical to the previous hard-coded values.
+            const textHeight = Math.round(internalPanelWidth * 0.15);
+            const textPaddingBottom = Math.round(internalPanelWidth * 0.05);
+            const hasText = (pawn.name || '').trim() !== '' || (pawn.number || '').toString().trim() !== '';
             const reservedBottom = hasText ? textHeight + textPaddingBottom : 0; 
 
             for (let i = 0; i < panels; i++) {
@@ -2437,9 +2649,14 @@
                             ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 3; ctx.setLineDash([]); ctx.strokeRect(x, y, boxW, boxH);
 
                             ctx.fillStyle = pawn.textColor; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-                            ctx.font = `bold ${labelFont}px sans-serif`; ctx.fillText(key, x + 8, y + boxH/2);
+                            ctx.font = `bold ${labelFont}px sans-serif`;
+                            const labelW = ctx.measureText(key).width;
+                            ctx.fillText(key, x + 8, y + boxH/2);
 
-                            ctx.textAlign = 'right'; ctx.font = `bold ${valFont}px sans-serif`;
+                            // Value gets whatever room the label left it.
+                            const valSpace = boxW - labelW - 22;
+                            const fittedVal = fitBoxedValue(ctx, pawn.stats[key], valSpace, valFont);
+                            ctx.textAlign = 'right'; ctx.font = `bold ${fittedVal}px sans-serif`;
                             ctx.fillText(pawn.stats[key], x + boxW - 8, y + boxH/2);
                         });
                         ctx.restore();
@@ -2476,14 +2693,69 @@
             return canvas;
         }
 
+        // Shrinks a pawn's label until it fits the panel, so a long name on a
+        // small pawn stays inside its own third of the strip instead of bleeding
+        // across the fold lines. Each of the three panels is a separate viewing
+        // angle, so an overflowing label makes the pawn unidentifiable from two
+        // of them.
+        //
+        // Order of concessions: shrink the type size first, and only if that
+        // bottoms out, ellipsise the NAME - never the "#N", because the number
+        // is what distinguishes Goblin #3 from Goblin #4 across the table.
+        function fitPawnLabel(ctx, name, number, maxWidth, basePx) {
+            const cleanName = (name || '').trim();
+            const cleanNum = (number || '').toString().trim();
+            const suffix = cleanNum ? (cleanName ? ` #${cleanNum}` : `#${cleanNum}`) : '';
+            if (!cleanName && !suffix) return null;
+
+            const minPx = Math.max(9, Math.floor(basePx * 0.45));
+            const measure = (t, px) => {
+                ctx.font = `bold ${px}px sans-serif`;
+                return ctx.measureText(t).width;
+            };
+
+            let text = cleanName + suffix;
+            let px = basePx;
+            while (px > minPx && measure(text, px) > maxWidth) px--;
+
+            if (measure(text, px) > maxWidth && cleanName) {
+                // Still too wide at the floor: trim the name, keep the number.
+                let trimmed = cleanName;
+                while (trimmed.length > 1 && measure(trimmed + '…' + suffix, px) > maxWidth) {
+                    trimmed = trimmed.slice(0, -1);
+                }
+                text = trimmed.replace(/\s+$/, '') + '…' + suffix;
+            }
+            return { text: text, px: px };
+        }
+
+        // Same idea for the stat boxes on the back panel - a long value like
+        // "18 (24)" would otherwise run out through the box border.
+        function fitBoxedValue(ctx, value, maxWidth, basePx) {
+            let px = basePx;
+            const minPx = Math.max(8, Math.floor(basePx * 0.5));
+            while (px > minPx) {
+                ctx.font = `bold ${px}px sans-serif`;
+                if (ctx.measureText(value).width <= maxWidth) break;
+                px--;
+            }
+            return px;
+        }
         function drawText(ctx, pawn, xBase, panelWidth, panelHeight, reservedBottom, paddingBottom) {
-            let displayText = pawn.name;
-            if (pawn.number) { displayText += displayText ? ` #${pawn.number}` : `#${pawn.number}`; }
-            if (!displayText) return;
+            const barHeight = reservedBottom;
+
+            // The label type size tracks panel width, so a 0.75" pawn is not
+            // stuck with the same 32px that suits a 1" one. At the 1" default
+            // this evaluates to 32px, matching the previous fixed size exactly.
+            const basePx = Math.max(12, Math.round(panelWidth * 0.107));
+            // Leave room for the white halo stroke on both sides.
+            const maxWidth = panelWidth - Math.round(panelWidth * 0.12);
+
+            const fitted = fitPawnLabel(ctx, pawn.name, pawn.number, maxWidth, basePx);
+            if (!fitted) return;
 
             const x = xBase + panelWidth / 2;
             const y = panelHeight - paddingBottom;
-            const barHeight = reservedBottom;
 
             if (pawn.textBgColor) {
                 ctx.save();
@@ -2493,9 +2765,13 @@
             }
 
             ctx.save();
-            ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.font = "bold 32px sans-serif";
-            ctx.lineWidth = 6; ctx.strokeStyle = 'white'; ctx.strokeText(displayText, x, y);
-            ctx.fillStyle = pawn.textColor; ctx.fillText(displayText, x, y);
+            ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+            ctx.font = `bold ${fitted.px}px sans-serif`;
+            // Halo scales with the type, or small text drowns in its own outline.
+            ctx.lineWidth = Math.max(2, fitted.px * 0.19);
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = 'white'; ctx.strokeText(fitted.text, x, y);
+            ctx.fillStyle = pawn.textColor; ctx.fillText(fitted.text, x, y);
             ctx.restore();
         }
 
@@ -3103,7 +3379,9 @@
             const totalCols = 1 + activeCols.length;
             const headerRow = buildTrackerHeaderRow(activeCols);
 
-            let html = `<table class="tracker-table"><thead><tr>${headerRow}</tr></thead><tbody>`;
+            let html = `<table class="tracker-table"><thead>` +
+                       buildSectionHeadRowHtml(cfg.heading, totalCols) +
+                       `<tr>${headerRow}</tr></thead><tbody>`;
 
             pawnList.forEach(p => {
                 ensurePawnShape(p);
@@ -3778,6 +4056,29 @@
                 reloading = true;
                 location.reload();
             });
+        }
+
+        // Brief, non-blocking status message. Used for import and compression
+        // results, which are worth surfacing but not worth an alert() that has
+        // to be dismissed before work continues.
+        let toastTimer = null;
+        function showToast(message, ms) {
+            let toast = document.getElementById('app-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'app-toast';
+                toast.className = 'pwa-toast app-toast';
+                document.body.appendChild(toast);
+            }
+            toast.innerHTML = '';
+            const span = document.createElement('span'); span.innerText = message;
+            const dismiss = document.createElement('button');
+            dismiss.className = 'pwa-toast-dismiss'; dismiss.innerHTML = '&times;';
+            dismiss.onclick = () => toast.remove();
+            toast.appendChild(span); toast.appendChild(dismiss);
+
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { if (toast.parentNode) toast.remove(); }, ms || 6000);
         }
 
         function showUpdateToast(reg) {
