@@ -9,7 +9,7 @@
  *
  * Bump CACHE_VERSION on every deploy; the activate handler evicts old caches.
  */
-const CACHE_VERSION = 'trifold-v2';
+const CACHE_VERSION = 'trifold-v2026.08.03.01';
 const SHELL = [
   './',
   './index.html',
