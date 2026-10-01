@@ -1,0 +1,524 @@
+--- trifold-pawns/beta/index.html	2026-10-01 00:23:18.985704693 +0000
++++ work/index.html	2026-10-01 01:22:02.528504313 +0000
+@@ -686,6 +686,19 @@
+         .empty-state-btn { width: auto !important; padding: 10px 22px !important; font-size: 14px !important; }
+         .empty-state-hint { font-size: 11px !important; color: #999 !important; margin-top: 12px !important; font-style: italic; }
+ 
++        /* ==================================================================
++           OVERHEAD TOKENS
++           Round tops for the standees, for use on a map seen from above. Each
++           token is its own flow item right after its pawn, so the print
++           layout packs circles into the gaps beside the strips instead of
++           making every strip taller.
++           ================================================================== */
++        .token-wrapper { align-self: flex-start; }
++        .token-wrapper canvas { touch-action: none; cursor: grab; border-radius: 50%; }
++        .token-wrapper canvas:active { cursor: grabbing; }
++        .token-wrapper .edit-toggle-btn { align-self: stretch; }
++        .ov-hint { font-size: 11px; color: #777; line-height: 1.5; margin: 0; }
++
+         /* Numbered Power Point boxes need room for two digits. */
+         .pp-box { min-width: 21px; font-size: 9px; color: #5b2c6f; }
+ 
+@@ -1174,6 +1187,11 @@
+                         Action card sheet
+                     </label>
+                     <p class="footer-hint">Each prints on its own page, after the pawns.</p>
++                    <label class="sub-label">On the pawn sheet</label>
++                    <label class="check-row" title="Round tops for the standees, for top-down maps. Each pawn can still opt out in its editor.">
++                        <input type="checkbox" id="toggle-overhead" onchange="toggleOverhead(event)">
++                        Overhead tokens
++                    </label>
+                 </div>
+             </div>
+ 
+@@ -1351,6 +1369,9 @@
+         const state = {
+             pawns: [], pawnWidth: 1.0, pawnHeight: 1.5,
+             showTable: false,
++            // Project-wide master switch for the round overhead tokens. Each
++            // pawn also has its own opt-out, so this is "show tokens at all".
++            showOverhead: false,
+             // Action Cards: a global library of abilities that individual pawns
+             // attach by id and then override field-by-field. Kept flat and
+             // id-keyed (never index-keyed) because renderAll() re-sorts
+@@ -1450,6 +1471,47 @@
+         // Guarantees every stat block, traits block and actions array exists on
+         // a pawn. Called after load, after a system switch, and defensively
+         // before any render, so partial/legacy pawns can never throw.
++        // Overhead token settings. Everything is flat on the pawn (like the
++        // standee's own scale/rotation/offset) so copy-style, duplicate and
++        // the generic slider helper all work without special cases. Pan values
++        // are percentages of the token's diameter, so they mean the same thing
++        // at every pawn size.
++        //
++        // Fit geometry: the folded standee has an equilateral-triangle top whose
++        // side equals the base width. The circle that exactly circumscribes
++        // that triangle has diameter 2/sqrt(3) x the base width. On such a
++        // circle the triangle's corners land on the rim and the three leftover
++        // circular segments are flaps that meet only at those corners, so they
++        // fold down along the triangle's sides with no slits needed.
++        const TOKEN_FIT = 2 / Math.sqrt(3);
++        const OVERHEAD_DEFAULTS = {
++            overhead: true,      // per-pawn opt-out; tokens only appear when the project-wide switch is on
++            ovScale: 1,          // 1 = whole image fitted inside the circle
++            ovRotation: 0,
++            ovOffsetX: 0,
++            ovOffsetY: 0,
++            ovBg: '#ffffff',     // shows through transparent PNGs
++            ovSize: TOKEN_FIT,   // TOKEN_FIT = wraps the standee top; 1 = flat disc, one base wide
++            ovFold: true         // dashed fold triangle (only meaningful at TOKEN_FIT size)
++        };
++        const OVERHEAD_KEYS = Object.keys(OVERHEAD_DEFAULTS);
++        const OVERHEAD_SIZES = [
++            { value: TOKEN_FIT, label: 'Fits standee top (folds on)' },
++            { value: 1, label: 'Flat disc (1\u00d7 base)' }
++        ];
++        function ovIsFit(pawn) { return Math.abs((pawn.ovSize || 1) - TOKEN_FIT) < 0.01; }
++
++        // Pulls the overhead fields out of a saved/clipboard object, falling
++        // back to defaults for anything absent (files from before this existed).
++        function pickOverheadFields(src) {
++            const out = {};
++            OVERHEAD_KEYS.forEach(k => {
++                out[k] = (src && src[k] !== undefined) ? src[k] : OVERHEAD_DEFAULTS[k];
++            });
++            out.overhead = !!out.overhead;
++            return out;
++        }
++
+         function ensurePawnShape(pawn) {
+             if (!pawn.stats) {
+                 pawn.stats = {};
+@@ -1465,6 +1527,7 @@
+             // Branding is on unless a project explicitly turned it off.
+             if (pawn.showQr === undefined) pawn.showQr = true;
+             if (!SYSTEMS.includes(pawn.system)) pawn.system = 'Generic';
++            OVERHEAD_KEYS.forEach(k => { if (pawn[k] === undefined) pawn[k] = OVERHEAD_DEFAULTS[k]; });
+             return pawn;
+         }
+ 
+@@ -1740,7 +1803,8 @@
+                 scale: p.scale, rotation: p.rotation, offsetX: p.offsetX, offsetY: p.offsetY,
+                 pawnWidth: p.pawnWidth, pawnHeight: p.pawnHeight,
+                 trackerScale: p.trackerScale, hpMode: p.hpMode || 'standard',
+-                showQr: !!p.showQr
++                showQr: !!p.showQr,
++                ...pickOverheadFields(p)
+             };
+             renderAll(); 
+         }
+@@ -1775,6 +1839,8 @@
+                 if (btn) btn.innerHTML = pawn.isEditing ? '✕ Close Editor' : '✎ Edit Pawn';
+                 const wrap = document.getElementById(`pawn-wrapper-${i}`);
+                 if (wrap) wrap.classList[pawn.isEditing ? 'add' : 'remove']('is-editing');
++                const tokenWrap = document.getElementById(`token-wrapper-${i}`);
++                if (tokenWrap) tokenWrap.classList[pawn.isEditing ? 'add' : 'remove']('is-editing');
+             });
+         }
+ 
+@@ -1865,7 +1931,9 @@
+ 
+         function updatePawnTransform(index, field, value) {
+             state.pawns[index][field] = parseFloat(value);
+-            renderSinglePawn(index);
++            // Overhead sliders only affect the token, so skip re-rasterising the strip.
++            if (field.indexOf('ov') === 0) renderOverhead(index);
++            else renderSinglePawn(index);
+         }
+ 
+         function updateGlobalSize() {
+@@ -1907,6 +1975,7 @@
+                 version: 2,
+                 pawnWidth: state.pawnWidth, pawnHeight: state.pawnHeight,
+                 showTable: state.showTable, showCards: state.showCards,
++                showOverhead: !!state.showOverhead,
+                 hpMode: state.hpMode || 'standard',
+                 actionCards: state.actionCards.map(c => ({
+                     id: c.id, system: c.system, name: c.name, fields: { ...c.fields }
+@@ -1922,6 +1991,7 @@
+                         trackerScale: p.trackerScale || 1,
+                         hpMode: p.hpMode || 'standard',
+                         showQr: !!p.showQr,
++                        ...pickOverheadFields(p),
+                         system: p.system || 'Generic',
+                         stats: p.stats,
+                         dnd5e: p.dnd5e, dnd4e: p.dnd4e,
+@@ -1959,7 +2029,9 @@
+                 // Absent means "saved before this existed", which should get the
+                 // new default rather than silently opting out.
+                 showQr: p.showQr === undefined ? true : !!p.showQr,
+-                system: p.system || 'Generic'
++                system: p.system || 'Generic',
++                // Files saved before overhead tokens existed simply get the defaults (off).
++                ...pickOverheadFields(p)
+             });
+ 
+             // Merge each saved block over its empty factory result, so keys
+@@ -2017,6 +2089,7 @@
+             state.pawnHeight = projectData.pawnHeight || 1.5;
+             state.showTable = projectData.showTable || false;
+             state.showCards = projectData.showCards || false;
++            state.showOverhead = !!projectData.showOverhead;
+             state.hpMode = projectData.hpMode || 'standard';
+ 
+             const select = document.getElementById('size-select');
+@@ -2027,6 +2100,8 @@
+             document.getElementById('toggle-table').checked = state.showTable;
+             const cardsToggle = document.getElementById('toggle-cards');
+             if (cardsToggle) cardsToggle.checked = state.showCards;
++            const overheadToggle = document.getElementById('toggle-overhead');
++            if (overheadToggle) overheadToggle.checked = state.showOverhead;
+ 
+             // Cards load first so attachment validation has a library to check
+             // against. Malformed entries are skipped rather than fatal.
+@@ -2151,6 +2226,17 @@
+             }, 500);
+         }
+ 
++        // Project-wide switch for the overhead tokens. Per-pawn settings are
++        // kept while it is off, so flipping it back restores every token as it was.
++        function toggleOverhead(e) { setGlobalOverhead(e.target.checked); }
++
++        function setGlobalOverhead(on) {
++            state.showOverhead = !!on;
++            const box = document.getElementById('toggle-overhead');
++            if (box) box.checked = state.showOverhead;
++            renderAll();
++        }
++
+         function toggleCards(e) {
+             state.showCards = e.target.checked;
+             renderCardsPage();
+@@ -2179,6 +2265,12 @@
+                     const wPx = Math.round(wInches * 96); const hPx = Math.round(hInches * 96);
+                     htmlContent += `<img src="${dataUrl}" width="${wPx}" height="${hPx}" style="width:${wInches}in; height:${hInches}in;" />`;
+                 }
++                const tokenCanvas = document.querySelector(`#token-container-${index} canvas`);
++                if (tokenCanvas) {
++                    const tUrl = tokenCanvas.toDataURL('image/png');
++                    const tIn = parseFloat(tokenCanvas.style.width); const tPx = Math.round(tIn * 96);
++                    htmlContent += `<img src="${tUrl}" width="${tPx}" height="${tPx}" style="width:${tIn}in; height:${tIn}in;" />`;
++                }
+             });
+             htmlContent += `</body></html>`;
+             const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+@@ -2200,6 +2292,12 @@
+                     const wInches = canvas.style.width; const hInches = canvas.style.height;
+                     xmlContent += `<draw:frame svg:width="${wInches}" svg:height="${hInches}"><draw:image><office:binary-data>${base64Data}</office:binary-data></draw:image></draw:frame><text:s text:c="2"/>`; 
+                 }
++                const tokenCanvas = document.querySelector(`#token-container-${index} canvas`);
++                if (tokenCanvas) {
++                    const tData = tokenCanvas.toDataURL('image/png').split(',')[1];
++                    const tIn = tokenCanvas.style.width;
++                    xmlContent += `<draw:frame svg:width="${tIn}" svg:height="${tIn}"><draw:image><office:binary-data>${tData}</office:binary-data></draw:image></draw:frame><text:s text:c="2"/>`;
++                }
+             });
+             xmlContent += `</text:p></office:text></office:body></office:document>`;
+             const blob = new Blob([xmlContent], { type: 'application/vnd.oasis.opendocument.text' });
+@@ -2213,6 +2311,7 @@
+             const label = document.createElement('label'); label.innerText = labelTxt;
+             const slider = document.createElement('input'); slider.type = 'range';
+             slider.min = min; slider.max = max; slider.step = step; slider.value = state.pawns[index][field];
++            slider.dataset.field = field;
+             slider.oninput = (e) => updatePawnTransform(index, field, e.target.value);
+             const resetBtn = document.createElement('button');
+             resetBtn.className = 'reset-slider-btn'; resetBtn.innerHTML = '↺'; resetBtn.title = 'Reset Setting';
+@@ -2577,6 +2676,7 @@
+                 editBtn.onclick = () => toggleEdit(index); wrapper.appendChild(editBtn);
+ 
+                 pageEl.appendChild(wrapper);
++                if (state.showOverhead && pawn.overhead) pageEl.appendChild(buildTokenWrapper(index, pawn));
+                 renderSinglePawn(index);
+             });
+ 
+@@ -2799,6 +2899,76 @@
+             controls.appendChild(createSliderGroup(index, 'Y-Pos', 'offsetY', -300, 300, 2, 0));
+             settingsDiv.appendChild(controls);
+ 
++            // --- 7. Overhead token ---
++            const ovTitle = document.createElement('div');
++            ovTitle.className = 'field-section-title'; ovTitle.innerText = 'Overhead Token';
++            settingsDiv.appendChild(ovTitle);
++
++            if (!state.showOverhead) {
++                // Tokens are switched off project-wide, so there would be no
++                // preview to adjust. Offer the switch right here instead.
++                const offHint = document.createElement('p'); offHint.className = 'ov-hint';
++                offHint.innerText = 'Overhead tokens are switched off for this project.';
++                settingsDiv.appendChild(offHint);
++                const onBtn = document.createElement('button'); onBtn.className = 'edit-toggle-btn';
++                onBtn.innerText = 'Turn on overhead tokens';
++                onBtn.onclick = () => setGlobalOverhead(true);
++                settingsDiv.appendChild(onBtn);
++                return settingsDiv;
++            }
++
++            const ovRow = document.createElement('div'); ovRow.className = 'pawn-options';
++            const ovLabel = document.createElement('label');
++            const ovCheckbox = document.createElement('input'); ovCheckbox.type = 'checkbox';
++            ovCheckbox.checked = !!pawn.overhead;
++            ovCheckbox.onchange = (e) => setOverhead(index, e.target.checked);
++            ovLabel.appendChild(ovCheckbox);
++            ovLabel.appendChild(document.createTextNode('Overhead token for this pawn'));
++            ovRow.appendChild(ovLabel);
++            settingsDiv.appendChild(ovRow);
++
++            if (pawn.overhead) {
++                const ovHint = document.createElement('p'); ovHint.className = 'ov-hint';
++                ovHint.innerText = 'Uses the same image as the standee. Drag the token on the page to pan it, or scroll over it to zoom. Dashed lines fold, the solid line cuts.';
++                settingsDiv.appendChild(ovHint);
++
++                const ovControls = document.createElement('div'); ovControls.className = 'pawn-controls';
++                ovControls.appendChild(createSliderGroup(index, 'Zoom', 'ovScale', 0.2, 8, 0.05, 1));
++                ovControls.appendChild(createSliderGroup(index, 'Rotate', 'ovRotation', -180, 180, 1, 0));
++                ovControls.appendChild(createSliderGroup(index, 'X-Pos', 'ovOffsetX', -100, 100, 1, 0));
++                ovControls.appendChild(createSliderGroup(index, 'Y-Pos', 'ovOffsetY', -100, 100, 1, 0));
++                settingsDiv.appendChild(ovControls);
++
++                const ovOpts = document.createElement('div'); ovOpts.className = 'pawn-options';
++                const bgLabel = document.createElement('label');
++                const bgInput = document.createElement('input'); bgInput.type = 'color'; bgInput.className = 'input-color';
++                bgInput.value = pawn.ovBg || '#ffffff'; bgInput.title = 'Fill behind the image (shows through transparent areas)';
++                bgInput.oninput = (e) => updatePawnColor(index, 'ovBg', e.target.value);
++                bgLabel.appendChild(bgInput); bgLabel.appendChild(document.createTextNode('Token bg'));
++
++                const sizeLabel2 = document.createElement('label');
++                const sizeSel2 = document.createElement('select'); sizeSel2.style.width = 'auto'; sizeSel2.style.padding = '2px';
++                OVERHEAD_SIZES.forEach(o => {
++                    const opt = document.createElement('option'); opt.value = o.value; opt.innerText = o.label;
++                    if (Math.abs((pawn.ovSize || 1) - o.value) < 0.01) opt.selected = true;
++                    sizeSel2.appendChild(opt);
++                });
++                sizeSel2.title = 'Fits standee top: sized so the dashed triangle is exactly the standee\u2019s top face and the three round flaps fold down over its sides. Flat disc: a plain round token, no fold lines.';
++                sizeSel2.onchange = (e) => { state.pawns[index].ovSize = parseFloat(e.target.value); renderAll(); };
++                sizeLabel2.appendChild(sizeSel2);
++
++                const foldLabel = document.createElement('label');
++                const foldBox = document.createElement('input'); foldBox.type = 'checkbox';
++                foldBox.checked = !!pawn.ovFold && ovIsFit(pawn);
++                foldBox.disabled = !ovIsFit(pawn);
++                foldBox.onchange = (e) => { state.pawns[index].ovFold = e.target.checked; renderOverhead(index); };
++                foldLabel.appendChild(foldBox); foldLabel.appendChild(document.createTextNode('Fold lines'));
++                if (!ovIsFit(pawn)) { foldLabel.style.opacity = '0.45'; foldLabel.title = 'Fold lines need the \u201cFits standee top\u201d size.'; }
++
++                ovOpts.appendChild(bgLabel); ovOpts.appendChild(sizeLabel2); ovOpts.appendChild(foldLabel);
++                settingsDiv.appendChild(ovOpts);
++            }
++
+             return settingsDiv;
+         }
+ 
+@@ -2818,6 +2988,159 @@
+             const container = document.getElementById(`canvas-container-${index}`);
+             if (!container) return;
+             container.innerHTML = ''; container.appendChild(drawPawnCanvas(pawn));
++            renderOverhead(index);
++        }
++
++        // ---- Overhead token -------------------------------------------------
++        const OV_DPI = 300;
++        const OV_PAD = 8;   // px of breathing room so the ring is never clipped by the canvas edge
++
++        function overheadDiameterPx(pawn) {
++            const pWidth = pawn.pawnWidth || state.pawnWidth;
++            // Snap to the exact fit size so the fold triangle is exactly one base wide.
++            const mult = ovIsFit(pawn) ? TOKEN_FIT : (pawn.ovSize || 1);
++            return Math.round(pWidth * mult * OV_DPI);
++        }
++
++        // Corners of the fold triangle for a token of diameter D on a canvas of
++        // side `total`: an equilateral triangle inscribed in the circle, point
++        // up. Its side is D * sqrt(3) / 2 = the pawn's base width at fit size.
++        function overheadFoldPoints(D, total) {
++            const c = total / 2, R = D / 2, dx = R * Math.sqrt(3) / 2;
++            return [[c, c - R], [c + dx, c + R / 2], [c - dx, c + R / 2]];
++        }
++
++        // Paints into an existing canvas, so a drag can repaint continuously
++        // without replacing the element (which would drop pointer capture).
++        function paintOverheadCanvas(canvas, pawn) {
++            const D = overheadDiameterPx(pawn);
++            const total = D + OV_PAD * 2;
++            canvas.width = total; canvas.height = total;
++            canvas.style.width = (total / OV_DPI) + 'in';
++            canvas.style.height = (total / OV_DPI) + 'in';
++            canvas._ov = { D: D, total: total };
++
++            const ctx = canvas.getContext('2d');
++            const c = total / 2, r = D / 2;
++            ctx.clearRect(0, 0, total, total);
++
++            ctx.save();
++            ctx.beginPath(); ctx.arc(c, c, r, 0, Math.PI * 2);
++            ctx.fillStyle = pawn.ovBg || '#ffffff'; ctx.fill();
++            ctx.clip();
++
++            // Same picture as the standee. At zoom 1 the whole image fits
++            // inside the circle's bounding square, with the same 5% margin the
++            // standee uses; zoom and pan then work relative to that.
++            const img = pawn.img;
++            if (img && img.width && img.height) {
++                const fit = Math.min(D / img.width, D / img.height) * 0.95;
++                const k = fit * (pawn.ovScale || 1);
++                const w = img.width * k, h = img.height * k;
++                ctx.translate(c + (pawn.ovOffsetX || 0) / 100 * D, c + (pawn.ovOffsetY || 0) / 100 * D);
++                ctx.rotate(((pawn.ovRotation || 0) * Math.PI) / 180);
++                ctx.drawImage(img, -w / 2, -h / 2, w, h);
++            }
++            ctx.restore();
++
++            // Ring in the pawn's colour just inside the rim.
++            ctx.save();
++            ctx.setLineDash([]);
++            ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 10;
++            ctx.beginPath(); ctx.arc(c, c, r - 5, 0, Math.PI * 2); ctx.stroke();
++
++            // FOLD lines (dashed): the triangle that matches the standee's top.
++            // Drawn twice - a wide white pass under a dark one - so the dashes
++            // stay visible over both dark and light artwork.
++            if (pawn.ovFold && ovIsFit(pawn)) {
++                const pts = overheadFoldPoints(D, total);
++                const tri = () => {
++                    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
++                    ctx.lineTo(pts[1][0], pts[1][1]); ctx.lineTo(pts[2][0], pts[2][1]);
++                    ctx.closePath();
++                };
++                ctx.setLineDash([14, 10]); ctx.lineJoin = 'round';
++                ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 7; tri(); ctx.stroke();
++                ctx.strokeStyle = '#222'; ctx.lineWidth = 3; tri(); ctx.stroke();
++            }
++
++            // CUT line (solid): just outside the ring, the rim to cut along.
++            ctx.setLineDash([]);
++            ctx.strokeStyle = '#222'; ctx.lineWidth = 2.5;
++            ctx.beginPath(); ctx.arc(c, c, r + OV_PAD / 2, 0, Math.PI * 2); ctx.stroke();
++            ctx.restore();
++        }
++
++        function clampNum(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
++
++        // Keeps any open editor's sliders in step with a drag/scroll on the
++        // token itself, without rebuilding the drawer (which would reset its scroll).
++        function syncOverheadSliders(pawn) {
++            document.querySelectorAll('#edit-drawer-body input[data-field^="ov"]').forEach(el => {
++                const f = el.dataset.field;
++                if (pawn[f] !== undefined) el.value = pawn[f];
++            });
++        }
++
++        function buildOverheadCanvas(index) {
++            const pawn = state.pawns[index];
++            const canvas = document.createElement('canvas');
++            canvas.title = 'Drag to pan, scroll to zoom';
++            paintOverheadCanvas(canvas, pawn);
++
++            let drag = null;
++            canvas.addEventListener('pointerdown', e => {
++                canvas.setPointerCapture(e.pointerId);
++                drag = { x: e.clientX, y: e.clientY, ox: pawn.ovOffsetX, oy: pawn.ovOffsetY };
++                e.preventDefault();
++            });
++            canvas.addEventListener('pointermove', e => {
++                if (!drag) return;
++                const rect = canvas.getBoundingClientRect();
++                // screen px -> fraction of the canvas -> percent of the circle's diameter
++                const toPct = canvas._ov.total / canvas._ov.D * 100 / rect.width;
++                pawn.ovOffsetX = clampNum(Math.round(drag.ox + (e.clientX - drag.x) * toPct), -100, 100);
++                pawn.ovOffsetY = clampNum(Math.round(drag.oy + (e.clientY - drag.y) * toPct), -100, 100);
++                paintOverheadCanvas(canvas, pawn);
++                syncOverheadSliders(pawn);
++            });
++            const endDrag = () => { drag = null; };
++            canvas.addEventListener('pointerup', endDrag);
++            canvas.addEventListener('pointercancel', endDrag);
++            canvas.addEventListener('wheel', e => {
++                e.preventDefault();
++                const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
++                pawn.ovScale = clampNum(Math.round(pawn.ovScale * factor * 100) / 100, 0.2, 8);
++                paintOverheadCanvas(canvas, pawn);
++                syncOverheadSliders(pawn);
++            }, { passive: false });
++            return canvas;
++        }
++
++        function renderOverhead(index) {
++            const pawn = state.pawns[index];
++            const container = document.getElementById(`token-container-${index}`);
++            if (!container || !pawn.overhead) return;
++            container.innerHTML = '';
++            container.appendChild(buildOverheadCanvas(index));
++        }
++
++        function buildTokenWrapper(index, pawn) {
++            const tw = document.createElement('div');
++            tw.className = 'pawn-wrapper token-wrapper' + (pawn.isEditing ? ' is-editing' : '');
++            tw.id = `token-wrapper-${index}`;
++            const tc = document.createElement('div'); tc.id = `token-container-${index}`;
++            tw.appendChild(tc);
++            const btn = document.createElement('button'); btn.className = 'edit-toggle-btn';
++            btn.innerHTML = '\u270e Token'; btn.title = 'Edit this pawn\u2019s overhead token';
++            btn.onclick = () => toggleEdit(index);
++            tw.appendChild(btn);
++            return tw;
++        }
++
++        function setOverhead(index, on) {
++            state.pawns[index].overhead = !!on;
++            renderAll();
+         }
+ 
+         function drawPawnCanvas(pawn) {
+--- trifold-pawns/beta/service-worker.js	2026-10-01 00:23:18.999879859 +0000
++++ work/service-worker.js	2026-10-01 01:23:02.736720531 +0000
+@@ -9,7 +9,7 @@
+  *
+  * Bump CACHE_VERSION on every deploy; the activate handler evicts old caches.
+  */
+-const CACHE_VERSION = 'trifold-v2026.08.03.01';
++const CACHE_VERSION = 'trifold-v2026.09.30.02';
+ const SHELL = [
+   './',
+   './index.html',
+--- trifold-pawns/beta/README.md	2026-10-01 00:23:18.979879858 +0000
++++ work/README.md	2026-10-01 01:23:02.736206039 +0000
+@@ -38,6 +38,39 @@
+ Panel order follows dependency: **System** first (it decides which stat fields exist),
+ then Name/Number, stats, traits, Action Cards, appearance, and image position.
+ 
++## Overhead tokens
++
++For play on a map viewed from above, pawns can have a **round overhead token** that
++goes on top of the standee.
++
++- **Project-wide switch:** tick **Overhead tokens** under *On the pawn sheet* in the
++  footer (off by default). While it is off no tokens show, print or export, but every
++  pawn's token settings are kept, so switching back on restores them. The setting is
++  saved in the project file. Each pawn also has an **Overhead token for this pawn**
++  checkbox in its editor, to opt a single pawn out. (With the switch off, that section
++  of the editor offers a *Turn on overhead tokens* button instead.)
++- **Same picture as the standee**, fitted inside the circle. **Zoom**, **Rotate**,
++  **X-Pos** and **Y-Pos** sliders reframe it (each has a reset button). You can also
++  **drag the token on the page to pan** and **scroll over it to zoom**; the sliders
++  follow along. Pan is a percentage of the token's diameter, so it means the same at
++  every pawn size. **Token bg** fills behind transparent PNGs.
++- **Cut and fold lines:** the **solid line is the cut**; the **dashed triangle is the
++  fold**. The folded standee has an equilateral-triangle top whose side equals the
++  base width. At the default **Fits standee top** size the token's diameter is
++  2/&radic;3 x the base width (about 1.15" for a Medium pawn), which is the circle that
++  exactly circumscribes that triangle. The triangle's corners land on the rim, so the
++  three round flaps meet only at the corners and fold down along the dashed lines with
++  no slits needed. Fold them over the outside, or tuck them inside the standee's top
++  for a cleaner look. The triangle is fixed on the token; the Rotate slider turns the
++  picture only.
++- **Flat disc (1x base)** is a plain round token with no fold lines, for use as a loose
++  marker. The **Fold lines** checkbox hides the dashed triangle on a fitted token.
++- Each token is its own item on the pawn sheet, directly after its pawn, so circles pack
++  into the space beside the strips when printing. They are included in the Word and
++  OpenDoc exports too.
++- Token settings are copied by Copy/Paste Style and carried over by Duplicate. Project
++  files saved before tokens existed load with tokens off.
++
+ ## Systems supported
+ 
+ Generic · D&D 5th Edition · D&D 4th Edition · Daggerheart · Savage Worlds · Cosmere "Plotweaver"

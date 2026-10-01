@@ -40,25 +40,36 @@ then Name/Number, stats, traits, Action Cards, appearance, and image position.
 
 ## Overhead tokens
 
-For play on a map viewed from above, any pawn can have an optional **round overhead
-token** to glue on top of its standee. Turn it on under **Overhead Token** in the pawn
-editor (off by default).
+For play on a map viewed from above, pawns can have a **round overhead token** that
+goes on top of the standee.
 
-- It starts as the **same image as the standee**, fitted inside the circle.
-- **Zoom**, **Rotate**, **X-Pos** and **Y-Pos** sliders reframe it (each has a reset
-  button). You can also **drag the token on the page to pan** and **scroll over it to
-  zoom**; the sliders follow along. Pan is stored as a percentage of the token's
-  diameter, so it means the same thing at every pawn size.
-- **Token bg** fills behind transparent PNGs. The ring uses the pawn's Border/X colour,
-  with a thin dashed cut line just outside it.
-- **Size:** *Grid size* makes the diameter equal to the pawn's base width (so a Medium
-  pawn gets a 1" token). *Covers the top* uses 2/√3 × the base width, which is the
-  smallest circle that hides the corners of the folded triangle's top face.
-- Each token is its own item on the pawn sheet, directly after its pawn, so the
-  circles pack into the space beside the strips when printing. They are included in the
-  Word and OpenDoc exports too.
-- Token settings are saved in the project `.json`, copied by Copy/Paste Style, and
-  carried over by Duplicate. Older project files simply load with tokens off.
+- **Project-wide switch:** tick **Overhead tokens** under *On the pawn sheet* in the
+  footer (off by default). While it is off no tokens show, print or export, but every
+  pawn's token settings are kept, so switching back on restores them. The setting is
+  saved in the project file. Each pawn also has an **Overhead token for this pawn**
+  checkbox in its editor, to opt a single pawn out. (With the switch off, that section
+  of the editor offers a *Turn on overhead tokens* button instead.)
+- **Same picture as the standee**, fitted inside the circle. **Zoom**, **Rotate**,
+  **X-Pos** and **Y-Pos** sliders reframe it (each has a reset button). You can also
+  **drag the token on the page to pan** and **scroll over it to zoom**; the sliders
+  follow along. Pan is a percentage of the token's diameter, so it means the same at
+  every pawn size. **Token bg** fills behind transparent PNGs.
+- **Cut and fold lines:** the **solid line is the cut**; the **dashed triangle is the
+  fold**. The folded standee has an equilateral-triangle top whose side equals the
+  base width. At the default **Fits standee top** size the token's diameter is
+  2/&radic;3 x the base width (about 1.15" for a Medium pawn), which is the circle that
+  exactly circumscribes that triangle. The triangle's corners land on the rim, so the
+  three round flaps meet only at the corners and fold down along the dashed lines with
+  no slits needed. Fold them over the outside, or tuck them inside the standee's top
+  for a cleaner look. The triangle is fixed on the token; the Rotate slider turns the
+  picture only.
+- **Flat disc (1x base)** is a plain round token with no fold lines, for use as a loose
+  marker. The **Fold lines** checkbox hides the dashed triangle on a fitted token.
+- Each token is its own item on the pawn sheet, directly after its pawn, so circles pack
+  into the space beside the strips when printing. They are included in the Word and
+  OpenDoc exports too.
+- Token settings are copied by Copy/Paste Style and carried over by Duplicate. Project
+  files saved before tokens existed load with tokens off.
 
 ## Systems supported
 
