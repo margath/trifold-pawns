@@ -38,6 +38,28 @@ visible beside its own settings. One pawn is open at a time; `Esc` closes it.
 Panel order follows dependency: **System** first (it decides which stat fields exist),
 then Name/Number, stats, traits, Action Cards, appearance, and image position.
 
+## Overhead tokens
+
+For play on a map viewed from above, any pawn can have an optional **round overhead
+token** to glue on top of its standee. Turn it on under **Overhead Token** in the pawn
+editor (off by default).
+
+- It starts as the **same image as the standee**, fitted inside the circle.
+- **Zoom**, **Rotate**, **X-Pos** and **Y-Pos** sliders reframe it (each has a reset
+  button). You can also **drag the token on the page to pan** and **scroll over it to
+  zoom**; the sliders follow along. Pan is stored as a percentage of the token's
+  diameter, so it means the same thing at every pawn size.
+- **Token bg** fills behind transparent PNGs. The ring uses the pawn's Border/X colour,
+  with a thin dashed cut line just outside it.
+- **Size:** *Grid size* makes the diameter equal to the pawn's base width (so a Medium
+  pawn gets a 1" token). *Covers the top* uses 2/√3 × the base width, which is the
+  smallest circle that hides the corners of the folded triangle's top face.
+- Each token is its own item on the pawn sheet, directly after its pawn, so the
+  circles pack into the space beside the strips when printing. They are included in the
+  Word and OpenDoc exports too.
+- Token settings are saved in the project `.json`, copied by Copy/Paste Style, and
+  carried over by Duplicate. Older project files simply load with tokens off.
+
 ## Systems supported
 
 Generic · D&D 5th Edition · D&D 4th Edition · Daggerheart · Savage Worlds · Cosmere "Plotweaver"
