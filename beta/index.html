@@ -115,8 +115,8 @@
 
         .page {
             background: white;
-            width: 8.5in;
-            min-height: 11in;
+            width: var(--paper-w, 8.5in);
+            min-height: var(--paper-h, 11in);
             box-shadow: 0 4px 20px rgba(0,0,0,0.6);
             padding: 0.5in;
             box-sizing: border-box;
@@ -376,7 +376,6 @@
 
         /* Print Settings */
         @media print {
-            @page { margin: 0.5in; size: letter portrait; }
             body { background: white; height: auto; }
             .top-header { display: none !important; }
             .content-wrapper { margin-top: 0; display: block; height: auto; overflow: visible; }
@@ -577,11 +576,6 @@
            PRINT
            ================================================================== */
         @media print {
-            /* Sheet 2 always starts a fresh page... */
-            .cards-page { page-break-before: always; }
-            /* ...unless it's the only thing printing, which would otherwise
-               emit a blank leading page. */
-            .print-hide-pawns.print-hide-table .cards-page { page-break-before: auto; }
             .print-hide-cards .cards-page { display: none !important; }
 
             .card-pawn-block, .action-card, .res-row { page-break-inside: avoid; }
@@ -1086,6 +1080,35 @@
             color: #3a3a3a;
             border-bottom-color: #ddd;
         }
+
+        /* ==================================================================
+           PRINT LAYOUT
+           Declared last so it wins the cascade over the screen rules above:
+           .main's screen padding and 40px gap used to leak into the printout,
+           and only the cards sheet forced a fresh page, so the tracker header
+           landed underneath the standees. Now every sheet is its own top-level
+           .page and starts on a fresh sheet of paper; applyPrintSelection()
+           marks the first sheet being printed so it doesn't leave a blank
+           leading page. The paper size comes from #print-page-style, which
+           applyPaper() keeps current.
+           ================================================================== */
+        .token-page { display: none; }
+        .footer-block select { width: 100%; }
+
+        @media print {
+            .content-wrapper { margin-top: 0; min-height: 0; display: block; }
+            .main { display: block; padding: 0; gap: 0; width: auto; }
+            .page { break-before: page; page-break-before: always; }
+            .page.print-first { break-before: auto; page-break-before: auto; }
+
+            /* Tokens never ride along inside the standee flow (that is what
+               pushed the strips out of step); they print on their own sheet. */
+            .token-wrapper { display: none !important; }
+            .token-page.has-tokens {
+                display: flex; flex-wrap: wrap; align-content: flex-start; gap: 0.1in;
+            }
+            .token-page canvas { display: block; border-radius: 0; }
+        }
     </style>
 </head>
 <body>
@@ -1123,6 +1146,10 @@
     <div class="content-wrapper">
         <div class="main">
             <div class="page pawn-page" id="page"></div>
+
+            <!-- Print-only: the overhead tokens gathered onto a sheet of their
+                 own. Filled by applyPrintSelection(), empty and hidden on screen. -->
+            <div class="page token-page" id="token-page"></div>
             
             <div class="page tracker-page" id="tracker-page"></div>
 
@@ -1177,33 +1204,39 @@
 
             <div class="footer-col">
                 <div class="footer-block">
-                    <label>3. Sheets to include</label>
-                    <label class="check-row">
-                        <input type="checkbox" id="toggle-table" onchange="toggleTable(event)">
-                        Tracker sheet
+                    <label>3. Sheets to print</label>
+                    <label class="check-row" title="The folded standee strips">
+                        <input type="checkbox" id="toggle-standees" checked onchange="togglePrintStandees(event)">
+                        Standees
                     </label>
-                    <label class="check-row">
-                        <input type="checkbox" id="toggle-cards" onchange="toggleCards(event)">
-                        Action card sheet
-                    </label>
-                    <p class="footer-hint">Each prints on its own page, after the pawns.</p>
-                    <label class="sub-label">On the pawn sheet</label>
-                    <label class="check-row" title="Round tops for the standees, for top-down maps. Each pawn can still opt out in its editor.">
+                    <label class="check-row" title="Round overhead tops for top-down maps, printed together on their own sheet. Each pawn can still opt out in its editor.">
                         <input type="checkbox" id="toggle-overhead" onchange="toggleOverhead(event)">
                         Overhead tokens
                     </label>
+                    <label class="check-row" title="The stat tracker: one table per game system">
+                        <input type="checkbox" id="toggle-table" onchange="toggleTable(event)">
+                        GM summary sheet
+                    </label>
+                    <label class="check-row" title="The action cards attached to your pawns">
+                        <input type="checkbox" id="toggle-cards" onchange="toggleCards(event)">
+                        Power cards
+                    </label>
+                    <p class="footer-hint">Each checked sheet starts on a fresh page.</p>
                 </div>
             </div>
 
             <div class="footer-col footer-col-wide">
                 <div class="footer-block">
-                    <label>4. Print &amp; Export</label>
-                    <button class="primary" onclick="handlePrint('all')">Print Sheet(s)</button>
-                    <div class="btn-grid-3">
-                        <button class="secondary" onclick="handlePrint('pawns')">Pawns</button>
-                        <button class="secondary" onclick="handlePrint('table')">Tracker</button>
-                        <button class="secondary" onclick="handlePrint('cards')">Cards</button>
+                    <label>4. Paper &amp; Print</label>
+                    <div class="btn-grid-2">
+                        <select id="paper-size" title="Paper size" onchange="setPaper()"></select>
+                        <select id="paper-orient" title="Page orientation" onchange="setPaper()">
+                            <option value="portrait">Portrait</option>
+                            <option value="landscape">Landscape</option>
+                        </select>
                     </div>
+                    <button class="primary" onclick="handlePrint()">Print</button>
+                    <label class="sub-label">Image sheets only</label>
                     <div class="btn-grid-2">
                         <button class="primary word-btn" onclick="exportWord()">Word (.doc)</button>
                         <button class="primary odt-btn" onclick="exportODT()">OpenDoc (.odt)</button>
@@ -1372,6 +1405,11 @@
             // Project-wide master switch for the round overhead tokens. Each
             // pawn also has its own opt-out, so this is "show tokens at all".
             showOverhead: false,
+            // Print-only switch for the standee sheet (it always stays visible
+            // on screen, because it is the editing surface), plus paper setup.
+            printStandees: true,
+            paper: 'letter',
+            orientation: 'portrait',
             // Action Cards: a global library of abilities that individual pawns
             // attach by id and then override field-by-field. Kept flat and
             // id-keyed (never index-keyed) because renderAll() re-sorts
@@ -1976,6 +2014,8 @@
                 pawnWidth: state.pawnWidth, pawnHeight: state.pawnHeight,
                 showTable: state.showTable, showCards: state.showCards,
                 showOverhead: !!state.showOverhead,
+                printStandees: state.printStandees !== false,
+                paper: state.paper, orientation: state.orientation,
                 hpMode: state.hpMode || 'standard',
                 actionCards: state.actionCards.map(c => ({
                     id: c.id, system: c.system, name: c.name, fields: { ...c.fields }
@@ -2090,6 +2130,14 @@
             state.showTable = projectData.showTable || false;
             state.showCards = projectData.showCards || false;
             state.showOverhead = !!projectData.showOverhead;
+            state.printStandees = projectData.printStandees !== false;
+            // Paper setup is only taken from files that carry it, so opening an
+            // older project doesn't undo the paper you have already chosen.
+            if (PAPER_SIZES[projectData.paper]) state.paper = projectData.paper;
+            if (projectData.orientation === 'landscape' || projectData.orientation === 'portrait') state.orientation = projectData.orientation;
+            applyPaper();
+            const standeeToggle = document.getElementById('toggle-standees');
+            if (standeeToggle) standeeToggle.checked = state.printStandees;
             state.hpMode = projectData.hpMode || 'standard';
 
             const select = document.getElementById('size-select');
@@ -2196,34 +2244,154 @@
             reader.readAsText(file); e.target.value = ''; 
         }
 
-        function handlePrint(mode) {
-            if (state.pawns.length === 0) { alert("Please add at least one pawn before printing."); return; }
+        /* ==================================================================
+           PAPER AND PRINT SELECTION
+           ================================================================== */
+        const BASE_TITLE = document.title;
+        const PAPER_SIZES = {
+            letter:  { label: 'Letter (8.5 × 11 in)',  w: 8.5, h: 11,  unit: 'in' },
+            legal:   { label: 'Legal (8.5 × 14 in)',   w: 8.5, h: 14,  unit: 'in' },
+            tabloid: { label: 'Tabloid (11 × 17 in)',  w: 11,  h: 17,  unit: 'in' },
+            a4:      { label: 'A4 (210 × 297 mm)',     w: 210, h: 297, unit: 'mm' },
+            a3:      { label: 'A3 (297 × 420 mm)',     w: 297, h: 420, unit: 'mm' }
+        };
+        const PRINT_PREF_KEY = 'trifold-print-prefs';
 
-            const hasAttachedCards = state.pawns.some(p => (p.actions || []).length > 0);
-            const originalTitle = document.title;
-            document.title = getExportFilename('');
-            const hide = [];
+        // Paper dimensions after orientation, as CSS lengths and in inches.
+        function paperDims() {
+            const sz = PAPER_SIZES[state.paper] || PAPER_SIZES.letter;
+            const landscape = state.orientation === 'landscape';
+            const w = landscape ? sz.h : sz.w, h = landscape ? sz.w : sz.h;
+            const toIn = v => sz.unit === 'mm' ? v / 25.4 : v;
+            return { w, h, unit: sz.unit, wCss: w + sz.unit, hCss: h + sz.unit, wIn: toIn(w), hIn: toIn(h) };
+        }
 
-            if (mode === 'pawns') {
-                hide.push('print-hide-table', 'print-hide-cards');
-            } else if (mode === 'table') {
-                if (!state.showTable) { alert("Please enable 'Append Tracker Sheet' to print the table."); document.title = originalTitle; return; }
-                hide.push('print-hide-pawns', 'print-hide-cards');
-            } else if (mode === 'cards') {
-                if (!state.showCards) { alert("Please enable 'Append Action Card Sheet' to print the cards."); document.title = originalTitle; return; }
-                if (!hasAttachedCards) { alert("No pawn has an Action Card attached yet."); document.title = originalTitle; return; }
-                hide.push('print-hide-pawns', 'print-hide-table');
-            } else { // 'all'
-                if (!state.showTable) hide.push('print-hide-table');
-                if (!state.showCards || !hasAttachedCards) hide.push('print-hide-cards');
+        function loadPrintPrefs() {
+            try {
+                const prefs = JSON.parse(localStorage.getItem(PRINT_PREF_KEY) || 'null');
+                if (!prefs) return;
+                if (PAPER_SIZES[prefs.paper]) state.paper = prefs.paper;
+                if (prefs.orientation === 'landscape' || prefs.orientation === 'portrait') state.orientation = prefs.orientation;
+            } catch (e) { /* storage unavailable: keep the defaults */ }
+        }
+        function savePrintPrefs() {
+            try { localStorage.setItem(PRINT_PREF_KEY, JSON.stringify({ paper: state.paper, orientation: state.orientation })); }
+            catch (e) { /* not worth interrupting anyone over */ }
+        }
+
+        function initPrintControls() {
+            const sel = document.getElementById('paper-size');
+            if (!sel || sel.options.length) return;
+            Object.keys(PAPER_SIZES).forEach(key => {
+                const opt = document.createElement('option');
+                opt.value = key; opt.innerText = PAPER_SIZES[key].label;
+                sel.appendChild(opt);
+            });
+        }
+
+        // Pushes the chosen paper into the printer's @page rule and into the
+        // on-screen sheets, so the preview wraps exactly as the printout will.
+        function applyPaper() {
+            if (!PAPER_SIZES[state.paper]) state.paper = 'letter';
+            if (state.orientation !== 'landscape') state.orientation = 'portrait';
+            const d = paperDims();
+            let style = document.getElementById('print-page-style');
+            if (!style) {
+                style = document.createElement('style'); style.id = 'print-page-style';
+                document.head.appendChild(style);
             }
+            style.textContent = `@page { size: ${d.wCss} ${d.hCss}; margin: 0.5in; }`;
+            document.documentElement.style.setProperty('--paper-w', d.wCss);
+            document.documentElement.style.setProperty('--paper-h', d.hCss);
+            const sizeSel = document.getElementById('paper-size');
+            const orientSel = document.getElementById('paper-orient');
+            if (sizeSel) sizeSel.value = state.paper;
+            if (orientSel) orientSel.value = state.orientation;
+        }
 
-            hide.forEach(c => document.body.classList.add(c));
+        function setPaper() {
+            state.paper = document.getElementById('paper-size').value;
+            state.orientation = document.getElementById('paper-orient').value;
+            applyPaper();
+            savePrintPrefs();
+        }
+
+        function togglePrintStandees(e) { state.printStandees = e.target.checked; }
+
+        // What will actually come out of the printer, from the checkboxes plus
+        // what exists: a ticked sheet with nothing to show is simply skipped.
+        function printPlan() {
+            const hasPawns = state.pawns.length > 0;
+            return {
+                standees: hasPawns && state.printStandees,
+                tokens: state.showOverhead && state.pawns.some(p => p.overhead),
+                tracker: hasPawns && state.showTable,
+                cards: hasPawns && state.showCards && state.pawns.some(p => (p.actions || []).length > 0)
+            };
+        }
+
+        // Copies the on-screen token canvases onto the print-only token sheet.
+        // Canvas-to-canvas copying is synchronous, which matters here: this runs
+        // inside beforeprint, and an <img> built from a data URL might not have
+        // decoded by the time the browser lays the page out.
+        function buildTokenPrintSheet(enabled) {
+            const sheet = document.getElementById('token-page');
+            if (!sheet) return;
+            sheet.innerHTML = ''; sheet.classList.remove('has-tokens');
+            if (!enabled) return;
+            let count = 0;
+            state.pawns.forEach((pawn, i) => {
+                if (!pawn.overhead) return;
+                const src = document.querySelector(`#token-container-${i} canvas`);
+                if (!src) return;
+                const copy = document.createElement('canvas');
+                copy.width = src.width; copy.height = src.height;
+                copy.style.width = src.style.width; copy.style.height = src.style.height;
+                copy.getContext('2d').drawImage(src, 0, 0);
+                sheet.appendChild(copy); count++;
+            });
+            if (count) sheet.classList.add('has-tokens');
+        }
+
+        function clearPrintSelection() {
+            document.body.classList.remove('print-hide-pawns', 'print-hide-table', 'print-hide-cards');
+            document.querySelectorAll('.page.print-first').forEach(el => el.classList.remove('print-first'));
+            const sheet = document.getElementById('token-page');
+            if (sheet) { sheet.innerHTML = ''; sheet.classList.remove('has-tokens'); }
+            document.title = BASE_TITLE;
+        }
+
+        // Runs for the Print button and for Ctrl+P / the browser's own Print
+        // menu alike (beforeprint), so both give the same result.
+        function applyPrintSelection() {
+            clearPrintSelection();
+            const plan = printPlan();
+            const body = document.body.classList;
+            if (!plan.standees) body.add('print-hide-pawns');
+            if (!plan.tracker) body.add('print-hide-table');
+            if (!plan.cards) body.add('print-hide-cards');
+            buildTokenPrintSheet(plan.tokens);
+            // The first sheet printed must not start with a forced page break.
+            const order = [['standees', 'page'], ['tokens', 'token-page'], ['tracker', 'tracker-page'], ['cards', 'cards-page']];
+            const first = order.find(entry => plan[entry[0]]);
+            if (first) document.getElementById(first[1]).classList.add('print-first');
+            document.title = getExportFilename('');   // becomes the suggested PDF file name
+            return plan;
+        }
+
+        window.addEventListener('beforeprint', applyPrintSelection);
+        window.addEventListener('afterprint', clearPrintSelection);
+
+        function handlePrint() {
+            if (state.pawns.length === 0) { alert("Please add at least one pawn before printing."); return; }
+            const plan = printPlan();
+            if (!plan.standees && !plan.tokens && !plan.tracker && !plan.cards) {
+                alert("Nothing is selected to print. Tick at least one sheet under \"Sheets to print\".");
+                return;
+            }
+            if (state.showCards && !plan.cards) showToast("Power cards skipped: no pawn has an action card attached.");
+            applyPrintSelection();
             window.print();
-            setTimeout(() => { 
-                document.title = originalTitle; 
-                document.body.classList.remove('print-hide-table', 'print-hide-pawns', 'print-hide-cards');
-            }, 500);
         }
 
         // Project-wide switch for the overhead tokens. Per-pawn settings are
@@ -2248,58 +2416,69 @@
             if (badge) badge.innerText = `(${state.actionCards.length})`;
         }
 
+        // The Word and OpenDoc exports carry the two image sheets: standees
+        // first, then the overhead tokens on a page of their own. They follow the
+        // same checkboxes and paper setup as printing.
+        function exportParts() {
+            const plan = printPlan();
+            const standees = [], tokens = [];
+            if (plan.standees) state.pawns.forEach((pawn, i) => {
+                const c = document.querySelector(`#canvas-container-${i} canvas`);
+                if (c) standees.push(c);
+            });
+            if (plan.tokens) state.pawns.forEach((pawn, i) => {
+                if (!pawn.overhead) return;
+                const c = document.querySelector(`#token-container-${i} canvas`);
+                if (c) tokens.push(c);
+            });
+            return { standees, tokens };
+        }
+        const EXPORT_EMPTY_MSG = "Nothing to export. Tick Standees and/or Overhead tokens under \"Sheets to print\" - the Word and OpenDoc exports contain those two sheets.";
+
         function exportWord() {
             if (state.pawns.length === 0) { alert("Please add at least one pawn before exporting."); return; }
+            const parts = exportParts();
+            if (!parts.standees.length && !parts.tokens.length) { alert(EXPORT_EMPTY_MSG); return; }
+            const d = paperDims();
+            const wIn = +d.wIn.toFixed(3), hIn = +d.hIn.toFixed(3);
+            const imgTag = (cv) => {
+                const wInches = parseFloat(cv.style.width), hInches = parseFloat(cv.style.height);
+                return `<img src="${cv.toDataURL('image/png')}" width="${Math.round(wInches * 96)}" height="${Math.round(hInches * 96)}" style="width:${wInches}in; height:${hInches}in;" />`;
+            };
             let htmlContent = `
                 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
                 <head><meta charset="utf-8"><title>Pawns Export</title>
-                <style>@page { margin: 0.5in; size: letter portrait; } body { margin: 0; padding: 0; font-family: Arial, sans-serif; } img { margin: 0 0.25in 0.25in 0; display: inline-block; }</style>
-                </head><body>
+                <style>@page { margin: 0.5in; size: ${wIn}in ${hIn}in; } @page Section1 { size: ${wIn}in ${hIn}in; mso-page-orientation: ${state.orientation}; margin: 0.5in; } div.Section1 { page: Section1; } body { margin: 0; padding: 0; font-family: Arial, sans-serif; } img { margin: 0 0.25in 0.25in 0; display: inline-block; }</style>
+                </head><body><div class="Section1">
             `;
-            state.pawns.forEach((pawn, index) => {
-                const container = document.getElementById(`canvas-container-${index}`);
-                const canvas = container.querySelector('canvas');
-                if (canvas) {
-                    const dataUrl = canvas.toDataURL('image/png');
-                    const wInches = parseFloat(canvas.style.width); const hInches = parseFloat(canvas.style.height);
-                    const wPx = Math.round(wInches * 96); const hPx = Math.round(hInches * 96);
-                    htmlContent += `<img src="${dataUrl}" width="${wPx}" height="${hPx}" style="width:${wInches}in; height:${hInches}in;" />`;
-                }
-                const tokenCanvas = document.querySelector(`#token-container-${index} canvas`);
-                if (tokenCanvas) {
-                    const tUrl = tokenCanvas.toDataURL('image/png');
-                    const tIn = parseFloat(tokenCanvas.style.width); const tPx = Math.round(tIn * 96);
-                    htmlContent += `<img src="${tUrl}" width="${tPx}" height="${tPx}" style="width:${tIn}in; height:${tIn}in;" />`;
-                }
-            });
-            htmlContent += `</body></html>`;
-            const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+            parts.standees.forEach(cv => { htmlContent += imgTag(cv); });
+            if (parts.tokens.length) {
+                if (parts.standees.length) htmlContent += `<br clear="all" style="page-break-before:always" />`;
+                parts.tokens.forEach(cv => { htmlContent += imgTag(cv); });
+            }
+            htmlContent += `</div></body></html>`;
+            const blob = new Blob(['﻿', htmlContent], { type: 'application/msword' });
             const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
             a.download = getExportFilename('.doc'); document.body.appendChild(a); a.click(); document.body.removeChild(a);
         }
 
         function exportODT() {
             if (state.pawns.length === 0) { alert("Please add at least one pawn before exporting."); return; }
+            const parts = exportParts();
+            if (!parts.standees.length && !parts.tokens.length) { alert(EXPORT_EMPTY_MSG); return; }
+            const d = paperDims();
+            const frame = (cv) => `<draw:frame svg:width="${cv.style.width}" svg:height="${cv.style.height}"><draw:image><office:binary-data>${cv.toDataURL('image/png').split(',')[1]}</office:binary-data></draw:image></draw:frame><text:s text:c="2"/>`;
             let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
-            <office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" office:mimetype="application/vnd.oasis.opendocument.text">
-              <office:body><office:text><text:p>`;
-            state.pawns.forEach((pawn, index) => {
-                const container = document.getElementById(`canvas-container-${index}`);
-                const canvas = container.querySelector('canvas');
-                if (canvas) {
-                    const dataUrl = canvas.toDataURL('image/png');
-                    const base64Data = dataUrl.split(',')[1]; 
-                    const wInches = canvas.style.width; const hInches = canvas.style.height;
-                    xmlContent += `<draw:frame svg:width="${wInches}" svg:height="${hInches}"><draw:image><office:binary-data>${base64Data}</office:binary-data></draw:image></draw:frame><text:s text:c="2"/>`; 
-                }
-                const tokenCanvas = document.querySelector(`#token-container-${index} canvas`);
-                if (tokenCanvas) {
-                    const tData = tokenCanvas.toDataURL('image/png').split(',')[1];
-                    const tIn = tokenCanvas.style.width;
-                    xmlContent += `<draw:frame svg:width="${tIn}" svg:height="${tIn}"><draw:image><office:binary-data>${tData}</office:binary-data></draw:image></draw:frame><text:s text:c="2"/>`;
-                }
-            });
-            xmlContent += `</text:p></office:text></office:body></office:document>`;
+            <office:document xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" office:version="1.2" xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" office:mimetype="application/vnd.oasis.opendocument.text">
+              <office:automatic-styles>
+                <style:page-layout style:name="pm1"><style:page-layout-properties fo:page-width="${+d.wIn.toFixed(3)}in" fo:page-height="${+d.hIn.toFixed(3)}in" style:print-orientation="${state.orientation}" fo:margin-top="0.5in" fo:margin-bottom="0.5in" fo:margin-left="0.5in" fo:margin-right="0.5in"/></style:page-layout>
+                <style:style style:name="PBreak" style:family="paragraph"><style:paragraph-properties fo:break-before="page"/></style:style>
+              </office:automatic-styles>
+              <office:master-styles><style:master-page style:name="Standard" style:page-layout-name="pm1"/></office:master-styles>
+              <office:body><office:text>`;
+            if (parts.standees.length) xmlContent += `<text:p>${parts.standees.map(frame).join('')}</text:p>`;
+            if (parts.tokens.length) xmlContent += `<text:p${parts.standees.length ? ' text:style-name="PBreak"' : ''}>${parts.tokens.map(frame).join('')}</text:p>`;
+            xmlContent += `</office:text></office:body></office:document>`;
             const blob = new Blob([xmlContent], { type: 'application/vnd.oasis.opendocument.text' });
             const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
             a.download = getExportFilename('.odt'); 
@@ -4808,6 +4987,7 @@
         window.addEventListener('DOMContentLoaded', async () => {
             const badge = document.getElementById('brand-badge-qr');
             if (badge) badge.innerHTML = qrSvgMarkup(46);
+            loadPrintPrefs(); initPrintControls(); applyPaper();
             updateInstallButton();
             try {
                 const response = await fetch('default-pawns.json');

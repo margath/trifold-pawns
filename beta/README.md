@@ -43,7 +43,7 @@ then Name/Number, stats, traits, Action Cards, appearance, and image position.
 For play on a map viewed from above, pawns can have a **round overhead token** that
 goes on top of the standee.
 
-- **Project-wide switch:** tick **Overhead tokens** under *On the pawn sheet* in the
+- **Project-wide switch:** tick **Overhead tokens** under *Sheets to print* in the
   footer (off by default). While it is off no tokens show, print or export, but every
   pawn's token settings are kept, so switching back on restores them. The setting is
   saved in the project file. Each pawn also has an **Overhead token for this pawn**
@@ -65,9 +65,10 @@ goes on top of the standee.
   picture only.
 - **Flat disc (1x base)** is a plain round token with no fold lines, for use as a loose
   marker. The **Fold lines** checkbox hides the dashed triangle on a fitted token.
-- Each token is its own item on the pawn sheet, directly after its pawn, so circles pack
-  into the space beside the strips when printing. They are included in the Word and
-  OpenDoc exports too.
+- On screen each token sits beside its pawn so you can edit it. When printing, the
+  tokens are gathered onto a **sheet of their own** after the standees, packed tightly,
+  so they never push the standee strips around. They are included in the Word and
+  OpenDoc exports too (on a page of their own).
 - Token settings are copied by Copy/Paste Style and carried over by Duplicate. Project
   files saved before tokens existed load with tokens off.
 
@@ -79,13 +80,30 @@ Every system also carries Immunities, Resistances, Vulnerabilities and Skills/Pr
 
 ## Printing
 
-Three independent sheets, each with its own print button:
+Tick the sheets you want under **3. Sheets to print** in the footer, choose a paper
+size and orientation under **4. Paper & Print**, then press **Print** (or use the
+browser's own Ctrl/Cmd+P, which gives the same result).
 
-1. **Pawns** — the foldable standees.
-2. **Tracker Tables** — stat blocks with consumable resource boxes beneath each pawn.
-3. **Action Cards** — a separate sheet (`page-break-before: always`) listing each
-   enemy with its attached cards. Pawn-specific overrides replace the library
-   defaults and are marked with `*`.
+| Checkbox | Sheet |
+| --- | --- |
+| **Standees** | The foldable standee strips. |
+| **Overhead tokens** | The round tokens, gathered on one sheet (see above). |
+| **GM summary sheet** | The stat tracker: stat blocks with consumable resource boxes beneath each pawn. |
+| **Power cards** | The Action Card reference, listing each pawn with its attached cards. Pawn-specific overrides replace the library defaults and are marked with `*`. Skipped (with a note) when no pawn has a card attached. |
+
+- **Every checked sheet starts on a fresh page**, and the sheets print in the order
+  above. Nothing shares a page with another sheet, so a sheet's heading can no longer
+  end up underneath the previous sheet's content.
+- **Standees** is a print-only switch: the standees always stay on screen, because that
+  is where you edit them. The other three checkboxes also show or hide their sheet on
+  screen.
+- **Paper:** Letter, Legal, Tabloid (11 x 17 in), A4 or A3, in portrait or landscape.
+  The on-screen sheet changes shape to match, so the preview wraps the way the printout
+  will. Margins are 0.5 in. Your choice is remembered in this browser and saved in the
+  project file; opening an older project file leaves your current choice alone.
+- The **Word (.doc)** and **OpenDoc (.odt)** exports contain the two image sheets
+  (standees, then tokens on their own page) and follow the **Standees**, **Overhead
+  tokens** and paper settings. The tracker and cards sheets are print-only.
 
 ## Adaptive HP
 
