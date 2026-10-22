@@ -688,7 +688,15 @@
            making every strip taller.
            ================================================================== */
         .token-wrapper { align-self: flex-start; }
-        .token-wrapper canvas { touch-action: none; cursor: grab; border-radius: 50%; }
+        .token-wrapper canvas { touch-action: none; cursor: grab; }
+        /* A token with a spine is tall, so rows must not stretch the shorter pawn cards to match. */
+        .pawn-page { align-items: flex-start; }
+        .check-row.sub-check { margin-left: 20px; font-size: 11px; color: #bbb; }
+        .check-row.sub-check.is-off { opacity: 0.45; }
+        .ov-help { font-size: 11.5px; color: #555; line-height: 1.5; }
+        .ov-help summary { cursor: pointer; font-weight: bold; color: #2c3e50; }
+        .ov-help ol { margin: 6px 0 0 18px; padding: 0; }
+        .ov-help li { margin-bottom: 4px; }
         .token-wrapper canvas:active { cursor: grabbing; }
         .token-wrapper .edit-toggle-btn { align-self: stretch; }
         .ov-hint { font-size: 11px; color: #777; line-height: 1.5; margin: 0; }
@@ -1213,6 +1221,10 @@
                         <input type="checkbox" id="toggle-overhead" onchange="toggleOverhead(event)">
                         Overhead tokens
                     </label>
+                    <label class="check-row sub-check" id="spine-row" title="Adds an I-shaped insert to the round tokens: a spine down the middle of the pawn and a foot under it, so lifting the topper lifts the pawn. Each pawn can still opt out in its editor.">
+                        <input type="checkbox" id="toggle-spine" checked onchange="toggleSpine(event)">
+                        with spine &amp; foot
+                    </label>
                     <label class="check-row" title="The stat tracker: one table per game system">
                         <input type="checkbox" id="toggle-table" onchange="toggleTable(event)">
                         GM summary sheet
@@ -1405,6 +1417,9 @@
             // Project-wide master switch for the round overhead tokens. Each
             // pawn also has its own opt-out, so this is "show tokens at all".
             showOverhead: false,
+            // Whether the round tokens carry the spine & foot. On unless switched off;
+            // each pawn can also opt out (pawn.ovSpine).
+            showSpine: true,
             // Print-only switch for the standee sheet (it always stays visible
             // on screen, because it is the editing surface), plus paper setup.
             printStandees: true,
@@ -1530,7 +1545,8 @@
             ovOffsetY: 0,
             ovBg: '#ffffff',     // shows through transparent PNGs
             ovSize: TOKEN_FIT,   // TOKEN_FIT = wraps the standee top; 1 = flat disc, one base wide
-            ovFold: true         // dashed fold triangle (only meaningful at TOKEN_FIT size)
+            ovFold: true,        // dashed fold triangle (only meaningful at TOKEN_FIT size)
+            ovSpine: true        // I-shaped spine & foot that holds the topper on (needs TOKEN_FIT size)
         };
         const OVERHEAD_KEYS = Object.keys(OVERHEAD_DEFAULTS);
         const OVERHEAD_SIZES = [
@@ -2014,6 +2030,7 @@
                 pawnWidth: state.pawnWidth, pawnHeight: state.pawnHeight,
                 showTable: state.showTable, showCards: state.showCards,
                 showOverhead: !!state.showOverhead,
+                showSpine: state.showSpine !== false,
                 printStandees: state.printStandees !== false,
                 paper: state.paper, orientation: state.orientation,
                 hpMode: state.hpMode || 'standard',
@@ -2130,6 +2147,8 @@
             state.showTable = projectData.showTable || false;
             state.showCards = projectData.showCards || false;
             state.showOverhead = !!projectData.showOverhead;
+            // Absent in files from before the spine existed, which should get it.
+            state.showSpine = projectData.showSpine !== false;
             state.printStandees = projectData.printStandees !== false;
             // Paper setup is only taken from files that carry it, so opening an
             // older project doesn't undo the paper you have already chosen.
@@ -2150,6 +2169,7 @@
             if (cardsToggle) cardsToggle.checked = state.showCards;
             const overheadToggle = document.getElementById('toggle-overhead');
             if (overheadToggle) overheadToggle.checked = state.showOverhead;
+            syncOverheadControls();
 
             // Cards load first so attachment validation has a library to check
             // against. Malformed entries are skipped rather than fatal.
@@ -2402,6 +2422,21 @@
             state.showOverhead = !!on;
             const box = document.getElementById('toggle-overhead');
             if (box) box.checked = state.showOverhead;
+            syncOverheadControls();
+            renderAll();
+        }
+
+        // Spine & foot only means something while the tokens are on, so its
+        // footer checkbox is greyed out (and kept as is) when they are off.
+        function syncOverheadControls() {
+            const spineBox = document.getElementById('toggle-spine');
+            const row = document.getElementById('spine-row');
+            if (spineBox) { spineBox.checked = state.showSpine !== false; spineBox.disabled = !state.showOverhead; }
+            if (row) row.classList.toggle('is-off', !state.showOverhead);
+        }
+
+        function toggleSpine(e) {
+            state.showSpine = e.target.checked;
             renderAll();
         }
 
@@ -3144,8 +3179,35 @@
                 foldLabel.appendChild(foldBox); foldLabel.appendChild(document.createTextNode('Fold lines'));
                 if (!ovIsFit(pawn)) { foldLabel.style.opacity = '0.45'; foldLabel.title = 'Fold lines need the \u201cFits standee top\u201d size.'; }
 
-                ovOpts.appendChild(bgLabel); ovOpts.appendChild(sizeLabel2); ovOpts.appendChild(foldLabel);
+                const spineLabel = document.createElement('label');
+                const spineBox = document.createElement('input'); spineBox.type = 'checkbox';
+                const spineAvailable = ovIsFit(pawn) && state.showSpine !== false;
+                spineBox.checked = !!pawn.ovSpine && ovIsFit(pawn);
+                spineBox.disabled = !spineAvailable;
+                spineBox.onchange = (e) => { state.pawns[index].ovSpine = e.target.checked; renderAll(); };
+                spineLabel.appendChild(spineBox); spineLabel.appendChild(document.createTextNode('Spine & foot'));
+                spineLabel.title = 'An I-shaped insert: a spine down the middle of the pawn and a foot under it, so lifting the topper lifts the pawn.';
+                if (!spineAvailable) {
+                    spineLabel.style.opacity = '0.45';
+                    spineLabel.title = ovIsFit(pawn)
+                        ? 'Switched off for the whole project (footer, under Overhead tokens).'
+                        : 'Spine & foot need the \u201cFits standee top\u201d size.';
+                }
+
+                ovOpts.appendChild(bgLabel); ovOpts.appendChild(sizeLabel2); ovOpts.appendChild(foldLabel); ovOpts.appendChild(spineLabel);
                 settingsDiv.appendChild(ovOpts);
+
+                if (overheadSpineOn(pawn)) {
+                    const help = document.createElement('details'); help.className = 'ov-help';
+                    help.innerHTML = '<summary>How the spine &amp; foot goes together</summary><ol>' +
+                        '<li>Cut out the whole I along the solid lines: round token, spine and foot in one piece, including the two short slits up either side of the spine.</li>' +
+                        '<li>Crease every dashed line, then make the four numbered folds in order. <b>1</b>: fold the strip back 180\u00b0 under the token, so it runs in towards the middle of the circle. <b>2</b>: turn it 90\u00b0 so it hangs straight down from the middle.</li>' +
+                        '<li><b>3</b>: at the bottom, turn the strip 90\u00b0 so it runs out along the floor. <b>4</b>: fold the foot back under that strip (the opposite way to the others), so the spine stands in the middle of the foot.</li>' +
+                        '<li>Fold the foot in half down its centre, drop it through the top of the pawn and let the token settle on top. (Not glued yet? Thread the spine through before the last seam instead.) Flatten the foot under the pawn: it is a little bigger than the pawn\u2019s base so it can\u2019t pull back up.</li>' +
+                        '<li>Fold the token\u2019s flaps down over the outside.</li></ol>' +
+                        '<p class="ov-hint">Print and test one before cutting a whole set.</p>';
+                    settingsDiv.appendChild(help);
+                }
             }
 
             return settingsDiv;
@@ -3184,9 +3246,63 @@
         // Corners of the fold triangle for a token of diameter D on a canvas of
         // side `total`: an equilateral triangle inscribed in the circle, point
         // up. Its side is D * sqrt(3) / 2 = the pawn's base width at fit size.
-        function overheadFoldPoints(D, total) {
-            const c = total / 2, R = D / 2, dx = R * Math.sqrt(3) / 2;
-            return [[c, c - R], [c + dx, c + R / 2], [c - dx, c + R / 2]];
+        function overheadFoldPoints(D, cx, cy) {
+            const R = D / 2, dx = R * Math.sqrt(3) / 2;
+            return [[cx, cy - R], [cx + dx, cy + R / 2], [cx - dx, cy + R / 2]];
+        }
+
+        // ---- Spine & foot (the "I") ---------------------------------------------
+        // A topper that only sits on the standee's top edges comes off with a
+        // knock. The spine & foot turn the token into an I: the round token is
+        // the top bar, a spine runs down the middle of the pawn, and a foot
+        // under the pawn is the bottom bar. Lift the topper and the pawn,
+        // resting on the foot, comes with it.
+        //
+        // One strip of paper, folded four times (numbered on the sheet):
+        //   1  at the triangle's bottom side: folded back 180 degrees under the
+        //      token, so the strip runs in towards the middle of the circle...
+        //   2  ...where it turns 90 degrees and drops straight down the middle.
+        //   3  at the bottom it turns 90 degrees onto the floor, running
+        //      towards the pawn's base side by exactly the foot's inradius...
+        //   4  ...where it folds 180 degrees the other way, under itself, into
+        //      the foot - a triangle a little bigger than the pawn's footprint,
+        //      with the spine standing on its centre.
+        // Each run is a little longer than it needs to be (the slack) so the
+        // folds don't pull tight.
+        const SPINE_W = 0.4;           // spine width, x pawn base width
+        const FOOT_MARGIN_IN = 0.05;   // how far the foot reaches past the pawn's footprint, every side
+        const SPINE_SLACK_IN = 0.04;   // extra length in each run, so the folds don't bind
+
+        function overheadSpineOn(pawn) {
+            return state.showSpine !== false && !!pawn.ovSpine && ovIsFit(pawn);
+        }
+
+        // Sizes in canvas pixels. Y values are offsets down from the token's
+        // centre; the foot is drawn base-up: its base edge is fold 4, and its
+        // point hangs below.
+        function overheadSpineGeometry(pawn, D) {
+            const B = D * Math.sqrt(3) / 2, r = D / 2;
+            const H = (pawn.pawnHeight || state.pawnHeight) * OV_DPI;
+            const slack = SPINE_SLACK_IN * OV_DPI, m = FOOT_MARGIN_IN * OV_DPI;
+            const rho = r / 2;                          // centre to the triangle's bottom side
+            const rhoF = rho + m;                       // the same for the foot
+            const f1 = rho;                             // fold 1
+            const f2 = f1 + rho + slack;                // fold 2: in at the middle of the circle
+            const f3 = f2 + H + slack;                  // fold 3: onto the floor
+            const f4 = f3 + rhoF + slack;               // fold 4: base of the foot
+            const footSide = 2 * Math.sqrt(3) * rhoF;
+            return { B: B, r: r, s: SPINE_W * B, f1: f1, f2: f2, f3: f3, f4: f4,
+                     footSide: footSide, footH: 3 * rhoF, bottom: f4 + 3 * rhoF };
+        }
+
+        function fitCanvasText(ctx, text, maxW, basePx) {
+            let px = basePx;
+            while (px > 8) {
+                ctx.font = `bold ${px}px sans-serif`;
+                if (ctx.measureText(text).width <= maxW) break;
+                px--;
+            }
+            return px;
         }
 
         // Paints into an existing canvas, so a drag can repaint continuously
@@ -3194,17 +3310,59 @@
         function paintOverheadCanvas(canvas, pawn) {
             const D = overheadDiameterPx(pawn);
             const total = D + OV_PAD * 2;
-            canvas.width = total; canvas.height = total;
-            canvas.style.width = (total / OV_DPI) + 'in';
-            canvas.style.height = (total / OV_DPI) + 'in';
+            const sp = overheadSpineOn(pawn) ? overheadSpineGeometry(pawn, D) : null;
+            // The foot can be wider than the circle on small pawns.
+            const width = sp ? Math.ceil(Math.max(total, sp.footSide + OV_PAD * 2 + 8)) : total;
+            // The extra 4px is room for the pointed tip of the cut line, which overshoots the foot's point.
+            const height = sp ? Math.ceil(total / 2 + sp.bottom + OV_PAD + 4) : total;
+            canvas.width = width; canvas.height = height;
+            canvas.style.width = (width / OV_DPI) + 'in';
+            canvas.style.height = (height / OV_DPI) + 'in';
             canvas._ov = { D: D, total: total };
 
             const ctx = canvas.getContext('2d');
-            const c = total / 2, r = D / 2;
-            ctx.clearRect(0, 0, total, total);
+            const cx = width / 2, cy = total / 2, r = D / 2;
+            ctx.clearRect(0, 0, width, height);
+            const PI = Math.PI;
+
+            // Spine and foot paper first, so the round token sits over their joins.
+            // The foot's printed face ends up facing the table, so both are kept
+            // plain: a light tint of the pawn colour plus instructions that end
+            // up hidden inside the pawn.
+            if (sp) {
+                const xl = cx - sp.s / 2, xr = cx + sp.s / 2;
+                const yRim = cy + r - 6, yF2 = cy + sp.f2, yF4 = cy + sp.f4;
+                const footPath = () => {
+                    ctx.beginPath();
+                    ctx.moveTo(cx - sp.footSide / 2, yF4); ctx.lineTo(cx + sp.footSide / 2, yF4);
+                    ctx.lineTo(cx, yF4 + sp.footH); ctx.closePath();
+                };
+                ctx.save();
+                ctx.fillStyle = pawn.ovBg || '#ffffff';
+                ctx.fillRect(xl, yRim, sp.s, yF4 - yRim + 1); footPath(); ctx.fill();
+                ctx.globalAlpha = 0.14; ctx.fillStyle = pawn.borderColor;
+                ctx.fillRect(xl, yRim, sp.s, yF4 - yRim + 1); footPath(); ctx.fill();
+                ctx.restore();
+
+                ctx.save();
+                ctx.fillStyle = '#666'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                const spineLen = (cy + sp.f3) - (cy + sp.f2) - 40;
+                if (spineLen > 60) {
+                    ctx.save();
+                    ctx.translate(cx, (yF2 + cy + sp.f3) / 2); ctx.rotate(PI / 2);
+                    const label = 'SPINE – hangs down the middle of the pawn';
+                    ctx.font = `bold ${fitCanvasText(ctx, label, spineLen, 22)}px sans-serif`;
+                    ctx.fillText(label, 0, 0);
+                    ctx.restore();
+                }
+                const footLabel = 'FOOT – lies flat under the pawn';
+                ctx.font = `bold ${fitCanvasText(ctx, footLabel, sp.footSide * 0.62, 20)}px sans-serif`;
+                ctx.fillText(footLabel, cx, yF4 + sp.footH * 0.2);
+                ctx.restore();
+            }
 
             ctx.save();
-            ctx.beginPath(); ctx.arc(c, c, r, 0, Math.PI * 2);
+            ctx.beginPath(); ctx.arc(cx, cy, r, 0, PI * 2);
             ctx.fillStyle = pawn.ovBg || '#ffffff'; ctx.fill();
             ctx.clip();
 
@@ -3216,37 +3374,83 @@
                 const fit = Math.min(D / img.width, D / img.height) * 0.95;
                 const k = fit * (pawn.ovScale || 1);
                 const w = img.width * k, h = img.height * k;
-                ctx.translate(c + (pawn.ovOffsetX || 0) / 100 * D, c + (pawn.ovOffsetY || 0) / 100 * D);
-                ctx.rotate(((pawn.ovRotation || 0) * Math.PI) / 180);
+                ctx.translate(cx + (pawn.ovOffsetX || 0) / 100 * D, cy + (pawn.ovOffsetY || 0) / 100 * D);
+                ctx.rotate(((pawn.ovRotation || 0) * PI) / 180);
                 ctx.drawImage(img, -w / 2, -h / 2, w, h);
             }
             ctx.restore();
+
+            // An arc that goes all the way round, except for the gap where the
+            // spine leaves the token at the bottom (no gap when there is no spine).
+            const roundArc = (radius) => {
+                const gap = sp ? Math.asin(Math.min(1, (sp.s / 2) / radius)) : 0;
+                ctx.beginPath(); ctx.arc(cx, cy, radius, PI / 2 + gap, PI / 2 - gap + PI * 2);
+            };
 
             // Ring in the pawn's colour just inside the rim.
             ctx.save();
             ctx.setLineDash([]);
             ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 10;
-            ctx.beginPath(); ctx.arc(c, c, r - 5, 0, Math.PI * 2); ctx.stroke();
+            roundArc(r - 5); ctx.stroke();
 
             // FOLD lines (dashed): the triangle that matches the standee's top.
             // Drawn twice - a wide white pass under a dark one - so the dashes
             // stay visible over both dark and light artwork.
+            const dashed = (trace) => {
+                ctx.setLineDash([14, 10]); ctx.lineJoin = 'round';
+                ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 7; trace(); ctx.stroke();
+                ctx.strokeStyle = '#222'; ctx.lineWidth = 3; trace(); ctx.stroke();
+            };
             if (pawn.ovFold && ovIsFit(pawn)) {
-                const pts = overheadFoldPoints(D, total);
-                const tri = () => {
+                const pts = overheadFoldPoints(D, cx, cy);
+                dashed(() => {
                     ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
                     ctx.lineTo(pts[1][0], pts[1][1]); ctx.lineTo(pts[2][0], pts[2][1]);
                     ctx.closePath();
-                };
-                ctx.setLineDash([14, 10]); ctx.lineJoin = 'round';
-                ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 7; tri(); ctx.stroke();
-                ctx.strokeStyle = '#222'; ctx.lineWidth = 3; tri(); ctx.stroke();
+                });
+            }
+            if (sp) {
+                // The spine's four folds stay marked even with the triangle's fold lines hidden.
+                const hinge = (y) => () => { ctx.beginPath(); ctx.moveTo(cx - sp.s / 2, y); ctx.lineTo(cx + sp.s / 2, y); };
+                const folds = [sp.f1, sp.f2, sp.f3, sp.f4];
+                folds.forEach(f => dashed(hinge(cy + f)));
             }
 
             // CUT line (solid): just outside the ring, the rim to cut along.
             ctx.setLineDash([]);
             ctx.strokeStyle = '#222'; ctx.lineWidth = 2.5;
-            ctx.beginPath(); ctx.arc(c, c, r + OV_PAD / 2, 0, Math.PI * 2); ctx.stroke();
+            roundArc(r + OV_PAD / 2); ctx.stroke();
+
+            // ...and, with a spine, the slits either side of it and the outline of
+            // spine and foot: one unbroken line from the triangle's bottom side,
+            // down one side of the strip, round the foot and back up the other.
+            if (sp) {
+                const xl = cx - sp.s / 2, xr = cx + sp.s / 2;
+                const y0 = cy + sp.f1, y4 = cy + sp.f4;
+                const outline = () => {
+                    ctx.beginPath();
+                    ctx.moveTo(xl, y0); ctx.lineTo(xl, y4);
+                    ctx.lineTo(cx - sp.footSide / 2, y4); ctx.lineTo(cx, y4 + sp.footH);
+                    ctx.lineTo(cx + sp.footSide / 2, y4); ctx.lineTo(xr, y4);
+                    ctx.lineTo(xr, y0);
+                };
+                ctx.lineJoin = 'miter';
+                ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 6; outline(); ctx.stroke();
+                ctx.strokeStyle = '#222'; ctx.lineWidth = 2.5; outline(); ctx.stroke();
+
+                // Numbered tags beside each fold, in the order they are made.
+                const folds = [sp.f1, sp.f2, sp.f3, sp.f4];
+                ctx.setLineDash([]);
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                folds.forEach((f, i) => {
+                    const tx = cx + sp.s / 2 + 20, ty = cy + f;
+                    ctx.beginPath(); ctx.arc(tx, ty, 13, 0, PI * 2);
+                    ctx.fillStyle = '#fff'; ctx.fill();
+                    ctx.strokeStyle = '#222'; ctx.lineWidth = 2.5; ctx.stroke();
+                    ctx.fillStyle = '#222'; ctx.font = 'bold 18px sans-serif';
+                    ctx.fillText(String(i + 1), tx, ty + 1);
+                });
+            }
             ctx.restore();
         }
 
@@ -3277,7 +3481,7 @@
                 if (!drag) return;
                 const rect = canvas.getBoundingClientRect();
                 // screen px -> fraction of the canvas -> percent of the circle's diameter
-                const toPct = canvas._ov.total / canvas._ov.D * 100 / rect.width;
+                const toPct = canvas.width / canvas._ov.D * 100 / rect.width;
                 pawn.ovOffsetX = clampNum(Math.round(drag.ox + (e.clientX - drag.x) * toPct), -100, 100);
                 pawn.ovOffsetY = clampNum(Math.round(drag.oy + (e.clientY - drag.y) * toPct), -100, 100);
                 paintOverheadCanvas(canvas, pawn);
@@ -4987,7 +5191,7 @@
         window.addEventListener('DOMContentLoaded', async () => {
             const badge = document.getElementById('brand-badge-qr');
             if (badge) badge.innerHTML = qrSvgMarkup(46);
-            loadPrintPrefs(); initPrintControls(); applyPaper();
+            loadPrintPrefs(); initPrintControls(); applyPaper(); syncOverheadControls();
             updateInstallButton();
             try {
                 const response = await fetch('default-pawns.json');

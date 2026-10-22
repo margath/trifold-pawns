@@ -63,6 +63,31 @@ goes on top of the standee.
   no slits needed. Fold them over the outside, or tuck them inside the standee's top
   for a cleaner look. The triangle is fixed on the token; the Rotate slider turns the
   picture only.
+- **Spine & foot (the "I"):** a topper that only sits on the standee's top edges can
+  knock off. With **Spine & foot** the printed token becomes an I: the round token is the
+  top bar, a **spine** runs down the middle of the pawn, and a **foot** under the pawn is
+  the bottom bar. Lift the topper and the pawn, resting on
+  the foot, comes with it. It is on by default for fitted tokens, switched off for the
+  whole project with the **with spine & foot** checkbox under *Overhead tokens* in the
+  footer, and off for a single pawn with **Spine & foot** in its editor. It needs the
+  *Fits standee top* size, so a flat disc never has one.
+  - To assemble: cut out the whole I (round token, spine and foot in one piece, including
+    the two short slits beside the spine) and crease the dashed lines. It is one strip with
+    four numbered folds: **1** folds the strip back 180° under the token so it runs in
+    towards the middle of the circle; **2** turns it 90° so it hangs straight down the
+    middle; **3** turns it 90° onto the floor; **4** folds the foot back under that strip
+    (the opposite way to the others), so the spine stands in the middle of the foot. Then
+    fold the foot in half down its centre, drop it through the top of the pawn and let the
+    token settle on top (or thread the spine through before the pawn's last seam if it
+    isn't glued yet), flatten the foot under the pawn, and fold the token's flaps down.
+  - Sizes, all relative to the pawn's base width **B**: the spine is 0.4 B wide, and every
+    run is 0.04" longer than it needs to be so the folds don't bind. The foot is an
+    equilateral triangle, the same way up as the pawn's footprint, reaching 0.05" past it on
+    every side; being wider than the inside of the pawn it can't pull back up through it.
+  - The spine and foot are plain paper, tinted with the pawn's colour, with instructions
+    printed on them that end up hidden inside the pawn. The token on screen becomes
+    taller (about 3.4" for a Medium pawn). Project files saved before this existed load
+    with the spine and foot on.
 - **Flat disc (1x base)** is a plain round token with no fold lines, for use as a loose
   marker. The **Fold lines** checkbox hides the dashed triangle on a fitted token.
 - On screen each token sits beside its pawn so you can edit it. When printing, the
