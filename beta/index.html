@@ -1546,6 +1546,7 @@
             ovBg: '#ffffff',     // shows through transparent PNGs
             ovSize: TOKEN_FIT,   // TOKEN_FIT = wraps the standee top; 1 = flat disc, one base wide
             ovFold: true,        // dashed fold triangle (only meaningful at TOKEN_FIT size)
+            ovLabel: true,       // pawn name and number printed on the topper
             ovSpine: true        // I-shaped spine & foot that holds the topper on (needs TOKEN_FIT size)
         };
         const OVERHEAD_KEYS = Object.keys(OVERHEAD_DEFAULTS);
@@ -3176,6 +3177,12 @@
                 foldBox.checked = !!pawn.ovFold && ovIsFit(pawn);
                 foldBox.disabled = !ovIsFit(pawn);
                 foldBox.onchange = (e) => { state.pawns[index].ovFold = e.target.checked; renderOverhead(index); };
+                const labelLabel = document.createElement('label');
+                const labelBox = document.createElement('input'); labelBox.type = 'checkbox';
+                labelBox.checked = pawn.ovLabel !== false;
+                labelBox.onchange = (e) => { state.pawns[index].ovLabel = e.target.checked; renderOverhead(index); };
+                labelLabel.appendChild(labelBox); labelLabel.appendChild(document.createTextNode('Name & number'));
+                labelLabel.title = 'Print this pawn\u2019s name (round the top) and number (lower right) on the topper.';
                 foldLabel.appendChild(foldBox); foldLabel.appendChild(document.createTextNode('Fold lines'));
                 if (!ovIsFit(pawn)) { foldLabel.style.opacity = '0.45'; foldLabel.title = 'Fold lines need the \u201cFits standee top\u201d size.'; }
 
@@ -3194,7 +3201,7 @@
                         : 'Spine & foot need the \u201cFits standee top\u201d size.';
                 }
 
-                ovOpts.appendChild(bgLabel); ovOpts.appendChild(sizeLabel2); ovOpts.appendChild(foldLabel); ovOpts.appendChild(spineLabel);
+                ovOpts.appendChild(bgLabel); ovOpts.appendChild(sizeLabel2); ovOpts.appendChild(foldLabel); ovOpts.appendChild(labelLabel); ovOpts.appendChild(spineLabel);
                 settingsDiv.appendChild(ovOpts);
 
                 if (overheadSpineOn(pawn)) {
@@ -3379,6 +3386,66 @@
                 ctx.drawImage(img, -w / 2, -h / 2, w, h);
             }
             ctx.restore();
+
+            // Name and number, so a topper can be matched to its pawn from above:
+            // the name wraps round the top of the token, just inside the colour
+            // ring, and the number sits in the middle. Both are on white so they
+            // read over any artwork, and neither touches the ring.
+            if (pawn.ovLabel !== false) {
+                const name = (pawn.name || '').trim();
+                const num = (pawn.number || '').toString().trim();
+                const textFill = pawn.textColor || '#000';
+                ctx.save();
+                ctx.textBaseline = 'middle';
+                if (name) {
+                    let px = Math.max(14, Math.round(r * 0.19));
+                    const maxAngle = PI * 0.8;                 // widest the name may sweep
+                    // The band's outer edge stays 6px inside the ring (which spans r-10 .. r).
+                    const radiusFor = (p) => r - 16 - p * 0.7;
+                    const widthOf = (t, p) => { ctx.font = `bold ${p}px sans-serif`; return ctx.measureText(t).width; };
+                    let text = name;
+                    while (px > 11 && widthOf(text, px) > radiusFor(px) * maxAngle) px--;
+                    if (widthOf(text, px) > radiusFor(px) * maxAngle) {
+                        while (text.length > 1 && widthOf(text + '…', px) > radiusFor(px) * maxAngle) text = text.slice(0, -1);
+                        text = text.replace(/\s+$/, '') + '…';
+                    }
+                    const rt = radiusFor(px);
+                    ctx.font = `bold ${px}px sans-serif`;
+                    const chars = Array.from(text);
+                    const widths = chars.map(ch => ctx.measureText(ch).width);
+                    const span = widths.reduce((x, y) => x + y, 0) / rt;      // radians
+                    // White band behind the text, a little longer than the text.
+                    const pad = (px * 0.5) / rt;
+                    ctx.lineCap = 'round'; ctx.lineWidth = px * 1.4; ctx.strokeStyle = '#fff';
+                    ctx.beginPath(); ctx.arc(cx, cy, rt, -PI / 2 - span / 2 - pad, -PI / 2 + span / 2 + pad); ctx.stroke();
+                    ctx.textAlign = 'center'; ctx.fillStyle = textFill;
+                    let ang = -PI / 2 - span / 2;
+                    chars.forEach((ch, i) => {
+                        const a = ang + widths[i] / rt / 2;
+                        ctx.save(); ctx.translate(cx + rt * Math.cos(a), cy + rt * Math.sin(a));
+                        ctx.rotate(a + PI / 2); ctx.fillText(ch, 0, 1); ctx.restore();
+                        ang += widths[i] / rt;
+                    });
+                }
+                if (num) {
+                    // Lower right of the dashed triangle, just above its bottom side
+                    // and inside its right-hand side, so it stays visible when the flaps fold down.
+                    const t = '#' + num;
+                    let px = Math.max(14, Math.round(r * 0.24));
+                    ctx.font = `bold ${px}px sans-serif`;
+                    const h = px * 1.4, w = Math.max(ctx.measureText(t).width + px * 0.8, h * 1.3);
+                    const midY = cy + r / 2 - h / 2 - r * 0.08;
+                    const topY = midY - h / 2;
+                    const edgeX = (topY - (cy - r)) / (1.5 * r) * (r * Math.sqrt(3) / 2);   // triangle's right side at the pill's top
+                    const midX = cx + edgeX - w / 2 - r * 0.05;
+                    ctx.fillStyle = '#fff'; ctx.beginPath();
+                    const pr = h / 2, x0 = midX - w / 2 + pr, x1 = midX + w / 2 - pr;
+                    ctx.moveTo(x0, midY - pr); ctx.lineTo(x1, midY - pr); ctx.arc(x1, midY, pr, -PI / 2, PI / 2);
+                    ctx.lineTo(x0, midY + pr); ctx.arc(x0, midY, pr, PI / 2, PI * 1.5); ctx.closePath(); ctx.fill();
+                    ctx.textAlign = 'center'; ctx.fillStyle = textFill; ctx.fillText(t, midX, midY + 1);
+                }
+                ctx.restore();
+            }
 
             // An arc that goes all the way round, except for the gap where the
             // spine leaves the token at the bottom (no gap when there is no spine).

@@ -63,6 +63,7 @@ goes on top of the standee.
   no slits needed. Fold them over the outside, or tuck them inside the standee's top
   for a cleaner look. The triangle is fixed on the token; the Rotate slider turns the
   picture only.
+- **Name & number on the topper:** each token prints its pawn's name wrapped round the top of the circle and its number (e.g. "#3") in the lower right, just above the triangle's bottom side, both on white and kept inside the colour ring so the pawn's colour still shows. A long name is shrunk and then shortened with "…"; the number is always kept. Untick **Name & number** in the pawn's editor to hide them.
 - **Spine & foot (the "I"):** a topper that only sits on the standee's top edges can
   knock off. With **Spine & foot** the printed token becomes an I: the round token is the
   top bar, a **spine** runs down the middle of the pawn, and a **foot** under the pawn is
