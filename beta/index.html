@@ -1692,6 +1692,11 @@
             if (n < 1024 * 1024) return (n / 1024).toFixed(0) + ' KB';
             return (n / (1024 * 1024)).toFixed(1) + ' MB';
         }
+        // "goblin_archer-2.PNG" -> "goblin archer-2": the file name minus its
+        // extension, with underscores read as spaces. Names the user types later win.
+        function nameFromFilename(fileName) {
+            return (fileName || '').replace(/\.[^.\/\\]+$/, '').replace(/_+/g, ' ').replace(/\s+/g, ' ').trim();
+        }
         async function handleFiles(e) {
             const files = e.target.files;
             if (!files) return;
@@ -1728,7 +1733,7 @@
                 STAT_KEYS.forEach(key => emptyStats[key] = '');
 
                 state.pawns.push(ensurePawnShape({
-                    img: img, dataUrl: storedUrl, name: '', number: '', isEditing: false,
+                    img: img, dataUrl: storedUrl, name: (e.target.id || '').startsWith('paste') ? '' : nameFromFilename(file.name), number: '', isEditing: false,
                     isDark: calculateDarkness(img), isFlipped: false, showBorder: false, 
                     borderColor: '#000000', textColor: '#000000', textBgColor: '#FFFFFFEE',
                     scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0,
@@ -3624,7 +3629,8 @@
             const reservedBottom = hasText ? textHeight + textPaddingBottom : 0; 
 
             for (let i = 0; i < panels; i++) {
-                let xBase = i * internalPanelWidth;
+                // The glue tab is at the left end, so it tucks under the back panel's far edge when the pawn is closed.
+                let xBase = internalTabWidth + i * internalPanelWidth;
                 ctx.save();
                 
                 const margin = internalHeight * 0.05;
@@ -3711,7 +3717,7 @@
                 }
             }
 
-            drawGlueTab(ctx, pawn, panels * internalPanelWidth, internalTabWidth, internalHeight);
+            drawGlueTab(ctx, pawn, 0, internalTabWidth, internalHeight);
 
             ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 4; ctx.strokeRect(0, 0, internalWidth, internalHeight);
             return canvas;
@@ -3802,7 +3808,7 @@
             ctx.save();
             ctx.setLineDash([]);
             ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.moveTo(xTab, 0); ctx.lineTo(xTab, tabH); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(xTab + tabW, 0); ctx.lineTo(xTab + tabW, tabH); ctx.stroke();
             ctx.fillStyle = '#e8e8e8';
             ctx.fillRect(xTab, 0, tabW, tabH);
 
@@ -3817,7 +3823,7 @@
             if (pawn.showQr) {
                 const qrSize = Math.max(0, Math.min(tabW - laneW - pad * 2, tabH - pad * 2));
                 if (qrSize > 0) {
-                    const qx = xTab + pad;
+                    const qx = xTab + tabW - pad - qrSize;      // beside the fold, label lane on the outer edge
                     const qy = Math.round((tabH - qrSize) / 2);
                     // White field behind the code: the tab is grey, and a QR on
                     // grey loses the contrast a scanner needs.
@@ -3837,7 +3843,7 @@
             const urlW = ctx.measureText('tools.gameportal.win').width;
             const totalW = glueW + urlW;
 
-            ctx.translate(xTab + tabW - laneW / 2, tabH / 2);
+            ctx.translate(xTab + laneW / 2, tabH / 2);
             ctx.rotate(-Math.PI / 2);
             ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
             ctx.font = `bold ${px}px sans-serif`;

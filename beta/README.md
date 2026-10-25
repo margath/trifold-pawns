@@ -161,3 +161,5 @@ reference are visible immediately.
 
 `Save` writes a `.json` you can reload later. Version 1 files (saved before Action
 Cards existed) load without modification — missing fields are filled with blanks.
+
+- **Glue tab and image names:** the glue tab (with the optional QR) is at the left end of each pawn strip, so it tucks in and glues under the back panel's far edge. Images added from files take their file name as the pawn name (extension removed, underscores read as spaces); pasted images are left unnamed.
