@@ -2909,7 +2909,8 @@
 
             updateCardCountBadge();
             const modal = document.getElementById('card-modal');
-            if (modal && modal.style.display === 'flex') renderCardManager();
+            // Skipped while typing into a card field: rebuilding the modal would drop the input's focus.
+            if (modal && modal.style.display === 'flex' && !renderAll.keepCardManager) renderCardManager();
         }
 
         // Shown when a project has no pawns at all - an empty white page gives no
@@ -4884,7 +4885,8 @@
             // Re-render attached pawn rows so non-overridden values track the
             // base card live, but don't rebuild the modal (it would steal focus
             // from the input being typed into).
-            renderAll();
+            renderAll.keepCardManager = true;
+            try { renderAll(); } finally { renderAll.keepCardManager = false; }
         }
 
         function duplicateActionCard(cardId) {
