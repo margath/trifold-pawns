@@ -87,25 +87,6 @@
         .icon-paste { background: #f39c12; }
 
         /* Static QR Code & Header Button */
-        .header-qr-link {
-            display: flex;
-            align-items: center;
-        }
-        .header-qr {
-            height: 46px;
-            width: 46px;
-            background: white;
-            padding: 2px;
-            border-radius: 4px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
-            transition: transform 0.2s ease-in-out;
-            transform-origin: top left; 
-            cursor: pointer;
-        }
-        .header-qr:hover {
-            transform: scale(2.5); 
-            z-index: 200;
-        }
         
         .header-link-btn {
             background: #8e44ad;
@@ -134,8 +115,8 @@
 
         .page {
             background: white;
-            width: 8.5in;
-            min-height: 11in;
+            width: var(--paper-w, 8.5in);
+            min-height: var(--paper-h, 11in);
             box-shadow: 0 4px 20px rgba(0,0,0,0.6);
             padding: 0.5in;
             box-sizing: border-box;
@@ -395,7 +376,6 @@
 
         /* Print Settings */
         @media print {
-            @page { margin: 0.5in; size: letter portrait; }
             body { background: white; height: auto; }
             .top-header { display: none !important; }
             .content-wrapper { margin-top: 0; display: block; height: auto; overflow: visible; }
@@ -596,11 +576,6 @@
            PRINT
            ================================================================== */
         @media print {
-            /* Sheet 2 always starts a fresh page... */
-            .cards-page { page-break-before: always; }
-            /* ...unless it's the only thing printing, which would otherwise
-               emit a blank leading page. */
-            .print-hide-pawns.print-hide-table .cards-page { page-break-before: auto; }
             .print-hide-cards .cards-page { display: none !important; }
 
             .card-pawn-block, .action-card, .res-row { page-break-inside: avoid; }
@@ -614,8 +589,6 @@
 
 
         /* PWA install affordance + update toast */
-        .install-btn { background: #16a085; border: none; cursor: pointer; font-family: inherit; }
-        .install-btn:hover { background: #117a65; }
         .pwa-toast {
             position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
             background: #1e1e1e; color: #eee; border: 1px solid #555; border-radius: 8px;
@@ -707,6 +680,27 @@
         .empty-state-btn { width: auto !important; padding: 10px 22px !important; font-size: 14px !important; }
         .empty-state-hint { font-size: 11px !important; color: #999 !important; margin-top: 12px !important; font-style: italic; }
 
+        /* ==================================================================
+           OVERHEAD TOKENS
+           Round tops for the standees, for use on a map seen from above. Each
+           token is its own flow item right after its pawn, so the print
+           layout packs circles into the gaps beside the strips instead of
+           making every strip taller.
+           ================================================================== */
+        .token-wrapper { align-self: flex-start; }
+        .token-wrapper canvas { touch-action: none; cursor: grab; }
+        /* A token with a spine is tall, so rows must not stretch the shorter pawn cards to match. */
+        .pawn-page { align-items: flex-start; }
+        .check-row.sub-check { margin-left: 20px; font-size: 11px; color: #bbb; }
+        .check-row.sub-check.is-off { opacity: 0.45; }
+        .ov-help { font-size: 11.5px; color: #555; line-height: 1.5; }
+        .ov-help summary { cursor: pointer; font-weight: bold; color: #2c3e50; }
+        .ov-help ol { margin: 6px 0 0 18px; padding: 0; }
+        .ov-help li { margin-bottom: 4px; }
+        .token-wrapper canvas:active { cursor: grabbing; }
+        .token-wrapper .edit-toggle-btn { align-self: stretch; }
+        .ov-hint { font-size: 11px; color: #777; line-height: 1.5; margin: 0; }
+
         /* Numbered Power Point boxes need room for two digits. */
         .pp-box { min-width: 21px; font-size: 9px; color: #5b2c6f; }
 
@@ -727,15 +721,6 @@
            ================================================================== */
         .tracker-table thead { display: table-header-group; }
         .tracker-table tfoot { display: table-footer-group; }
-        .section-head-row th {
-            background: #333 !important;
-            color: #fff !important;
-            text-align: left !important;
-            font-size: 14px;
-            letter-spacing: 0.3px;
-            padding: 8px 10px !important;
-            border: 1px solid #222 !important;
-        }
         .tracker-page > .tracker-table { margin-bottom: 18px; }
         .tracker-table { margin-bottom: 18px; }
 
@@ -995,17 +980,157 @@
         }
 
         @media print { .privacy-ribbon, .card-modal { display: none !important; } }
+
+        /* ==================================================================
+           BRANDING ON THE PRINTED SHEETS
+           ================================================================== */
+        .sheet-head {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            gap: 16px; border-bottom: 2px solid #ccc; margin-bottom: 12px;
+        }
+        .sheet-head h2 { border-bottom: none !important; margin: 0 !important; padding-bottom: 6px !important; }
+
+        .brand-block { display: inline-flex; align-items: center; gap: 6px; }
+        .brand-block .qr-svg { display: block; flex-shrink: 0; }
+        .brand-url {
+            font-size: 7px; line-height: 1.15; font-weight: bold;
+            color: #666; text-transform: lowercase; letter-spacing: 0.2px;
+            white-space: nowrap;
+        }
+        .brand-sheet { flex-shrink: 0; }
+        .brand-sheet .brand-url { font-size: 8px; color: #555; }
+
+        /* Inside the dark section band the code needs a white surround to stay
+           scannable, and the caption has to invert. */
+        .brand-in-header { float: right; margin-left: 12px; }
+        .section-head-text { display: inline-block; padding-top: 8px; }
+
+        .qr-too-small { color: #b9770e !important; }
+        .qr-too-small::after { content: ' ⚠'; }
+
+        @media print {
+            /* Codes must keep full contrast even with background graphics off. */
+            .qr-svg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        /* ==================================================================
+           BRAND BADGE + INSTALL CONTROL
+           The QR and the site link are one object now: hovering enlarges the
+           whole badge so the code becomes scannable straight off the screen.
+           ================================================================== */
+        .brand-badge {
+            display: flex; align-items: center; gap: 8px;
+            background: #8e44ad; color: #fff;
+            padding: 4px 10px 4px 4px; border-radius: 5px;
+            text-decoration: none; font-size: 11px; font-weight: bold;
+            line-height: 1.2; white-space: nowrap;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            transform-origin: top left;
+            transition: transform 0.18s ease-in-out, background 0.18s;
+        }
+        .brand-badge:hover { background: #7d3c98; transform: scale(2.1); z-index: 300; }
+        .brand-badge-qr {
+            display: block; background: #fff;
+            padding: 2px; border-radius: 3px; line-height: 0; flex-shrink: 0;
+        }
+        .brand-badge-qr svg { display: block; }
+        .brand-badge-label strong { font-size: 12px; }
+
+        .app-install-btn {
+            border: none; border-radius: 4px; padding: 8px 14px;
+            font-family: inherit; font-size: 12px; font-weight: bold;
+            color: #fff; cursor: pointer; white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            transition: background 0.15s, transform 0.15s;
+        }
+        .app-install-btn:hover { transform: translateY(-1px); }
+        .app-install-btn.is-installable { background: #1e8449; }
+        .app-install-btn.is-installable:hover { background: #166b3a; }
+        .app-install-btn.is-installed { background: #c0392b; }
+        .app-install-btn.is-installed:hover { background: #a33025; }
+
+        .install-panel { max-width: 560px; }
+        .install-intro { margin: 0 0 12px; font-size: 12.5px; color: #ccc; line-height: 1.55; }
+        .install-step {
+            background: #222; border: 1px solid #333; border-left: 3px solid #1e8449;
+            border-radius: 5px; padding: 9px 12px; margin-bottom: 7px;
+        }
+        .install-step h3 { margin: 0 0 4px; font-size: 12px; color: #fff; }
+        .install-step p { margin: 0; font-size: 11.5px; color: #b5b5b5; line-height: 1.5; }
+        .install-step em { color: #ddd; font-style: normal; font-weight: bold; }
+        .install-step code {
+            background: #1a1a1a; border: 1px solid #383838; border-radius: 3px;
+            padding: 0 4px; font-size: 10.5px; color: #ddd;
+        }
+        .install-note { margin: 12px 0 0; font-size: 11px; font-style: italic; color: #8a8a8a; }
+
+        @media print { .brand-badge, .app-install-btn { display: none !important; } }
+
+        /* Section band: light enough not to dominate the page, with a heavy
+           bottom rule doing the dividing work the black fill used to do. */
+        .section-head-row th {
+            background: #f2f2f2 !important;
+            color: #1f1f1f !important;
+            text-align: left !important;
+            font-size: 13.5px;
+            font-weight: bold;
+            letter-spacing: 0.2px;
+            padding: 6px 10px !important;
+            border: 1px solid #ccc !important;
+            border-bottom: 2px solid #888 !important;
+            border-left: 4px solid #666 !important;
+        }
+        .brand-in-header .qr-svg { border: 1px solid #d5d5d5; border-radius: 2px; }
+        .brand-in-header .brand-url { color: #777; }
+
+        .tracker-page h2, .cards-page h2 {
+            font-weight: 600;
+            color: #3a3a3a;
+            border-bottom-color: #ddd;
+        }
+
+        /* ==================================================================
+           PRINT LAYOUT
+           Declared last so it wins the cascade over the screen rules above:
+           .main's screen padding and 40px gap used to leak into the printout,
+           and only the cards sheet forced a fresh page, so the tracker header
+           landed underneath the standees. Now every sheet is its own top-level
+           .page and starts on a fresh sheet of paper; applyPrintSelection()
+           marks the first sheet being printed so it doesn't leave a blank
+           leading page. The paper size comes from #print-page-style, which
+           applyPaper() keeps current.
+           ================================================================== */
+        .token-page { display: none; }
+        .footer-block select { width: 100%; }
+
+        @media print {
+            .content-wrapper { margin-top: 0; min-height: 0; display: block; }
+            .main { display: block; padding: 0; gap: 0; width: auto; }
+            .page { break-before: page; page-break-before: always; }
+            .page.print-first { break-before: auto; page-break-before: auto; }
+
+            /* Tokens never ride along inside the standee flow (that is what
+               pushed the strips out of step); they print on their own sheet. */
+            .token-wrapper { display: none !important; }
+            .token-page.has-tokens {
+                display: flex; flex-wrap: wrap; align-content: flex-start; gap: 0.1in;
+            }
+            .token-page canvas { display: block; border-radius: 0; }
+        }
     </style>
 </head>
 <body>
 
     <header class="top-header">
         <div class="header-left">
-            <a href="https://tools.gameportal.win/" alt="Link to http://tools.gameportal.win/" title="https://tools.gameportal.win/" class="header-qr-link">
-                <img class="header-qr" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0nMS4wJyBlbmNvZGluZz0nVVRGLTgnPz4KPHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzdtbSIgaGVpZ2h0PSIzN21tIiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNW1tIiB5PSI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE2bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI3bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI4bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTVtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzJtbSIgeT0iNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMW1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOW1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMG1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iN21tIiB5PSI3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIwbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI4bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjhtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTVtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjJtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzBtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzJtbSIgeT0iOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyM21tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI1bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTJtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMThtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIwbW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMm1tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjRtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMG1tIiB5PSIxMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMTBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjEwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIxMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMTFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjExbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMTFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjExbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIxMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMTFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjExbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSIxMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTJtbSIgeT0iMTJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNG1tIiB5PSIxMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iMTJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIxMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjJtbSIgeT0iMTJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjEybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIxMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjdtbSIgeT0iMTJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjVtbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjExbW0iIHk9IjEzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIxM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjEzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIxM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjEzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSIxM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMTNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjEzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTFtbSIgeT0iMTRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMTRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMTRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMTRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjE0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMW1tIiB5PSIxNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNW1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTJtbSIgeT0iMTVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjE1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxN21tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMTVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjE1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMTVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjE1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMW1tIiB5PSIxNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEybW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMThtbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMW1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMTZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjE2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIxNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNW1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iN21tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMTdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjE3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMTdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjE3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMTdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIxbW0iIHk9IjE3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMm1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMTdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjE3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIxN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iN21tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMThtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEybW0iIHk9IjE4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTVtbSIgeT0iMThtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjE4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOG1tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjVtbSIgeT0iMThtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjE4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMG1tIiB5PSIxOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMThtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMybW0iIHk9IjE4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI5bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMTltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTltbSIgeT0iMTltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIxbW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMm1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMTltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI1bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMTltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjE5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMW1tIiB5PSIxOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMjBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjExbW0iIHk9IjIwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMjBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjIwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxN21tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMjBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIzbW0iIHk9IjIwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIyMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMjBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjVtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjExbW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE1bW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNm1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIxbW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI3bW0iIHk9IjIxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOW1tIiB5PSIyMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzJtbSIgeT0iMjFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjltbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMThtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjJtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI1bW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNm1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjdtbSIgeT0iMjJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjIybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIyMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIyM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMjNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE2bW0iIHk9IjIzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOG1tIiB5PSIyM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMjNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjIzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSIyM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMjNtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjIzbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIyM21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEybW0iIHk9IjI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNG1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iMjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjVtbSIgeT0iMjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIyNG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMjRtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjI0bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iMjVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE4bW0iIHk9IjI1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIyNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMjVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjI1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIyNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzBtbSIgeT0iMjVtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMxbW0iIHk9IjI1bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIyNW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNW1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNm1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iN21tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOG1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iOW1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMjZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjBtbSIgeT0iMjZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIxbW0iIHk9IjI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iMjZtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI4bW0iIHk9IjI2bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMW1tIiB5PSIyNm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIyN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEybW0iIHk9IjI3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOG1tIiB5PSIyN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTltbSIgeT0iMjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjI3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIyN21tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMjdtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjI3bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI0bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI2bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI3bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSI4bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMG1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTNtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE0bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNW1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTZtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIwbW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMW1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjJtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNW1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjZtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI3bW0iIHk9IjI4bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIyOG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMjhtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjhtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIyOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTRtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxOW1tIiB5PSIyOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI2bW0iIHk9IjI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIyOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjhtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI5bW0iIHk9IjI5bW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMG1tIiB5PSIyOW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzJtbSIgeT0iMjltbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjhtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjMwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxM21tIiB5PSIzMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTdtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE5bW0iIHk9IjMwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIzMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjNtbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI0bW0iIHk9IjMwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIzMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjltbSIgeT0iMzBtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjMwbW0iIHk9IjMwbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIzMm1tIiB5PSIzMG1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iNG1tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTBtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEzbW0iIHk9IjMxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxNG1tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTVtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjE3bW0iIHk9IjMxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyMG1tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjFtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjMxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyM21tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjRtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI1bW0iIHk9IjMxbW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyN21tIiB5PSIzMW1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMzFtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjRtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjVtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjZtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjdtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjhtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjltbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjEwbW0iIHk9IjMybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIxMm1tIiB5PSIzMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMTltbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjIybW0iIHk9IjMybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyNG1tIiB5PSIzMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMjVtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PHN2ZzpyZWN0IHg9IjI3bW0iIHk9IjMybW0iIHdpZHRoPSIxbW0iIGhlaWdodD0iMW1tIiAvPjxzdmc6cmVjdCB4PSIyOG1tIiB5PSIzMm1tIiB3aWR0aD0iMW1tIiBoZWlnaHQ9IjFtbSIgLz48c3ZnOnJlY3QgeD0iMzFtbSIgeT0iMzJtbSIgd2lkdGg9IjFtbSIgaGVpZ2h0PSIxbW0iIC8+PC9zdmc+" alt="Static QR Code for tools.gameportal.win" title="https://tools.gameportal.win">
+            <a href="https://tools.gameportal.win" target="_blank" rel="noopener"
+               class="brand-badge" title="Visit tools.gameportal.win — hover to enlarge the code">
+                <span class="brand-badge-qr" id="brand-badge-qr"></span>
+                <span class="brand-badge-label">Visit<br><strong>GamePortal</strong></span>
             </a>
-            <a href="https://tools.gameportal.win" target="_blank" class="header-link-btn">Visit GamePortal</a>
-            <button id="install-app-btn" class="header-link-btn install-btn" style="display:none" onclick="triggerInstall()">Install App</button>
+            <button id="install-app-btn" class="app-install-btn" onclick="handleInstallClick()">
+                Install App
+            </button>
         </div>
         <div class="header-titles">
             <h1>The Tri-Fold Pawn Maker</h1>
@@ -1029,6 +1154,10 @@
     <div class="content-wrapper">
         <div class="main">
             <div class="page pawn-page" id="page"></div>
+
+            <!-- Print-only: the overhead tokens gathered onto a sheet of their
+                 own. Filled by applyPrintSelection(), empty and hidden on screen. -->
+            <div class="page token-page" id="token-page"></div>
             
             <div class="page tracker-page" id="tracker-page"></div>
 
@@ -1083,28 +1212,43 @@
 
             <div class="footer-col">
                 <div class="footer-block">
-                    <label>3. Sheets to include</label>
-                    <label class="check-row">
+                    <label>3. Sheets to print</label>
+                    <label class="check-row" title="The folded standee strips">
+                        <input type="checkbox" id="toggle-standees" checked onchange="togglePrintStandees(event)">
+                        Standees
+                    </label>
+                    <label class="check-row" title="Round overhead tops for top-down maps, printed together on their own sheet. Each pawn can still opt out in its editor.">
+                        <input type="checkbox" id="toggle-overhead" onchange="toggleOverhead(event)">
+                        Overhead tokens
+                    </label>
+                    <label class="check-row sub-check" id="spine-row" title="Adds an I-shaped insert to the round tokens: a spine down the middle of the pawn and a foot under it, so lifting the topper lifts the pawn. Each pawn can still opt out in its editor.">
+                        <input type="checkbox" id="toggle-spine" checked onchange="toggleSpine(event)">
+                        with spine &amp; foot
+                    </label>
+                    <label class="check-row" title="The stat tracker: one table per game system">
                         <input type="checkbox" id="toggle-table" onchange="toggleTable(event)">
-                        Tracker sheet
+                        GM summary sheet
                     </label>
-                    <label class="check-row">
+                    <label class="check-row" title="The action cards attached to your pawns">
                         <input type="checkbox" id="toggle-cards" onchange="toggleCards(event)">
-                        Action card sheet
+                        Power cards
                     </label>
-                    <p class="footer-hint">Each prints on its own page, after the pawns.</p>
+                    <p class="footer-hint">Each checked sheet starts on a fresh page.</p>
                 </div>
             </div>
 
             <div class="footer-col footer-col-wide">
                 <div class="footer-block">
-                    <label>4. Print &amp; Export</label>
-                    <button class="primary" onclick="handlePrint('all')">Print Sheet(s)</button>
-                    <div class="btn-grid-3">
-                        <button class="secondary" onclick="handlePrint('pawns')">Pawns</button>
-                        <button class="secondary" onclick="handlePrint('table')">Tracker</button>
-                        <button class="secondary" onclick="handlePrint('cards')">Cards</button>
+                    <label>4. Paper &amp; Print</label>
+                    <div class="btn-grid-2">
+                        <select id="paper-size" title="Paper size" onchange="setPaper()"></select>
+                        <select id="paper-orient" title="Page orientation" onchange="setPaper()">
+                            <option value="portrait">Portrait</option>
+                            <option value="landscape">Landscape</option>
+                        </select>
                     </div>
+                    <button class="primary" onclick="handlePrint()">Print</button>
+                    <label class="sub-label">Image sheets only</label>
                     <div class="btn-grid-2">
                         <button class="primary word-btn" onclick="exportWord()">Word (.doc)</button>
                         <button class="primary odt-btn" onclick="exportODT()">OpenDoc (.odt)</button>
@@ -1131,6 +1275,19 @@
             </div>
             <div class="edit-drawer-body" id="edit-drawer-body"></div>
         </aside>
+
+        <!-- Install / remove guidance. There is no web API to uninstall an
+             installed app - only the browser or OS can do that - so the red
+             button opens instructions rather than pretending to act. -->
+        <div class="card-modal" id="install-modal">
+            <div class="card-modal-panel install-panel">
+                <div class="card-modal-header">
+                    <h2 id="install-modal-title">Install this app</h2>
+                    <button class="card-modal-close" onclick="closeInstallHelp()" title="Close">&times;</button>
+                </div>
+                <div class="card-modal-body" id="install-modal-body"></div>
+            </div>
+        </div>
 
         <!-- Privacy notice. Claims here are deliberately narrow and checkable:
              the app makes no third-party requests, uses no browser storage, and
@@ -1257,6 +1414,17 @@
         const state = {
             pawns: [], pawnWidth: 1.0, pawnHeight: 1.5,
             showTable: false,
+            // Project-wide master switch for the round overhead tokens. Each
+            // pawn also has its own opt-out, so this is "show tokens at all".
+            showOverhead: false,
+            // Whether the round tokens carry the spine & foot. On unless switched off;
+            // each pawn can also opt out (pawn.ovSpine).
+            showSpine: true,
+            // Print-only switch for the standee sheet (it always stays visible
+            // on screen, because it is the editing surface), plus paper setup.
+            printStandees: true,
+            paper: 'letter',
+            orientation: 'portrait',
             // Action Cards: a global library of abilities that individual pawns
             // attach by id and then override field-by-field. Kept flat and
             // id-keyed (never index-keyed) because renderAll() re-sorts
@@ -1356,6 +1524,49 @@
         // Guarantees every stat block, traits block and actions array exists on
         // a pawn. Called after load, after a system switch, and defensively
         // before any render, so partial/legacy pawns can never throw.
+        // Overhead token settings. Everything is flat on the pawn (like the
+        // standee's own scale/rotation/offset) so copy-style, duplicate and
+        // the generic slider helper all work without special cases. Pan values
+        // are percentages of the token's diameter, so they mean the same thing
+        // at every pawn size.
+        //
+        // Fit geometry: the folded standee has an equilateral-triangle top whose
+        // side equals the base width. The circle that exactly circumscribes
+        // that triangle has diameter 2/sqrt(3) x the base width. On such a
+        // circle the triangle's corners land on the rim and the three leftover
+        // circular segments are flaps that meet only at those corners, so they
+        // fold down along the triangle's sides with no slits needed.
+        const TOKEN_FIT = 2 / Math.sqrt(3);
+        const OVERHEAD_DEFAULTS = {
+            overhead: true,      // per-pawn opt-out; tokens only appear when the project-wide switch is on
+            ovScale: 1,          // 1 = whole image fitted inside the circle
+            ovRotation: 0,
+            ovOffsetX: 0,
+            ovOffsetY: 0,
+            ovBg: '#ffffff',     // shows through transparent PNGs
+            ovSize: TOKEN_FIT,   // TOKEN_FIT = wraps the standee top; 1 = flat disc, one base wide
+            ovFold: true,        // dashed fold triangle (only meaningful at TOKEN_FIT size)
+            ovLabel: true,       // pawn name and number printed on the topper
+            ovSpine: true        // I-shaped spine & foot that holds the topper on (needs TOKEN_FIT size)
+        };
+        const OVERHEAD_KEYS = Object.keys(OVERHEAD_DEFAULTS);
+        const OVERHEAD_SIZES = [
+            { value: TOKEN_FIT, label: 'Fits standee top (folds on)' },
+            { value: 1, label: 'Flat disc (1\u00d7 base)' }
+        ];
+        function ovIsFit(pawn) { return Math.abs((pawn.ovSize || 1) - TOKEN_FIT) < 0.01; }
+
+        // Pulls the overhead fields out of a saved/clipboard object, falling
+        // back to defaults for anything absent (files from before this existed).
+        function pickOverheadFields(src) {
+            const out = {};
+            OVERHEAD_KEYS.forEach(k => {
+                out[k] = (src && src[k] !== undefined) ? src[k] : OVERHEAD_DEFAULTS[k];
+            });
+            out.overhead = !!out.overhead;
+            return out;
+        }
+
         function ensurePawnShape(pawn) {
             if (!pawn.stats) {
                 pawn.stats = {};
@@ -1368,7 +1579,10 @@
             if (!pawn.traits) pawn.traits = emptyTraits();
             if (!Array.isArray(pawn.actions)) pawn.actions = [];
             if (!pawn.hpMode) pawn.hpMode = 'standard';
+            // Branding is on unless a project explicitly turned it off.
+            if (pawn.showQr === undefined) pawn.showQr = true;
             if (!SYSTEMS.includes(pawn.system)) pawn.system = 'Generic';
+            OVERHEAD_KEYS.forEach(k => { if (pawn[k] === undefined) pawn[k] = OVERHEAD_DEFAULTS[k]; });
             return pawn;
         }
 
@@ -1478,6 +1692,11 @@
             if (n < 1024 * 1024) return (n / 1024).toFixed(0) + ' KB';
             return (n / (1024 * 1024)).toFixed(1) + ' MB';
         }
+        // "goblin_archer-2.PNG" -> "goblin archer-2": the file name minus its
+        // extension, with underscores read as spaces. Names the user types later win.
+        function nameFromFilename(fileName) {
+            return (fileName || '').replace(/\.[^.\/\\]+$/, '').replace(/_+/g, ' ').replace(/\s+/g, ' ').trim();
+        }
         async function handleFiles(e) {
             const files = e.target.files;
             if (!files) return;
@@ -1514,13 +1733,14 @@
                 STAT_KEYS.forEach(key => emptyStats[key] = '');
 
                 state.pawns.push(ensurePawnShape({
-                    img: img, dataUrl: storedUrl, name: '', number: '', isEditing: false,
+                    img: img, dataUrl: storedUrl, name: (e.target.id || '').startsWith('paste') ? '' : nameFromFilename(file.name), number: '', isEditing: false,
                     isDark: calculateDarkness(img), isFlipped: false, showBorder: false, 
                     borderColor: '#000000', textColor: '#000000', textBgColor: '#FFFFFFEE',
                     scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0,
                     pawnWidth: state.pawnWidth, pawnHeight: state.pawnHeight,
                     trackerScale: 1,
                     hpMode: state.hpMode || 'standard',
+                    showQr: true,
                     system: 'Generic',
                     stats: emptyStats,
                     traits: emptyTraits(),
@@ -1540,6 +1760,11 @@
 
         // Cycles through a small palette so consecutive blank pawns are
         // visually distinguishable on the sheet without any user effort.
+        // Glue-tab widths. The wide variant exists solely to make the branding
+        // QR large enough to scan; see the module-size note above drawPawnCanvas.
+        const TAB_WIDTH_PLAIN = 0.25;
+        const TAB_WIDTH_QR = 0.75;
+
         const BLANK_PAWN_COLORS = ['#34495e', '#7b241c', '#1e8449', '#6c3483', '#b9770e', '#1a5276'];
         let blankPawnCount = 0;
 
@@ -1562,6 +1787,7 @@
                 pawnWidth: state.pawnWidth, pawnHeight: state.pawnHeight,
                 trackerScale: 1,
                 hpMode: state.hpMode || 'standard',
+                showQr: true,
                 system: 'Generic',
                 stats: emptyStats,
                 traits: emptyTraits(),
@@ -1636,7 +1862,9 @@
                 showBorder: p.showBorder, isDark: p.isDark, isFlipped: p.isFlipped,
                 scale: p.scale, rotation: p.rotation, offsetX: p.offsetX, offsetY: p.offsetY,
                 pawnWidth: p.pawnWidth, pawnHeight: p.pawnHeight,
-                trackerScale: p.trackerScale, hpMode: p.hpMode || 'standard'
+                trackerScale: p.trackerScale, hpMode: p.hpMode || 'standard',
+                showQr: !!p.showQr,
+                ...pickOverheadFields(p)
             };
             renderAll(); 
         }
@@ -1671,6 +1899,8 @@
                 if (btn) btn.innerHTML = pawn.isEditing ? '✕ Close Editor' : '✎ Edit Pawn';
                 const wrap = document.getElementById(`pawn-wrapper-${i}`);
                 if (wrap) wrap.classList[pawn.isEditing ? 'add' : 'remove']('is-editing');
+                const tokenWrap = document.getElementById(`token-wrapper-${i}`);
+                if (tokenWrap) tokenWrap.classList[pawn.isEditing ? 'add' : 'remove']('is-editing');
             });
         }
 
@@ -1761,7 +1991,9 @@
 
         function updatePawnTransform(index, field, value) {
             state.pawns[index][field] = parseFloat(value);
-            renderSinglePawn(index);
+            // Overhead sliders only affect the token, so skip re-rasterising the strip.
+            if (field.indexOf('ov') === 0) renderOverhead(index);
+            else renderSinglePawn(index);
         }
 
         function updateGlobalSize() {
@@ -1803,6 +2035,10 @@
                 version: 2,
                 pawnWidth: state.pawnWidth, pawnHeight: state.pawnHeight,
                 showTable: state.showTable, showCards: state.showCards,
+                showOverhead: !!state.showOverhead,
+                showSpine: state.showSpine !== false,
+                printStandees: state.printStandees !== false,
+                paper: state.paper, orientation: state.orientation,
                 hpMode: state.hpMode || 'standard',
                 actionCards: state.actionCards.map(c => ({
                     id: c.id, system: c.system, name: c.name, fields: { ...c.fields }
@@ -1817,6 +2053,8 @@
                         pawnWidth: p.pawnWidth || state.pawnWidth, pawnHeight: p.pawnHeight || state.pawnHeight,
                         trackerScale: p.trackerScale || 1,
                         hpMode: p.hpMode || 'standard',
+                        showQr: !!p.showQr,
+                        ...pickOverheadFields(p),
                         system: p.system || 'Generic',
                         stats: p.stats,
                         dnd5e: p.dnd5e, dnd4e: p.dnd4e,
@@ -1851,7 +2089,12 @@
                 pawnWidth: p.pawnWidth || state.pawnWidth, pawnHeight: p.pawnHeight || state.pawnHeight,
                 trackerScale: p.trackerScale || 1,
                 hpMode: p.hpMode || 'standard',
-                system: p.system || 'Generic'
+                // Absent means "saved before this existed", which should get the
+                // new default rather than silently opting out.
+                showQr: p.showQr === undefined ? true : !!p.showQr,
+                system: p.system || 'Generic',
+                // Files saved before overhead tokens existed simply get the defaults (off).
+                ...pickOverheadFields(p)
             });
 
             // Merge each saved block over its empty factory result, so keys
@@ -1909,6 +2152,17 @@
             state.pawnHeight = projectData.pawnHeight || 1.5;
             state.showTable = projectData.showTable || false;
             state.showCards = projectData.showCards || false;
+            state.showOverhead = !!projectData.showOverhead;
+            // Absent in files from before the spine existed, which should get it.
+            state.showSpine = projectData.showSpine !== false;
+            state.printStandees = projectData.printStandees !== false;
+            // Paper setup is only taken from files that carry it, so opening an
+            // older project doesn't undo the paper you have already chosen.
+            if (PAPER_SIZES[projectData.paper]) state.paper = projectData.paper;
+            if (projectData.orientation === 'landscape' || projectData.orientation === 'portrait') state.orientation = projectData.orientation;
+            applyPaper();
+            const standeeToggle = document.getElementById('toggle-standees');
+            if (standeeToggle) standeeToggle.checked = state.printStandees;
             state.hpMode = projectData.hpMode || 'standard';
 
             const select = document.getElementById('size-select');
@@ -1919,6 +2173,9 @@
             document.getElementById('toggle-table').checked = state.showTable;
             const cardsToggle = document.getElementById('toggle-cards');
             if (cardsToggle) cardsToggle.checked = state.showCards;
+            const overheadToggle = document.getElementById('toggle-overhead');
+            if (overheadToggle) overheadToggle.checked = state.showOverhead;
+            syncOverheadControls();
 
             // Cards load first so attachment validation has a library to check
             // against. Malformed entries are skipped rather than fatal.
@@ -2013,34 +2270,180 @@
             reader.readAsText(file); e.target.value = ''; 
         }
 
-        function handlePrint(mode) {
-            if (state.pawns.length === 0) { alert("Please add at least one pawn before printing."); return; }
+        /* ==================================================================
+           PAPER AND PRINT SELECTION
+           ================================================================== */
+        const BASE_TITLE = document.title;
+        const PAPER_SIZES = {
+            letter:  { label: 'Letter (8.5 × 11 in)',  w: 8.5, h: 11,  unit: 'in' },
+            legal:   { label: 'Legal (8.5 × 14 in)',   w: 8.5, h: 14,  unit: 'in' },
+            tabloid: { label: 'Tabloid (11 × 17 in)',  w: 11,  h: 17,  unit: 'in' },
+            a4:      { label: 'A4 (210 × 297 mm)',     w: 210, h: 297, unit: 'mm' },
+            a3:      { label: 'A3 (297 × 420 mm)',     w: 297, h: 420, unit: 'mm' }
+        };
+        const PRINT_PREF_KEY = 'trifold-print-prefs';
 
-            const hasAttachedCards = state.pawns.some(p => (p.actions || []).length > 0);
-            const originalTitle = document.title;
-            document.title = getExportFilename('');
-            const hide = [];
+        // Paper dimensions after orientation, as CSS lengths and in inches.
+        function paperDims() {
+            const sz = PAPER_SIZES[state.paper] || PAPER_SIZES.letter;
+            const landscape = state.orientation === 'landscape';
+            const w = landscape ? sz.h : sz.w, h = landscape ? sz.w : sz.h;
+            const toIn = v => sz.unit === 'mm' ? v / 25.4 : v;
+            return { w, h, unit: sz.unit, wCss: w + sz.unit, hCss: h + sz.unit, wIn: toIn(w), hIn: toIn(h) };
+        }
 
-            if (mode === 'pawns') {
-                hide.push('print-hide-table', 'print-hide-cards');
-            } else if (mode === 'table') {
-                if (!state.showTable) { alert("Please enable 'Append Tracker Sheet' to print the table."); document.title = originalTitle; return; }
-                hide.push('print-hide-pawns', 'print-hide-cards');
-            } else if (mode === 'cards') {
-                if (!state.showCards) { alert("Please enable 'Append Action Card Sheet' to print the cards."); document.title = originalTitle; return; }
-                if (!hasAttachedCards) { alert("No pawn has an Action Card attached yet."); document.title = originalTitle; return; }
-                hide.push('print-hide-pawns', 'print-hide-table');
-            } else { // 'all'
-                if (!state.showTable) hide.push('print-hide-table');
-                if (!state.showCards || !hasAttachedCards) hide.push('print-hide-cards');
+        function loadPrintPrefs() {
+            try {
+                const prefs = JSON.parse(localStorage.getItem(PRINT_PREF_KEY) || 'null');
+                if (!prefs) return;
+                if (PAPER_SIZES[prefs.paper]) state.paper = prefs.paper;
+                if (prefs.orientation === 'landscape' || prefs.orientation === 'portrait') state.orientation = prefs.orientation;
+            } catch (e) { /* storage unavailable: keep the defaults */ }
+        }
+        function savePrintPrefs() {
+            try { localStorage.setItem(PRINT_PREF_KEY, JSON.stringify({ paper: state.paper, orientation: state.orientation })); }
+            catch (e) { /* not worth interrupting anyone over */ }
+        }
+
+        function initPrintControls() {
+            const sel = document.getElementById('paper-size');
+            if (!sel || sel.options.length) return;
+            Object.keys(PAPER_SIZES).forEach(key => {
+                const opt = document.createElement('option');
+                opt.value = key; opt.innerText = PAPER_SIZES[key].label;
+                sel.appendChild(opt);
+            });
+        }
+
+        // Pushes the chosen paper into the printer's @page rule and into the
+        // on-screen sheets, so the preview wraps exactly as the printout will.
+        function applyPaper() {
+            if (!PAPER_SIZES[state.paper]) state.paper = 'letter';
+            if (state.orientation !== 'landscape') state.orientation = 'portrait';
+            const d = paperDims();
+            let style = document.getElementById('print-page-style');
+            if (!style) {
+                style = document.createElement('style'); style.id = 'print-page-style';
+                document.head.appendChild(style);
             }
+            style.textContent = `@page { size: ${d.wCss} ${d.hCss}; margin: 0.5in; }`;
+            document.documentElement.style.setProperty('--paper-w', d.wCss);
+            document.documentElement.style.setProperty('--paper-h', d.hCss);
+            const sizeSel = document.getElementById('paper-size');
+            const orientSel = document.getElementById('paper-orient');
+            if (sizeSel) sizeSel.value = state.paper;
+            if (orientSel) orientSel.value = state.orientation;
+        }
 
-            hide.forEach(c => document.body.classList.add(c));
+        function setPaper() {
+            state.paper = document.getElementById('paper-size').value;
+            state.orientation = document.getElementById('paper-orient').value;
+            applyPaper();
+            savePrintPrefs();
+        }
+
+        function togglePrintStandees(e) { state.printStandees = e.target.checked; }
+
+        // What will actually come out of the printer, from the checkboxes plus
+        // what exists: a ticked sheet with nothing to show is simply skipped.
+        function printPlan() {
+            const hasPawns = state.pawns.length > 0;
+            return {
+                standees: hasPawns && state.printStandees,
+                tokens: state.showOverhead && state.pawns.some(p => p.overhead),
+                tracker: hasPawns && state.showTable,
+                cards: hasPawns && state.showCards && state.pawns.some(p => (p.actions || []).length > 0)
+            };
+        }
+
+        // Copies the on-screen token canvases onto the print-only token sheet.
+        // Canvas-to-canvas copying is synchronous, which matters here: this runs
+        // inside beforeprint, and an <img> built from a data URL might not have
+        // decoded by the time the browser lays the page out.
+        function buildTokenPrintSheet(enabled) {
+            const sheet = document.getElementById('token-page');
+            if (!sheet) return;
+            sheet.innerHTML = ''; sheet.classList.remove('has-tokens');
+            if (!enabled) return;
+            let count = 0;
+            state.pawns.forEach((pawn, i) => {
+                if (!pawn.overhead) return;
+                const src = document.querySelector(`#token-container-${i} canvas`);
+                if (!src) return;
+                const copy = document.createElement('canvas');
+                copy.width = src.width; copy.height = src.height;
+                copy.style.width = src.style.width; copy.style.height = src.style.height;
+                copy.getContext('2d').drawImage(src, 0, 0);
+                sheet.appendChild(copy); count++;
+            });
+            if (count) sheet.classList.add('has-tokens');
+        }
+
+        function clearPrintSelection() {
+            document.body.classList.remove('print-hide-pawns', 'print-hide-table', 'print-hide-cards');
+            document.querySelectorAll('.page.print-first').forEach(el => el.classList.remove('print-first'));
+            const sheet = document.getElementById('token-page');
+            if (sheet) { sheet.innerHTML = ''; sheet.classList.remove('has-tokens'); }
+            document.title = BASE_TITLE;
+        }
+
+        // Runs for the Print button and for Ctrl+P / the browser's own Print
+        // menu alike (beforeprint), so both give the same result.
+        function applyPrintSelection() {
+            clearPrintSelection();
+            const plan = printPlan();
+            const body = document.body.classList;
+            if (!plan.standees) body.add('print-hide-pawns');
+            if (!plan.tracker) body.add('print-hide-table');
+            if (!plan.cards) body.add('print-hide-cards');
+            buildTokenPrintSheet(plan.tokens);
+            // The first sheet printed must not start with a forced page break.
+            const order = [['standees', 'page'], ['tokens', 'token-page'], ['tracker', 'tracker-page'], ['cards', 'cards-page']];
+            const first = order.find(entry => plan[entry[0]]);
+            if (first) document.getElementById(first[1]).classList.add('print-first');
+            document.title = getExportFilename('');   // becomes the suggested PDF file name
+            return plan;
+        }
+
+        window.addEventListener('beforeprint', applyPrintSelection);
+        window.addEventListener('afterprint', clearPrintSelection);
+
+        function handlePrint() {
+            if (state.pawns.length === 0) { alert("Please add at least one pawn before printing."); return; }
+            const plan = printPlan();
+            if (!plan.standees && !plan.tokens && !plan.tracker && !plan.cards) {
+                alert("Nothing is selected to print. Tick at least one sheet under \"Sheets to print\".");
+                return;
+            }
+            if (state.showCards && !plan.cards) showToast("Power cards skipped: no pawn has an action card attached.");
+            applyPrintSelection();
             window.print();
-            setTimeout(() => { 
-                document.title = originalTitle; 
-                document.body.classList.remove('print-hide-table', 'print-hide-pawns', 'print-hide-cards');
-            }, 500);
+        }
+
+        // Project-wide switch for the overhead tokens. Per-pawn settings are
+        // kept while it is off, so flipping it back restores every token as it was.
+        function toggleOverhead(e) { setGlobalOverhead(e.target.checked); }
+
+        function setGlobalOverhead(on) {
+            state.showOverhead = !!on;
+            const box = document.getElementById('toggle-overhead');
+            if (box) box.checked = state.showOverhead;
+            syncOverheadControls();
+            renderAll();
+        }
+
+        // Spine & foot only means something while the tokens are on, so its
+        // footer checkbox is greyed out (and kept as is) when they are off.
+        function syncOverheadControls() {
+            const spineBox = document.getElementById('toggle-spine');
+            const row = document.getElementById('spine-row');
+            if (spineBox) { spineBox.checked = state.showSpine !== false; spineBox.disabled = !state.showOverhead; }
+            if (row) row.classList.toggle('is-off', !state.showOverhead);
+        }
+
+        function toggleSpine(e) {
+            state.showSpine = e.target.checked;
+            renderAll();
         }
 
         function toggleCards(e) {
@@ -2054,46 +2457,69 @@
             if (badge) badge.innerText = `(${state.actionCards.length})`;
         }
 
+        // The Word and OpenDoc exports carry the two image sheets: standees
+        // first, then the overhead tokens on a page of their own. They follow the
+        // same checkboxes and paper setup as printing.
+        function exportParts() {
+            const plan = printPlan();
+            const standees = [], tokens = [];
+            if (plan.standees) state.pawns.forEach((pawn, i) => {
+                const c = document.querySelector(`#canvas-container-${i} canvas`);
+                if (c) standees.push(c);
+            });
+            if (plan.tokens) state.pawns.forEach((pawn, i) => {
+                if (!pawn.overhead) return;
+                const c = document.querySelector(`#token-container-${i} canvas`);
+                if (c) tokens.push(c);
+            });
+            return { standees, tokens };
+        }
+        const EXPORT_EMPTY_MSG = "Nothing to export. Tick Standees and/or Overhead tokens under \"Sheets to print\" - the Word and OpenDoc exports contain those two sheets.";
+
         function exportWord() {
             if (state.pawns.length === 0) { alert("Please add at least one pawn before exporting."); return; }
+            const parts = exportParts();
+            if (!parts.standees.length && !parts.tokens.length) { alert(EXPORT_EMPTY_MSG); return; }
+            const d = paperDims();
+            const wIn = +d.wIn.toFixed(3), hIn = +d.hIn.toFixed(3);
+            const imgTag = (cv) => {
+                const wInches = parseFloat(cv.style.width), hInches = parseFloat(cv.style.height);
+                return `<img src="${cv.toDataURL('image/png')}" width="${Math.round(wInches * 96)}" height="${Math.round(hInches * 96)}" style="width:${wInches}in; height:${hInches}in;" />`;
+            };
             let htmlContent = `
                 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
                 <head><meta charset="utf-8"><title>Pawns Export</title>
-                <style>@page { margin: 0.5in; size: letter portrait; } body { margin: 0; padding: 0; font-family: Arial, sans-serif; } img { margin: 0 0.25in 0.25in 0; display: inline-block; }</style>
-                </head><body>
+                <style>@page { margin: 0.5in; size: ${wIn}in ${hIn}in; } @page Section1 { size: ${wIn}in ${hIn}in; mso-page-orientation: ${state.orientation}; margin: 0.5in; } div.Section1 { page: Section1; } body { margin: 0; padding: 0; font-family: Arial, sans-serif; } img { margin: 0 0.25in 0.25in 0; display: inline-block; }</style>
+                </head><body><div class="Section1">
             `;
-            state.pawns.forEach((pawn, index) => {
-                const container = document.getElementById(`canvas-container-${index}`);
-                const canvas = container.querySelector('canvas');
-                if (canvas) {
-                    const dataUrl = canvas.toDataURL('image/png');
-                    const wInches = parseFloat(canvas.style.width); const hInches = parseFloat(canvas.style.height);
-                    const wPx = Math.round(wInches * 96); const hPx = Math.round(hInches * 96);
-                    htmlContent += `<img src="${dataUrl}" width="${wPx}" height="${hPx}" style="width:${wInches}in; height:${hInches}in;" />`;
-                }
-            });
-            htmlContent += `</body></html>`;
-            const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+            parts.standees.forEach(cv => { htmlContent += imgTag(cv); });
+            if (parts.tokens.length) {
+                if (parts.standees.length) htmlContent += `<br clear="all" style="page-break-before:always" />`;
+                parts.tokens.forEach(cv => { htmlContent += imgTag(cv); });
+            }
+            htmlContent += `</div></body></html>`;
+            const blob = new Blob(['﻿', htmlContent], { type: 'application/msword' });
             const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
             a.download = getExportFilename('.doc'); document.body.appendChild(a); a.click(); document.body.removeChild(a);
         }
 
         function exportODT() {
             if (state.pawns.length === 0) { alert("Please add at least one pawn before exporting."); return; }
+            const parts = exportParts();
+            if (!parts.standees.length && !parts.tokens.length) { alert(EXPORT_EMPTY_MSG); return; }
+            const d = paperDims();
+            const frame = (cv) => `<draw:frame svg:width="${cv.style.width}" svg:height="${cv.style.height}"><draw:image><office:binary-data>${cv.toDataURL('image/png').split(',')[1]}</office:binary-data></draw:image></draw:frame><text:s text:c="2"/>`;
             let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
-            <office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" office:mimetype="application/vnd.oasis.opendocument.text">
-              <office:body><office:text><text:p>`;
-            state.pawns.forEach((pawn, index) => {
-                const container = document.getElementById(`canvas-container-${index}`);
-                const canvas = container.querySelector('canvas');
-                if (canvas) {
-                    const dataUrl = canvas.toDataURL('image/png');
-                    const base64Data = dataUrl.split(',')[1]; 
-                    const wInches = canvas.style.width; const hInches = canvas.style.height;
-                    xmlContent += `<draw:frame svg:width="${wInches}" svg:height="${hInches}"><draw:image><office:binary-data>${base64Data}</office:binary-data></draw:image></draw:frame><text:s text:c="2"/>`; 
-                }
-            });
-            xmlContent += `</text:p></office:text></office:body></office:document>`;
+            <office:document xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" office:version="1.2" xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" office:mimetype="application/vnd.oasis.opendocument.text">
+              <office:automatic-styles>
+                <style:page-layout style:name="pm1"><style:page-layout-properties fo:page-width="${+d.wIn.toFixed(3)}in" fo:page-height="${+d.hIn.toFixed(3)}in" style:print-orientation="${state.orientation}" fo:margin-top="0.5in" fo:margin-bottom="0.5in" fo:margin-left="0.5in" fo:margin-right="0.5in"/></style:page-layout>
+                <style:style style:name="PBreak" style:family="paragraph"><style:paragraph-properties fo:break-before="page"/></style:style>
+              </office:automatic-styles>
+              <office:master-styles><style:master-page style:name="Standard" style:page-layout-name="pm1"/></office:master-styles>
+              <office:body><office:text>`;
+            if (parts.standees.length) xmlContent += `<text:p>${parts.standees.map(frame).join('')}</text:p>`;
+            if (parts.tokens.length) xmlContent += `<text:p${parts.standees.length ? ' text:style-name="PBreak"' : ''}>${parts.tokens.map(frame).join('')}</text:p>`;
+            xmlContent += `</office:text></office:body></office:document>`;
             const blob = new Blob([xmlContent], { type: 'application/vnd.oasis.opendocument.text' });
             const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
             a.download = getExportFilename('.odt'); 
@@ -2105,6 +2531,7 @@
             const label = document.createElement('label'); label.innerText = labelTxt;
             const slider = document.createElement('input'); slider.type = 'range';
             slider.min = min; slider.max = max; slider.step = step; slider.value = state.pawns[index][field];
+            slider.dataset.field = field;
             slider.oninput = (e) => updatePawnTransform(index, field, e.target.value);
             const resetBtn = document.createElement('button');
             resetBtn.className = 'reset-slider-btn'; resetBtn.innerHTML = '↺'; resetBtn.title = 'Reset Setting';
@@ -2283,8 +2710,15 @@
         // Full-width band naming the system, rendered as the first row of the
         // table's <thead> rather than as a separate <h3>. See the note on
         // orphan control in the print CSS.
+        // Full-width band naming the system, rendered as the first row of the
+        // table's <thead> rather than as a separate <h3>. Also carries the
+        // branding QR, which rides along at no vertical cost - the band is
+        // already taller than the code needs to be.
         function buildSectionHeadRowHtml(heading, colspanTotal) {
-            return `<tr class="section-head-row"><th colspan="${colspanTotal}">${esc(heading)}</th></tr>`;
+            return `<tr class="section-head-row"><th colspan="${colspanTotal}">` +
+                   `<span class="section-head-text">${esc(heading)}</span>` +
+                   brandBlockHtml(38, 'brand-in-header') +
+                   `</th></tr>`;
         }
 
 
@@ -2321,7 +2755,8 @@
             }
 
             tablePage.style.display = 'block';
-            let html = `<h2>Encounter Stat Tracker</h2>`;
+            let html = `<div class="sheet-head"><h2>Encounter Stat Tracker</h2>` +
+                       brandBlockHtml(52, 'brand-sheet') + `</div>`;
 
             const genericPawns = state.pawns.filter(p => (p.system || 'Generic') === 'Generic');
             if (genericPawns.length > 0) html += renderGenericTrackerTable(genericPawns);
@@ -2461,6 +2896,7 @@
                 editBtn.onclick = () => toggleEdit(index); wrapper.appendChild(editBtn);
 
                 pageEl.appendChild(wrapper);
+                if (state.showOverhead && pawn.overhead) pageEl.appendChild(buildTokenWrapper(index, pawn));
                 renderSinglePawn(index);
             });
 
@@ -2657,7 +3093,19 @@
             flipCheckbox.checked = pawn.isFlipped; flipCheckbox.onchange = (e) => updatePawnValue(index, 'isFlipped', e.target.checked);
             flipLabel.appendChild(flipCheckbox); flipLabel.appendChild(document.createTextNode("Flip Image"));
 
-            checksRow.appendChild(borderLabel); checksRow.appendChild(darkLabel); checksRow.appendChild(flipLabel);
+            const qrLabel = document.createElement('label');
+            const qrCheckbox = document.createElement('input'); qrCheckbox.type = 'checkbox';
+            qrCheckbox.checked = !!pawn.showQr;
+            qrCheckbox.onchange = (e) => updatePawnValue(index, 'showQr', e.target.checked);
+            qrLabel.appendChild(qrCheckbox); qrLabel.appendChild(document.createTextNode("QR on tab"));
+            // The tab widens from 0.25" to 0.65" to fit a code big enough to
+            // scan, so the cost is horizontal sheet space, not legibility.
+            qrLabel.title = 'Prints the tools.gameportal.win QR on the glue tab. ' +
+                            'Widens the tab from 0.25" to 0.75" so the code is large enough to scan. ' +
+                            'Turn off to fit more small pawns per row.';
+
+            checksRow.appendChild(borderLabel); checksRow.appendChild(darkLabel);
+            checksRow.appendChild(flipLabel); checksRow.appendChild(qrLabel);
             settingsDiv.appendChild(checksRow);
 
             // --- 6. Image transform ---
@@ -2670,6 +3118,109 @@
             controls.appendChild(createSliderGroup(index, 'X-Pos', 'offsetX', -300, 300, 2, 0));
             controls.appendChild(createSliderGroup(index, 'Y-Pos', 'offsetY', -300, 300, 2, 0));
             settingsDiv.appendChild(controls);
+
+            // --- 7. Overhead token ---
+            const ovTitle = document.createElement('div');
+            ovTitle.className = 'field-section-title'; ovTitle.innerText = 'Overhead Token';
+            settingsDiv.appendChild(ovTitle);
+
+            if (!state.showOverhead) {
+                // Tokens are switched off project-wide, so there would be no
+                // preview to adjust. Offer the switch right here instead.
+                const offHint = document.createElement('p'); offHint.className = 'ov-hint';
+                offHint.innerText = 'Overhead tokens are switched off for this project.';
+                settingsDiv.appendChild(offHint);
+                const onBtn = document.createElement('button'); onBtn.className = 'edit-toggle-btn';
+                onBtn.innerText = 'Turn on overhead tokens';
+                onBtn.onclick = () => setGlobalOverhead(true);
+                settingsDiv.appendChild(onBtn);
+                return settingsDiv;
+            }
+
+            const ovRow = document.createElement('div'); ovRow.className = 'pawn-options';
+            const ovLabel = document.createElement('label');
+            const ovCheckbox = document.createElement('input'); ovCheckbox.type = 'checkbox';
+            ovCheckbox.checked = !!pawn.overhead;
+            ovCheckbox.onchange = (e) => setOverhead(index, e.target.checked);
+            ovLabel.appendChild(ovCheckbox);
+            ovLabel.appendChild(document.createTextNode('Overhead token for this pawn'));
+            ovRow.appendChild(ovLabel);
+            settingsDiv.appendChild(ovRow);
+
+            if (pawn.overhead) {
+                const ovHint = document.createElement('p'); ovHint.className = 'ov-hint';
+                ovHint.innerText = 'Uses the same image as the standee. Drag the token on the page to pan it, or scroll over it to zoom. Dashed lines fold, the solid line cuts.';
+                settingsDiv.appendChild(ovHint);
+
+                const ovControls = document.createElement('div'); ovControls.className = 'pawn-controls';
+                ovControls.appendChild(createSliderGroup(index, 'Zoom', 'ovScale', 0.2, 8, 0.05, 1));
+                ovControls.appendChild(createSliderGroup(index, 'Rotate', 'ovRotation', -180, 180, 1, 0));
+                ovControls.appendChild(createSliderGroup(index, 'X-Pos', 'ovOffsetX', -100, 100, 1, 0));
+                ovControls.appendChild(createSliderGroup(index, 'Y-Pos', 'ovOffsetY', -100, 100, 1, 0));
+                settingsDiv.appendChild(ovControls);
+
+                const ovOpts = document.createElement('div'); ovOpts.className = 'pawn-options';
+                const bgLabel = document.createElement('label');
+                const bgInput = document.createElement('input'); bgInput.type = 'color'; bgInput.className = 'input-color';
+                bgInput.value = pawn.ovBg || '#ffffff'; bgInput.title = 'Fill behind the image (shows through transparent areas)';
+                bgInput.oninput = (e) => updatePawnColor(index, 'ovBg', e.target.value);
+                bgLabel.appendChild(bgInput); bgLabel.appendChild(document.createTextNode('Token bg'));
+
+                const sizeLabel2 = document.createElement('label');
+                const sizeSel2 = document.createElement('select'); sizeSel2.style.width = 'auto'; sizeSel2.style.padding = '2px';
+                OVERHEAD_SIZES.forEach(o => {
+                    const opt = document.createElement('option'); opt.value = o.value; opt.innerText = o.label;
+                    if (Math.abs((pawn.ovSize || 1) - o.value) < 0.01) opt.selected = true;
+                    sizeSel2.appendChild(opt);
+                });
+                sizeSel2.title = 'Fits standee top: sized so the dashed triangle is exactly the standee\u2019s top face and the three round flaps fold down over its sides. Flat disc: a plain round token, no fold lines.';
+                sizeSel2.onchange = (e) => { state.pawns[index].ovSize = parseFloat(e.target.value); renderAll(); };
+                sizeLabel2.appendChild(sizeSel2);
+
+                const foldLabel = document.createElement('label');
+                const foldBox = document.createElement('input'); foldBox.type = 'checkbox';
+                foldBox.checked = !!pawn.ovFold && ovIsFit(pawn);
+                foldBox.disabled = !ovIsFit(pawn);
+                foldBox.onchange = (e) => { state.pawns[index].ovFold = e.target.checked; renderOverhead(index); };
+                const labelLabel = document.createElement('label');
+                const labelBox = document.createElement('input'); labelBox.type = 'checkbox';
+                labelBox.checked = pawn.ovLabel !== false;
+                labelBox.onchange = (e) => { state.pawns[index].ovLabel = e.target.checked; renderOverhead(index); };
+                labelLabel.appendChild(labelBox); labelLabel.appendChild(document.createTextNode('Name & number'));
+                labelLabel.title = 'Print this pawn\u2019s name (round the top) and number (lower right) on the topper.';
+                foldLabel.appendChild(foldBox); foldLabel.appendChild(document.createTextNode('Fold lines'));
+                if (!ovIsFit(pawn)) { foldLabel.style.opacity = '0.45'; foldLabel.title = 'Fold lines need the \u201cFits standee top\u201d size.'; }
+
+                const spineLabel = document.createElement('label');
+                const spineBox = document.createElement('input'); spineBox.type = 'checkbox';
+                const spineAvailable = ovIsFit(pawn) && state.showSpine !== false;
+                spineBox.checked = !!pawn.ovSpine && ovIsFit(pawn);
+                spineBox.disabled = !spineAvailable;
+                spineBox.onchange = (e) => { state.pawns[index].ovSpine = e.target.checked; renderAll(); };
+                spineLabel.appendChild(spineBox); spineLabel.appendChild(document.createTextNode('Spine & foot'));
+                spineLabel.title = 'An I-shaped insert: a spine down the middle of the pawn and a foot under it, so lifting the topper lifts the pawn.';
+                if (!spineAvailable) {
+                    spineLabel.style.opacity = '0.45';
+                    spineLabel.title = ovIsFit(pawn)
+                        ? 'Switched off for the whole project (footer, under Overhead tokens).'
+                        : 'Spine & foot need the \u201cFits standee top\u201d size.';
+                }
+
+                ovOpts.appendChild(bgLabel); ovOpts.appendChild(sizeLabel2); ovOpts.appendChild(foldLabel); ovOpts.appendChild(labelLabel); ovOpts.appendChild(spineLabel);
+                settingsDiv.appendChild(ovOpts);
+
+                if (overheadSpineOn(pawn)) {
+                    const help = document.createElement('details'); help.className = 'ov-help';
+                    help.innerHTML = '<summary>How the spine &amp; foot goes together</summary><ol>' +
+                        '<li>Cut out the whole I along the solid lines: round token, spine and foot in one piece, including the two short slits up either side of the spine.</li>' +
+                        '<li>Crease every dashed line, then make the four numbered folds in order. <b>1</b>: fold the strip back 180\u00b0 under the token, so it runs in towards the middle of the circle. <b>2</b>: turn it 90\u00b0 so it hangs straight down from the middle.</li>' +
+                        '<li><b>3</b>: at the bottom, turn the strip 90\u00b0 so it runs out along the floor. <b>4</b>: fold the foot back under that strip (the opposite way to the others), so the spine stands in the middle of the foot.</li>' +
+                        '<li>Fold the foot in half down its centre, drop it through the top of the pawn and let the token settle on top. (Not glued yet? Thread the spine through before the last seam instead.) Flatten the foot under the pawn: it is a little bigger than the pawn\u2019s base so it can\u2019t pull back up.</li>' +
+                        '<li>Fold the token\u2019s flaps down over the outside.</li></ol>' +
+                        '<p class="ov-hint">Print and test one before cutting a whole set.</p>';
+                    settingsDiv.appendChild(help);
+                }
+            }
 
             return settingsDiv;
         }
@@ -2690,11 +3241,369 @@
             const container = document.getElementById(`canvas-container-${index}`);
             if (!container) return;
             container.innerHTML = ''; container.appendChild(drawPawnCanvas(pawn));
+            renderOverhead(index);
+        }
+
+        // ---- Overhead token -------------------------------------------------
+        const OV_DPI = 300;
+        const OV_PAD = 8;   // px of breathing room so the ring is never clipped by the canvas edge
+
+        function overheadDiameterPx(pawn) {
+            const pWidth = pawn.pawnWidth || state.pawnWidth;
+            // Snap to the exact fit size so the fold triangle is exactly one base wide.
+            const mult = ovIsFit(pawn) ? TOKEN_FIT : (pawn.ovSize || 1);
+            return Math.round(pWidth * mult * OV_DPI);
+        }
+
+        // Corners of the fold triangle for a token of diameter D on a canvas of
+        // side `total`: an equilateral triangle inscribed in the circle, point
+        // up. Its side is D * sqrt(3) / 2 = the pawn's base width at fit size.
+        function overheadFoldPoints(D, cx, cy) {
+            const R = D / 2, dx = R * Math.sqrt(3) / 2;
+            return [[cx, cy - R], [cx + dx, cy + R / 2], [cx - dx, cy + R / 2]];
+        }
+
+        // ---- Spine & foot (the "I") ---------------------------------------------
+        // A topper that only sits on the standee's top edges comes off with a
+        // knock. The spine & foot turn the token into an I: the round token is
+        // the top bar, a spine runs down the middle of the pawn, and a foot
+        // under the pawn is the bottom bar. Lift the topper and the pawn,
+        // resting on the foot, comes with it.
+        //
+        // One strip of paper, folded four times (numbered on the sheet):
+        //   1  at the triangle's bottom side: folded back 180 degrees under the
+        //      token, so the strip runs in towards the middle of the circle...
+        //   2  ...where it turns 90 degrees and drops straight down the middle.
+        //   3  at the bottom it turns 90 degrees onto the floor, running
+        //      towards the pawn's base side by exactly the foot's inradius...
+        //   4  ...where it folds 180 degrees the other way, under itself, into
+        //      the foot - a triangle a little bigger than the pawn's footprint,
+        //      with the spine standing on its centre.
+        // Each run is a little longer than it needs to be (the slack) so the
+        // folds don't pull tight.
+        const SPINE_W = 0.4;           // spine width, x pawn base width
+        const FOOT_MARGIN_IN = 0.05;   // how far the foot reaches past the pawn's footprint, every side
+        const SPINE_SLACK_IN = 0.04;   // extra length in each run, so the folds don't bind
+
+        function overheadSpineOn(pawn) {
+            return state.showSpine !== false && !!pawn.ovSpine && ovIsFit(pawn);
+        }
+
+        // Sizes in canvas pixels. Y values are offsets down from the token's
+        // centre; the foot is drawn base-up: its base edge is fold 4, and its
+        // point hangs below.
+        function overheadSpineGeometry(pawn, D) {
+            const B = D * Math.sqrt(3) / 2, r = D / 2;
+            const H = (pawn.pawnHeight || state.pawnHeight) * OV_DPI;
+            const slack = SPINE_SLACK_IN * OV_DPI, m = FOOT_MARGIN_IN * OV_DPI;
+            const rho = r / 2;                          // centre to the triangle's bottom side
+            const rhoF = rho + m;                       // the same for the foot
+            const f1 = rho;                             // fold 1
+            const f2 = f1 + rho + slack;                // fold 2: in at the middle of the circle
+            const f3 = f2 + H + slack;                  // fold 3: onto the floor
+            const f4 = f3 + rhoF + slack;               // fold 4: base of the foot
+            const footSide = 2 * Math.sqrt(3) * rhoF;
+            return { B: B, r: r, s: SPINE_W * B, f1: f1, f2: f2, f3: f3, f4: f4,
+                     footSide: footSide, footH: 3 * rhoF, bottom: f4 + 3 * rhoF };
+        }
+
+        function fitCanvasText(ctx, text, maxW, basePx) {
+            let px = basePx;
+            while (px > 8) {
+                ctx.font = `bold ${px}px sans-serif`;
+                if (ctx.measureText(text).width <= maxW) break;
+                px--;
+            }
+            return px;
+        }
+
+        // Paints into an existing canvas, so a drag can repaint continuously
+        // without replacing the element (which would drop pointer capture).
+        function paintOverheadCanvas(canvas, pawn) {
+            const D = overheadDiameterPx(pawn);
+            const total = D + OV_PAD * 2;
+            const sp = overheadSpineOn(pawn) ? overheadSpineGeometry(pawn, D) : null;
+            // The foot can be wider than the circle on small pawns.
+            const width = sp ? Math.ceil(Math.max(total, sp.footSide + OV_PAD * 2 + 8)) : total;
+            // The extra 4px is room for the pointed tip of the cut line, which overshoots the foot's point.
+            const height = sp ? Math.ceil(total / 2 + sp.bottom + OV_PAD + 4) : total;
+            canvas.width = width; canvas.height = height;
+            canvas.style.width = (width / OV_DPI) + 'in';
+            canvas.style.height = (height / OV_DPI) + 'in';
+            canvas._ov = { D: D, total: total };
+
+            const ctx = canvas.getContext('2d');
+            const cx = width / 2, cy = total / 2, r = D / 2;
+            ctx.clearRect(0, 0, width, height);
+            const PI = Math.PI;
+
+            // Spine and foot paper first, so the round token sits over their joins.
+            // The foot's printed face ends up facing the table, so both are kept
+            // plain: a light tint of the pawn colour plus instructions that end
+            // up hidden inside the pawn.
+            if (sp) {
+                const xl = cx - sp.s / 2, xr = cx + sp.s / 2;
+                const yRim = cy + r - 6, yF2 = cy + sp.f2, yF4 = cy + sp.f4;
+                const footPath = () => {
+                    ctx.beginPath();
+                    ctx.moveTo(cx - sp.footSide / 2, yF4); ctx.lineTo(cx + sp.footSide / 2, yF4);
+                    ctx.lineTo(cx, yF4 + sp.footH); ctx.closePath();
+                };
+                ctx.save();
+                ctx.fillStyle = pawn.ovBg || '#ffffff';
+                ctx.fillRect(xl, yRim, sp.s, yF4 - yRim + 1); footPath(); ctx.fill();
+                ctx.globalAlpha = 0.14; ctx.fillStyle = pawn.borderColor;
+                ctx.fillRect(xl, yRim, sp.s, yF4 - yRim + 1); footPath(); ctx.fill();
+                ctx.restore();
+
+                ctx.save();
+                ctx.fillStyle = '#666'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                const spineLen = (cy + sp.f3) - (cy + sp.f2) - 40;
+                if (spineLen > 60) {
+                    ctx.save();
+                    ctx.translate(cx, (yF2 + cy + sp.f3) / 2); ctx.rotate(PI / 2);
+                    const label = 'SPINE – hangs down the middle of the pawn';
+                    ctx.font = `bold ${fitCanvasText(ctx, label, spineLen, 22)}px sans-serif`;
+                    ctx.fillText(label, 0, 0);
+                    ctx.restore();
+                }
+                const footLabel = 'FOOT – lies flat under the pawn';
+                ctx.font = `bold ${fitCanvasText(ctx, footLabel, sp.footSide * 0.62, 20)}px sans-serif`;
+                ctx.fillText(footLabel, cx, yF4 + sp.footH * 0.2);
+                ctx.restore();
+            }
+
+            ctx.save();
+            ctx.beginPath(); ctx.arc(cx, cy, r, 0, PI * 2);
+            ctx.fillStyle = pawn.ovBg || '#ffffff'; ctx.fill();
+            ctx.clip();
+
+            // Same picture as the standee. At zoom 1 the whole image fits
+            // inside the circle's bounding square, with the same 5% margin the
+            // standee uses; zoom and pan then work relative to that.
+            const img = pawn.img;
+            if (img && img.width && img.height) {
+                const fit = Math.min(D / img.width, D / img.height) * 0.95;
+                const k = fit * (pawn.ovScale || 1);
+                const w = img.width * k, h = img.height * k;
+                ctx.translate(cx + (pawn.ovOffsetX || 0) / 100 * D, cy + (pawn.ovOffsetY || 0) / 100 * D);
+                ctx.rotate(((pawn.ovRotation || 0) * PI) / 180);
+                ctx.drawImage(img, -w / 2, -h / 2, w, h);
+            }
+            ctx.restore();
+
+            // Name and number, so a topper can be matched to its pawn from above:
+            // the name wraps round the top of the token, just inside the colour
+            // ring, and the number sits in the middle. Both are on white so they
+            // read over any artwork, and neither touches the ring.
+            if (pawn.ovLabel !== false) {
+                const name = (pawn.name || '').trim();
+                const num = (pawn.number || '').toString().trim();
+                const textFill = pawn.textColor || '#000';
+                ctx.save();
+                ctx.textBaseline = 'middle';
+                if (name) {
+                    let px = Math.max(14, Math.round(r * 0.19));
+                    const maxAngle = PI * 0.8;                 // widest the name may sweep
+                    // The band's outer edge stays 6px inside the ring (which spans r-10 .. r).
+                    const radiusFor = (p) => r - 16 - p * 0.7;
+                    const widthOf = (t, p) => { ctx.font = `bold ${p}px sans-serif`; return ctx.measureText(t).width; };
+                    let text = name;
+                    while (px > 11 && widthOf(text, px) > radiusFor(px) * maxAngle) px--;
+                    if (widthOf(text, px) > radiusFor(px) * maxAngle) {
+                        while (text.length > 1 && widthOf(text + '…', px) > radiusFor(px) * maxAngle) text = text.slice(0, -1);
+                        text = text.replace(/\s+$/, '') + '…';
+                    }
+                    const rt = radiusFor(px);
+                    ctx.font = `bold ${px}px sans-serif`;
+                    const chars = Array.from(text);
+                    const widths = chars.map(ch => ctx.measureText(ch).width);
+                    const span = widths.reduce((x, y) => x + y, 0) / rt;      // radians
+                    // White band behind the text, a little longer than the text.
+                    const pad = (px * 0.5) / rt;
+                    ctx.lineCap = 'round'; ctx.lineWidth = px * 1.4; ctx.strokeStyle = '#fff';
+                    ctx.beginPath(); ctx.arc(cx, cy, rt, -PI / 2 - span / 2 - pad, -PI / 2 + span / 2 + pad); ctx.stroke();
+                    ctx.textAlign = 'center'; ctx.fillStyle = textFill;
+                    let ang = -PI / 2 - span / 2;
+                    chars.forEach((ch, i) => {
+                        const a = ang + widths[i] / rt / 2;
+                        ctx.save(); ctx.translate(cx + rt * Math.cos(a), cy + rt * Math.sin(a));
+                        ctx.rotate(a + PI / 2); ctx.fillText(ch, 0, 1); ctx.restore();
+                        ang += widths[i] / rt;
+                    });
+                }
+                if (num) {
+                    // Lower right of the dashed triangle, just above its bottom side
+                    // and inside its right-hand side, so it stays visible when the flaps fold down.
+                    const t = '#' + num;
+                    let px = Math.max(14, Math.round(r * 0.24));
+                    ctx.font = `bold ${px}px sans-serif`;
+                    const h = px * 1.4, w = Math.max(ctx.measureText(t).width + px * 0.8, h * 1.3);
+                    const midY = cy + r / 2 - h / 2 - r * 0.08;
+                    const topY = midY - h / 2;
+                    const edgeX = (topY - (cy - r)) / (1.5 * r) * (r * Math.sqrt(3) / 2);   // triangle's right side at the pill's top
+                    const midX = cx + edgeX - w / 2 - r * 0.05;
+                    ctx.fillStyle = '#fff'; ctx.beginPath();
+                    const pr = h / 2, x0 = midX - w / 2 + pr, x1 = midX + w / 2 - pr;
+                    ctx.moveTo(x0, midY - pr); ctx.lineTo(x1, midY - pr); ctx.arc(x1, midY, pr, -PI / 2, PI / 2);
+                    ctx.lineTo(x0, midY + pr); ctx.arc(x0, midY, pr, PI / 2, PI * 1.5); ctx.closePath(); ctx.fill();
+                    ctx.textAlign = 'center'; ctx.fillStyle = textFill; ctx.fillText(t, midX, midY + 1);
+                }
+                ctx.restore();
+            }
+
+            // An arc that goes all the way round, except for the gap where the
+            // spine leaves the token at the bottom (no gap when there is no spine).
+            const roundArc = (radius) => {
+                const gap = sp ? Math.asin(Math.min(1, (sp.s / 2) / radius)) : 0;
+                ctx.beginPath(); ctx.arc(cx, cy, radius, PI / 2 + gap, PI / 2 - gap + PI * 2);
+            };
+
+            // Ring in the pawn's colour just inside the rim.
+            ctx.save();
+            ctx.setLineDash([]);
+            ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 10;
+            roundArc(r - 5); ctx.stroke();
+
+            // FOLD lines (dashed): the triangle that matches the standee's top.
+            // Drawn twice - a wide white pass under a dark one - so the dashes
+            // stay visible over both dark and light artwork.
+            const dashed = (trace) => {
+                ctx.setLineDash([14, 10]); ctx.lineJoin = 'round';
+                ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 7; trace(); ctx.stroke();
+                ctx.strokeStyle = '#222'; ctx.lineWidth = 3; trace(); ctx.stroke();
+            };
+            if (pawn.ovFold && ovIsFit(pawn)) {
+                const pts = overheadFoldPoints(D, cx, cy);
+                dashed(() => {
+                    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+                    ctx.lineTo(pts[1][0], pts[1][1]); ctx.lineTo(pts[2][0], pts[2][1]);
+                    ctx.closePath();
+                });
+            }
+            if (sp) {
+                // The spine's four folds stay marked even with the triangle's fold lines hidden.
+                const hinge = (y) => () => { ctx.beginPath(); ctx.moveTo(cx - sp.s / 2, y); ctx.lineTo(cx + sp.s / 2, y); };
+                const folds = [sp.f1, sp.f2, sp.f3, sp.f4];
+                folds.forEach(f => dashed(hinge(cy + f)));
+            }
+
+            // CUT line (solid): just outside the ring, the rim to cut along.
+            ctx.setLineDash([]);
+            ctx.strokeStyle = '#222'; ctx.lineWidth = 2.5;
+            roundArc(r + OV_PAD / 2); ctx.stroke();
+
+            // ...and, with a spine, the slits either side of it and the outline of
+            // spine and foot: one unbroken line from the triangle's bottom side,
+            // down one side of the strip, round the foot and back up the other.
+            if (sp) {
+                const xl = cx - sp.s / 2, xr = cx + sp.s / 2;
+                const y0 = cy + sp.f1, y4 = cy + sp.f4;
+                const outline = () => {
+                    ctx.beginPath();
+                    ctx.moveTo(xl, y0); ctx.lineTo(xl, y4);
+                    ctx.lineTo(cx - sp.footSide / 2, y4); ctx.lineTo(cx, y4 + sp.footH);
+                    ctx.lineTo(cx + sp.footSide / 2, y4); ctx.lineTo(xr, y4);
+                    ctx.lineTo(xr, y0);
+                };
+                ctx.lineJoin = 'miter';
+                ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 6; outline(); ctx.stroke();
+                ctx.strokeStyle = '#222'; ctx.lineWidth = 2.5; outline(); ctx.stroke();
+
+                // Numbered tags beside each fold, in the order they are made.
+                const folds = [sp.f1, sp.f2, sp.f3, sp.f4];
+                ctx.setLineDash([]);
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                folds.forEach((f, i) => {
+                    const tx = cx + sp.s / 2 + 20, ty = cy + f;
+                    ctx.beginPath(); ctx.arc(tx, ty, 13, 0, PI * 2);
+                    ctx.fillStyle = '#fff'; ctx.fill();
+                    ctx.strokeStyle = '#222'; ctx.lineWidth = 2.5; ctx.stroke();
+                    ctx.fillStyle = '#222'; ctx.font = 'bold 18px sans-serif';
+                    ctx.fillText(String(i + 1), tx, ty + 1);
+                });
+            }
+            ctx.restore();
+        }
+
+        function clampNum(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+
+        // Keeps any open editor's sliders in step with a drag/scroll on the
+        // token itself, without rebuilding the drawer (which would reset its scroll).
+        function syncOverheadSliders(pawn) {
+            document.querySelectorAll('#edit-drawer-body input[data-field^="ov"]').forEach(el => {
+                const f = el.dataset.field;
+                if (pawn[f] !== undefined) el.value = pawn[f];
+            });
+        }
+
+        function buildOverheadCanvas(index) {
+            const pawn = state.pawns[index];
+            const canvas = document.createElement('canvas');
+            canvas.title = 'Drag to pan, scroll to zoom';
+            paintOverheadCanvas(canvas, pawn);
+
+            let drag = null;
+            canvas.addEventListener('pointerdown', e => {
+                canvas.setPointerCapture(e.pointerId);
+                drag = { x: e.clientX, y: e.clientY, ox: pawn.ovOffsetX, oy: pawn.ovOffsetY };
+                e.preventDefault();
+            });
+            canvas.addEventListener('pointermove', e => {
+                if (!drag) return;
+                const rect = canvas.getBoundingClientRect();
+                // screen px -> fraction of the canvas -> percent of the circle's diameter
+                const toPct = canvas.width / canvas._ov.D * 100 / rect.width;
+                pawn.ovOffsetX = clampNum(Math.round(drag.ox + (e.clientX - drag.x) * toPct), -100, 100);
+                pawn.ovOffsetY = clampNum(Math.round(drag.oy + (e.clientY - drag.y) * toPct), -100, 100);
+                paintOverheadCanvas(canvas, pawn);
+                syncOverheadSliders(pawn);
+            });
+            const endDrag = () => { drag = null; };
+            canvas.addEventListener('pointerup', endDrag);
+            canvas.addEventListener('pointercancel', endDrag);
+            canvas.addEventListener('wheel', e => {
+                e.preventDefault();
+                const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
+                pawn.ovScale = clampNum(Math.round(pawn.ovScale * factor * 100) / 100, 0.2, 8);
+                paintOverheadCanvas(canvas, pawn);
+                syncOverheadSliders(pawn);
+            }, { passive: false });
+            return canvas;
+        }
+
+        function renderOverhead(index) {
+            const pawn = state.pawns[index];
+            const container = document.getElementById(`token-container-${index}`);
+            if (!container || !pawn.overhead) return;
+            container.innerHTML = '';
+            container.appendChild(buildOverheadCanvas(index));
+        }
+
+        function buildTokenWrapper(index, pawn) {
+            const tw = document.createElement('div');
+            tw.className = 'pawn-wrapper token-wrapper' + (pawn.isEditing ? ' is-editing' : '');
+            tw.id = `token-wrapper-${index}`;
+            const tc = document.createElement('div'); tc.id = `token-container-${index}`;
+            tw.appendChild(tc);
+            const btn = document.createElement('button'); btn.className = 'edit-toggle-btn';
+            btn.innerHTML = '\u270e Token'; btn.title = 'Edit this pawn\u2019s overhead token';
+            btn.onclick = () => toggleEdit(index);
+            tw.appendChild(btn);
+            return tw;
+        }
+
+        function setOverhead(index, on) {
+            state.pawns[index].overhead = !!on;
+            renderAll();
         }
 
         function drawPawnCanvas(pawn) {
             const canvas = document.createElement('canvas');
-            const printDPI = 300; const tabWidthInches = 0.25; const panels = 3;
+            const printDPI = 300; const panels = 3;
+            // A QR on the tab needs the tab wider than its usual 0.25in, or the
+            // modules fall below the size a camera can resolve in print.
+            const tabWidthInches = pawn.showQr ? TAB_WIDTH_QR : TAB_WIDTH_PLAIN;
             
             const pWidth = pawn.pawnWidth || state.pawnWidth;
             const pHeight = pawn.pawnHeight || state.pawnHeight;
@@ -2720,7 +3629,8 @@
             const reservedBottom = hasText ? textHeight + textPaddingBottom : 0; 
 
             for (let i = 0; i < panels; i++) {
-                let xBase = i * internalPanelWidth;
+                // The glue tab is at the left end, so it tucks under the back panel's far edge when the pawn is closed.
+                let xBase = internalTabWidth + i * internalPanelWidth;
                 ctx.save();
                 
                 const margin = internalHeight * 0.05;
@@ -2807,16 +3717,7 @@
                 }
             }
 
-            let xTab = panels * internalPanelWidth;
-            ctx.setLineDash([]); ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.moveTo(xTab, 0); ctx.lineTo(xTab, internalHeight); ctx.stroke();
-            ctx.fillStyle = '#e8e8e8'; ctx.fillRect(xTab, 0, internalTabWidth, internalHeight);
-            
-            ctx.save();
-            ctx.fillStyle = pawn.borderColor; ctx.translate(xTab + internalTabWidth/2, internalHeight/2);
-            ctx.rotate(-Math.PI/2); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-            ctx.font = "bold 28px sans-serif"; ctx.fillText("GLUE", 0, 0);
-            ctx.restore();
+            drawGlueTab(ctx, pawn, 0, internalTabWidth, internalHeight);
 
             ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 4; ctx.strokeRect(0, 0, internalWidth, internalHeight);
             return canvas;
@@ -2870,6 +3771,89 @@
             }
             return px;
         }
+        /* ------------------------------------------------------------------
+           GLUE TAB
+
+           Layout, outer edge inwards:
+             [ QR code ][ GLUE · tools.gameportal.win running vertically ]
+
+           The label lives in its own lane rather than stacked under the code.
+           Stacking only worked on tall pawns - on a Small pawn the space left
+           beneath the QR is ~0.35in, and a 29-character string cannot fit
+           across that without either printing on top of the code or running off
+           the tab. Running it along the edge gives it the full tab height, which
+           is exactly the dimension that grows with pawn size.
+
+           Both the label size and the QR size are measured against the space
+           actually available, so neither can overprint the other.
+           ------------------------------------------------------------------ */
+        const TAB_GLUE_WORD = 'GLUE';
+        const TAB_SEP = '  ·  ';
+        // Capped so the lane stays narrow on tall pawns; without a cap the
+        // label would grow with height and squeeze the code below scannable size.
+        const TAB_TEXT_MAX_PX = 26;
+        const TAB_TEXT_MIN_PX = 11;
+
+        function fitTextToLength(ctx, text, maxLength, maxPx, minPx) {
+            let px = maxPx;
+            while (px > minPx) {
+                ctx.font = `bold ${px}px sans-serif`;
+                if (ctx.measureText(text).width <= maxLength) break;
+                px--;
+            }
+            return px;
+        }
+
+        function drawGlueTab(ctx, pawn, xTab, tabW, tabH) {
+            ctx.save();
+            ctx.setLineDash([]);
+            ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(xTab + tabW, 0); ctx.lineTo(xTab + tabW, tabH); ctx.stroke();
+            ctx.fillStyle = '#e8e8e8';
+            ctx.fillRect(xTab, 0, tabW, tabH);
+
+            const pad = Math.round(tabW * 0.05);
+            const label = TAB_GLUE_WORD + TAB_SEP + 'tools.gameportal.win';
+            // Fitted against the tab's full height: on a Small pawn this lands
+            // small enough that the label spans the entire edge, which is the
+            // only way it fits at all.
+            const px = fitTextToLength(ctx, label, tabH - pad * 2, TAB_TEXT_MAX_PX, TAB_TEXT_MIN_PX);
+            const laneW = pawn.showQr ? Math.round(px * 1.35) : tabW;
+
+            if (pawn.showQr) {
+                const qrSize = Math.max(0, Math.min(tabW - laneW - pad * 2, tabH - pad * 2));
+                if (qrSize > 0) {
+                    const qx = xTab + tabW - pad - qrSize;      // beside the fold, label lane on the outer edge
+                    const qy = Math.round((tabH - qrSize) / 2);
+                    // White field behind the code: the tab is grey, and a QR on
+                    // grey loses the contrast a scanner needs.
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(Math.round(qx - pad / 2), Math.round(qy - pad / 2),
+                                 Math.round(qrSize + pad), Math.round(qrSize + pad));
+                    // Quiet zone 2 rather than 4: every module of width counts
+                    // here, and the white field already isolates the code.
+                    drawQrOnCanvas(ctx, qx, qy, qrSize, 2);
+                }
+            }
+
+            // Label, rotated to run up the outer edge of the tab. Drawn as two
+            // runs so GLUE keeps the pawn's accent colour.
+            ctx.font = `bold ${px}px sans-serif`;
+            const glueW = ctx.measureText(TAB_GLUE_WORD + TAB_SEP).width;
+            const urlW = ctx.measureText('tools.gameportal.win').width;
+            const totalW = glueW + urlW;
+
+            ctx.translate(xTab + laneW / 2, tabH / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+            ctx.font = `bold ${px}px sans-serif`;
+            ctx.fillStyle = pawn.borderColor;
+            ctx.fillText(TAB_GLUE_WORD + TAB_SEP, -totalW / 2, 0);
+            ctx.fillStyle = '#666';
+            ctx.fillText('tools.gameportal.win', -totalW / 2 + glueW, 0);
+            ctx.restore();
+        }
+
         function drawText(ctx, pawn, xBase, panelWidth, panelHeight, reservedBottom, paddingBottom) {
             const barHeight = reservedBottom;
 
@@ -2995,7 +3979,8 @@
                 borderColor: '#000000', textColor: '#000000', textBgColor: '#FFFFFFEE',
                 isFlipped: false, showBorder: true,
                 scale: 1.0, rotation: 0, offsetX: 0, offsetY: 0,
-                pawnWidth: 1.0, pawnHeight: 1.5, trackerScale: 1, hpMode: 'standard'
+                pawnWidth: 1.0, pawnHeight: 1.5, trackerScale: 1, hpMode: 'standard',
+                showQr: true
             };
             const blankTraits = { immunities: '', resistances: '', vulnerabilities: '', skills: '' };
 
@@ -3101,6 +4086,112 @@
         // Escapes user-entered text before it goes into an innerHTML string.
         // Traits, card names and card field values are all free-text, so a
         // stray "<" would otherwise silently eat the rest of the sheet.
+
+        /* ==================================================================
+           BRANDING QR
+
+           The same static code that was embedded in the header as a 31KB
+           base64 SVG, stored instead as one string per module row: 29x29
+           modules, '1' = dark. That is ~1KB, and unlike a fixed-size raster it
+           renders crisply at any size on both canvas and HTML.
+
+           Encodes https://tools.gameportal.win
+           ================================================================== */
+        const QR_TARGET_URL = 'https://tools.gameportal.win';
+        const QR_ROWS = [
+            '11111110011110100011001111111',
+            '10000010010110001100001000001',
+            '10111010011110110100101011101',
+            '10111010010101001011101011101',
+            '10111010000100000110001011101',
+            '10000010110110011011101000001',
+            '11111110101010101010101111111',
+            '00000000011111011101000000000',
+            '10010110111010101010110100000',
+            '11000001011001011000101001001',
+            '10111111000111110101000011110',
+            '01101100101001001000001110110',
+            '10001010111110110101101001011',
+            '11010000010111111111110000000',
+            '10010110110101100000010001111',
+            '10111100110110010111011011010',
+            '10100111111001000101010000010',
+            '01110001110111111100011101001',
+            '10100110111100111010011100011',
+            '00000100001010100110100010011',
+            '10101010101010010000111110100',
+            '00000000100010110001100010111',
+            '11111110010100001100101010010',
+            '10000010100000110000100011100',
+            '10111010011110001110111110010',
+            '10111010101001010001001111101',
+            '10111010010001011001100011101',
+            '10000010011101001111110100010',
+            '11111110100000010010110110010'
+        ];
+        // The spec quiet zone is 4 modules. Anything less trades scan
+        // reliability for a fraction of an inch, which is a bad deal on paper.
+        const QR_QUIET = 4;
+
+        // Horizontal runs of dark modules are merged into single rects, which
+        // roughly halves the element count and removes hairline seams between
+        // adjacent squares when a printer rounds coordinates.
+        function qrRuns() {
+            const runs = [];
+            QR_ROWS.forEach((row, y) => {
+                let x = 0;
+                while (x < row.length) {
+                    if (row[x] === '1') {
+                        let run = 1;
+                        while (x + run < row.length && row[x + run] === '1') run++;
+                        runs.push([x, y, run]);
+                        x += run;
+                    } else x++;
+                }
+            });
+            return runs;
+        }
+        const QR_RUNS = qrRuns();
+        const QR_TOTAL = QR_ROWS.length + QR_QUIET * 2;
+
+        function qrSvgMarkup(sizePx, title) {
+            const rects = QR_RUNS.map(([x, y, run]) =>
+                `<rect x="${x + QR_QUIET}" y="${y + QR_QUIET}" width="${run}" height="1"/>`).join('');
+            return `<svg class="qr-svg" width="${sizePx}" height="${sizePx}" ` +
+                   `viewBox="0 0 ${QR_TOTAL} ${QR_TOTAL}" xmlns="http://www.w3.org/2000/svg" ` +
+                   `shape-rendering="crispEdges" role="img" aria-label="${esc(title || ('QR code linking to ' + QR_TARGET_URL))}">` +
+                   `<rect width="${QR_TOTAL}" height="${QR_TOTAL}" fill="#ffffff"/>` +
+                   `<g fill="#000000">${rects}</g></svg>`;
+        }
+
+        // Canvas variant for the printed pawns. Coordinates are snapped to whole
+        // device pixels: at 300 DPI a fractional module width leaves grey seams
+        // that confuse scanners.
+        function drawQrOnCanvas(ctx, x, y, size, quiet) {
+            quiet = (quiet === undefined) ? QR_QUIET : quiet;
+            const total = QR_ROWS.length + quiet * 2;
+            const m = size / total;
+            ctx.save();
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(Math.round(x), Math.round(y), Math.round(size), Math.round(size));
+            ctx.fillStyle = '#000000';
+            QR_RUNS.forEach(([mx, my, run]) => {
+                const x0 = Math.round(x + (mx + quiet) * m);
+                const x1 = Math.round(x + (mx + run + quiet) * m);
+                const y0 = Math.round(y + (my + quiet) * m);
+                const y1 = Math.round(y + (my + 1 + quiet) * m);
+                ctx.fillRect(x0, y0, Math.max(1, x1 - x0), Math.max(1, y1 - y0));
+            });
+            ctx.restore();
+        }
+
+        // Reusable brand block for the printed sheets.
+        function brandBlockHtml(sizePx, extraClass) {
+            return `<span class="brand-block ${extraClass || ''}">` +
+                   qrSvgMarkup(sizePx) +
+                   `<span class="brand-url">tools.<br>gameportal<br>.win</span></span>`;
+        }
+
         function esc(v) {
             return String(v === undefined || v === null ? '' : v)
                 .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -4111,7 +5202,8 @@
             }
 
             page.style.display = 'block';
-            let html = `<h2>Action Card Reference</h2>`;
+            let html = `<div class="sheet-head"><h2>Action Card Reference</h2>` +
+                       brandBlockHtml(52, 'brand-sheet') + `</div>`;
 
             withActions.forEach(pawn => {
                 const systemName = pawn.system || 'Generic';
@@ -4158,6 +5250,8 @@
         // the drawer, so it wins when both are open.
         window.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape') return;
+            const install = document.getElementById('install-modal');
+            if (install && install.style.display === 'flex') { closeInstallHelp(); return; }
             const about = document.getElementById('about-modal');
             if (about && about.style.display === 'flex') { closeAboutModal(); return; }
             const privacy = document.getElementById('privacy-modal');
@@ -4168,6 +5262,10 @@
         });
 
         window.addEventListener('DOMContentLoaded', async () => {
+            const badge = document.getElementById('brand-badge-qr');
+            if (badge) badge.innerHTML = qrSvgMarkup(46);
+            loadPrintPrefs(); initPrintControls(); applyPaper(); syncOverheadControls();
+            updateInstallButton();
             try {
                 const response = await fetch('default-pawns.json');
                 if (response.ok) {
@@ -4262,30 +5360,113 @@
             document.body.appendChild(toast);
         }
 
-        // Chrome fires this instead of showing its own install affordance in
-        // some contexts; capturing it lets the header button drive the prompt.
+        /* ------------------------------------------------------------------
+           INSTALL / UNINSTALL
+
+           Chrome hands us a deferred prompt we can fire on demand. Nothing
+           equivalent exists for removal - no browser exposes an uninstall API -
+           so the red state opens platform instructions instead of implying an
+           action it cannot perform.
+           ------------------------------------------------------------------ */
         let deferredInstallPrompt = null;
+
+        function isRunningInstalled() {
+            return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+                || (window.matchMedia && window.matchMedia('(display-mode: window-controls-overlay)').matches)
+                || navigator.standalone === true;
+        }
+
+        function updateInstallButton() {
+            const btn = document.getElementById('install-app-btn');
+            if (!btn) return;
+            if (isRunningInstalled()) {
+                btn.textContent = 'Uninstall App';
+                btn.className = 'app-install-btn is-installed';
+                btn.title = 'How to remove this app from your device';
+            } else {
+                btn.textContent = 'Install App';
+                btn.className = 'app-install-btn is-installable';
+                btn.title = deferredInstallPrompt
+                    ? 'Install as an app for offline use'
+                    : 'How to install this as an app';
+            }
+        }
+
+        async function handleInstallClick() {
+            if (isRunningInstalled()) { openInstallHelp('uninstall'); return; }
+            if (deferredInstallPrompt) {
+                deferredInstallPrompt.prompt();
+                const choice = await deferredInstallPrompt.userChoice;
+                deferredInstallPrompt = null;
+                updateInstallButton();
+                if (choice && choice.outcome === 'accepted') showToast('Installing… the app will appear with your other apps.');
+                return;
+            }
+            // No prompt available: either the browser does not offer one, the
+            // page is on file://, or it is already installed elsewhere.
+            openInstallHelp('install');
+        }
+
+        const INSTALL_HELP = {
+            install: {
+                title: 'Install this app',
+                intro: 'Your browser has not offered an automatic install prompt. That usually means it is ' +
+                       'already installed, the page is open from a file rather than a web address, or this ' +
+                       'browser installs apps only from its menu. You can always install it manually:',
+                steps: [
+                    ['Chrome / Edge (desktop)', 'Look for the install icon at the right of the address bar, or open the ⋮ menu → <em>Cast, save and share</em> → <em>Install page as app</em>.'],
+                    ['Chrome (Android)', 'Open the ⋮ menu → <em>Add to Home screen</em> → <em>Install</em>.'],
+                    ['Safari (iPhone / iPad)', 'Tap the Share button → <em>Add to Home Screen</em>. Safari does not show an automatic prompt.'],
+                    ['Firefox', 'Open the menu → <em>Install</em> (desktop) or <em>Add to Home screen</em> (Android).']
+                ],
+                note: 'Installing stores a copy of the app on your device so it opens instantly and works offline. Nothing is uploaded.'
+            },
+            uninstall: {
+                title: 'Remove this app',
+                intro: 'No website can uninstall itself — only your browser or operating system can. ' +
+                       'These are the manual steps:',
+                steps: [
+                    ['Chrome / Edge (desktop)', 'Open the app, then use its ⋮ menu → <em>Uninstall</em>. Or visit <code>chrome://apps</code>, right-click the icon → <em>Remove from Chrome</em>.'],
+                    ['Android', 'Long-press the app icon on your home screen → <em>Uninstall</em>, or remove it from <em>Settings → Apps</em>.'],
+                    ['iPhone / iPad', 'Long-press the icon on the Home Screen → <em>Remove App</em> → <em>Delete App</em>.'],
+                    ['Any browser', 'To also clear the cached offline copy, clear site data for this site in your browser settings.']
+                ],
+                note: 'Removing the app does not touch any project files you saved — those are ordinary files on your computer.'
+            }
+        };
+
+        function openInstallHelp(mode) {
+            const cfg = INSTALL_HELP[mode] || INSTALL_HELP.install;
+            const title = document.getElementById('install-modal-title');
+            const body = document.getElementById('install-modal-body');
+            if (!title || !body) return;
+            title.textContent = cfg.title;
+            body.innerHTML = `<p class="install-intro">${esc(cfg.intro)}</p>` +
+                cfg.steps.map(([platform, how]) =>
+                    `<section class="install-step"><h3>${esc(platform)}</h3><p>${how}</p></section>`).join('') +
+                `<p class="install-note">${esc(cfg.note)}</p>`;
+            setOverlay('install-modal', true);
+        }
+        function closeInstallHelp() { setOverlay('install-modal', false); }
+
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredInstallPrompt = e;
-            const btn = document.getElementById('install-app-btn');
-            if (btn) btn.style.display = 'inline-block';
+            updateInstallButton();
         });
-
-        async function triggerInstall() {
-            if (!deferredInstallPrompt) return;
-            deferredInstallPrompt.prompt();
-            await deferredInstallPrompt.userChoice;
-            deferredInstallPrompt = null;
-            const btn = document.getElementById('install-app-btn');
-            if (btn) btn.style.display = 'none';
-        }
 
         window.addEventListener('appinstalled', () => {
             deferredInstallPrompt = null;
-            const btn = document.getElementById('install-app-btn');
-            if (btn) btn.style.display = 'none';
+            updateInstallButton();
+            showToast('Installed. You can now open it like any other app, online or off.');
         });
+
+        // Switching between tab and installed window changes what the button
+        // should say, so track it rather than deciding once at startup.
+        if (window.matchMedia) {
+            const mq = window.matchMedia('(display-mode: standalone)');
+            if (mq.addEventListener) mq.addEventListener('change', updateInstallButton);
+        }
 
         initServiceWorker();
     </script>

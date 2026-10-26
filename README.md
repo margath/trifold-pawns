@@ -2,23 +2,6 @@
 
 Foldable paper standees, DM tracker sheets and Action Card references for tabletop RPGs.
 
-**→ [Open the app](index.html)** · Live build: <https://trifold.gameportal.win/beta/>
-
-Built on [Whitebeard's "You've Been Pawned"](https://pwned.whitebeard.blog/).
-
----
-
-## Contents
-
-- [Files](#files)
-- [Running it](#running-it)
-- [What it does](#what-it-does)
-- [Change history](#change-history)
-- [Design decisions worth knowing](#design-decisions-worth-knowing)
-- [Privacy](#privacy)
-
----
-
 ## Files
 
 | File | Purpose |
@@ -30,191 +13,153 @@ Built on [Whitebeard's "You've Been Pawned"](https://pwned.whitebeard.blog/).
 
 ## Running it
 
-Opening `index.html` directly works for everything except offline install — browsers
+**Just opening `index.html`** works for everything except offline install. Browsers
 refuse to register a service worker on `file://`, so the app detects that and skips
-registration rather than logging an error.
+registration instead of logging an error.
 
-To install it as an app, serve the folder over HTTPS (or `localhost`):
+**As an installable PWA**, serve the folder over HTTPS (or `localhost`):
 
 ```bash
-python3 -m http.server 8000   # then visit http://localhost:8000
+# local test
+python3 -m http.server 8000
+# then visit http://localhost:8000
 ```
 
-An **Install App** button appears once the browser signals installability. New
-deployments surface a "new version is ready" prompt instead of leaving you on a stale
-cached copy.
+An **Install App** button appears in the header once the browser signals the app is
+installable. When a new build is deployed, an "A new version is ready" prompt appears
+rather than leaving you on a stale cached copy.
 
----
+## Editing pawns
 
-## What it does
+The editor slides in from the **right side of the window** rather than expanding
+underneath a pawn, so the grid never reflows while you work and the pawn stays
+visible beside its own settings. One pawn is open at a time; `Esc` closes it.
 
-**Six systems:** Generic · D&D 5th Edition · D&D 4th Edition · Daggerheart ·
-Savage Worlds · Cosmere "Plotweaver". Every system also carries Immunities,
-Resistances, Vulnerabilities and Skills/Proficiencies.
+Panel order follows dependency: **System** first (it decides which stat fields exist),
+then Name/Number, stats, traits, Action Cards, appearance, and image position.
 
-**Three independent print sheets**, each with its own button:
+## Overhead tokens
 
-1. **Pawns** — the foldable standees.
-2. **Tracker** — stat blocks in scannable columns, with consumable resource boxes
-   spanning beneath each pawn.
-3. **Action Cards** — a separate sheet listing each enemy with its attached abilities,
-   pawn-specific overrides applied.
+For play on a map viewed from above, pawns can have a **round overhead token** that
+goes on top of the standee.
 
-**Adaptive HP** distributes a large pool into 10 / 5 / 2 / 1 point boxes — a 256 HP
-dragon becomes 61 boxes instead of 256. The distribution is lossless: boxes always sum
-to exactly the stated total.
+- **Project-wide switch:** tick **Overhead tokens** under *Sheets to print* in the
+  footer (off by default). While it is off no tokens show, print or export, but every
+  pawn's token settings are kept, so switching back on restores them. The setting is
+  saved in the project file. Each pawn also has an **Overhead token for this pawn**
+  checkbox in its editor, to opt a single pawn out. (With the switch off, that section
+  of the editor offers a *Turn on overhead tokens* button instead.)
+- **Same picture as the standee**, fitted inside the circle. **Zoom**, **Rotate**,
+  **X-Pos** and **Y-Pos** sliders reframe it (each has a reset button). You can also
+  **drag the token on the page to pan** and **scroll over it to zoom**; the sliders
+  follow along. Pan is a percentage of the token's diameter, so it means the same at
+  every pawn size. **Token bg** fills behind transparent PNGs.
+- **Cut and fold lines:** the **solid line is the cut**; the **dashed triangle is the
+  fold**. The folded standee has an equilateral-triangle top whose side equals the
+  base width. At the default **Fits standee top** size the token's diameter is
+  2/&radic;3 x the base width (about 1.15" for a Medium pawn), which is the circle that
+  exactly circumscribes that triangle. The triangle's corners land on the rim, so the
+  three round flaps meet only at the corners and fold down along the dashed lines with
+  no slits needed. Fold them over the outside, or tuck them inside the standee's top
+  for a cleaner look. The triangle is fixed on the token; the Rotate slider turns the
+  picture only.
+- **Name & number on the topper:** each token prints its pawn's name wrapped round the top of the circle and its number (e.g. "#3") in the lower right, just above the triangle's bottom side, both on white and kept inside the colour ring so the pawn's colour still shows. A long name is shrunk and then shortened with "…"; the number is always kept. Untick **Name & number** in the pawn's editor to hide them.
+- **Spine & foot (the "I"):** a topper that only sits on the standee's top edges can
+  knock off. With **Spine & foot** the printed token becomes an I: the round token is the
+  top bar, a **spine** runs down the middle of the pawn, and a **foot** under the pawn is
+  the bottom bar. Lift the topper and the pawn, resting on
+  the foot, comes with it. It is on by default for fitted tokens, switched off for the
+  whole project with the **with spine & foot** checkbox under *Overhead tokens* in the
+  footer, and off for a single pawn with **Spine & foot** in its editor. It needs the
+  *Fits standee top* size, so a flat disc never has one.
+  - To assemble: cut out the whole I (round token, spine and foot in one piece, including
+    the two short slits beside the spine) and crease the dashed lines. It is one strip with
+    four numbered folds: **1** folds the strip back 180° under the token so it runs in
+    towards the middle of the circle; **2** turns it 90° so it hangs straight down the
+    middle; **3** turns it 90° onto the floor; **4** folds the foot back under that strip
+    (the opposite way to the others), so the spine stands in the middle of the foot. Then
+    fold the foot in half down its centre, drop it through the top of the pawn and let the
+    token settle on top (or thread the spine through before the pawn's last seam if it
+    isn't glued yet), flatten the foot under the pawn, and fold the token's flaps down.
+  - Sizes, all relative to the pawn's base width **B**: the spine is 0.4 B wide, and every
+    run is 0.04" longer than it needs to be so the folds don't bind. The foot is an
+    equilateral triangle, the same way up as the pawn's footprint, reaching 0.05" past it on
+    every side; being wider than the inside of the pawn it can't pull back up through it.
+  - The spine and foot are plain paper, tinted with the pawn's colour, with instructions
+    printed on them that end up hidden inside the pawn. The token on screen becomes
+    taller (about 3.4" for a Medium pawn). Project files saved before this existed load
+    with the spine and foot on.
+- **Flat disc (1x base)** is a plain round token with no fold lines, for use as a loose
+  marker. The **Fold lines** checkbox hides the dashed triangle on a fitted token.
+- On screen each token sits beside its pawn so you can edit it. When printing, the
+  tokens are gathered onto a **sheet of their own** after the standees, packed tightly,
+  so they never push the standee strips around. They are included in the Word and
+  OpenDoc exports too (on a page of their own).
+- Token settings are copied by Copy/Paste Style and carried over by Duplicate. Project
+  files saved before tokens existed load with tokens off.
 
-**Action Cards** are a global library of abilities that pawns attach by reference.
-Any field can be overridden per pawn — an alpha with +8 to hit instead of the card's
-+5 — without touching the shared card.
+## Systems supported
 
----
+Generic · D&D 5th Edition · D&D 4th Edition · Daggerheart · Savage Worlds · Cosmere "Plotweaver"
 
-## Change history
+Every system also carries Immunities, Resistances, Vulnerabilities and Skills/Proficiencies.
 
-### Round 1 — Systems, Adaptive HP, Action Cards, PWA
+## Printing
 
-- Added **D&D 4th Edition** (HP, Bloodied, Healing Surges, Action Points, Speed;
-  AC/Fort/Ref/Will), **Daggerheart** (HP, Stress, Armor Score, Evasion, Hope, Fear,
-  three damage thresholds) and **Savage Worlds** (Pace, Parry, Toughness with armour,
-  Bennies, Power Points).
-- Added Immunities / Resistances / Vulnerabilities / Skills to **all six** systems,
-  stored once as `pawn.traits` rather than duplicated into each stat block.
-- **Adaptive HP** mode, per pawn, alongside the existing Standard mode.
-- **Action Cards**: global library, per-pawn attachment with field-level overrides,
-  system-specific field schemas.
-- **Separated print sheets** — action cards break to their own page.
-- Collapsed the near-identical 5e and Cosmere tracker renderers into one
-  config-driven renderer; adding a system became a config entry.
-- **PWA**: real manifest, offline service worker with update prompts, generated icon
-  set, install button.
-- Free text is now escaped before rendering — a pawn named with a `<` previously ate
-  the rest of the sheet.
-- Backward compatible: v1 project files load with missing fields filled blank.
+Tick the sheets you want under **3. Sheets to print** in the footer, choose a paper
+size and orientation under **4. Paper & Print**, then press **Print** (or use the
+browser's own Ctrl/Cmd+P, which gives the same result).
 
-### Round 2 — Editor drawer, numbered pools, defaults
+| Checkbox | Sheet |
+| --- | --- |
+| **Standees** | The foldable standee strips. |
+| **Overhead tokens** | The round tokens, gathered on one sheet (see above). |
+| **GM summary sheet** | The stat tracker: stat blocks with consumable resource boxes beneath each pawn. |
+| **Power cards** | The Action Card reference, listing each pawn with its attached cards. Pawn-specific overrides replace the library defaults and are marked with `*`. Skipped (with a note) when no pawn has a card attached. |
 
-- **Editor moved to a right-side drawer** instead of expanding under a pawn, so the
-  grid no longer reflows while you work. System dropdown leads the panel, since it
-  determines every field beneath it. `Esc` closes.
-- Savage Worlds **Power Points are numbered** 1..N.
-- **HP controls hide where meaningless**: Savage Worlds has no HP stat at all, and
-  Daggerheart/Cosmere pools are too small for x1/x5/x10 scaling.
-- Default project expanded to eight pawns covering all six systems, both HP modes,
-  all three pawn sizes, traits and action cards with overrides — with both sheets
-  pre-enabled so a first run shows what the tool does.
-- Empty projects show a start-here panel with a **Load the sample encounter** button.
+- **Every checked sheet starts on a fresh page**, and the sheets print in the order
+  above. Nothing shares a page with another sheet, so a sheet's heading can no longer
+  end up underneath the previous sheet's content.
+- **Standees** is a print-only switch: the standees always stay on screen, because that
+  is where you edit them. The other three checkboxes also show or hide their sheet on
+  screen.
+- **Paper:** Letter, Legal, Tabloid (11 x 17 in), A4 or A3, in portrait or landscape.
+  The on-screen sheet changes shape to match, so the preview wraps the way the printout
+  will. Margins are 0.5 in. Your choice is remembered in this browser and saved in the
+  project file; opening an older project file leaves your current choice alone.
+- The **Word (.doc)** and **OpenDoc (.odt)** exports contain the two image sheets
+  (standees, then tokens on their own page) and follow the **Standees**, **Overhead
+  tokens** and paper settings. The tracker and cards sheets are print-only.
 
-### Round 3 — Print fidelity, imports, compression
+## Adaptive HP
 
-- **Pawn labels shrink to fit** their panel. Type size scales with pawn size; if a
-  name is still too long at the minimum readable size the name is ellipsised but the
-  `#N` is always kept.
-- **Section headings moved into `<thead>`** so they can't be orphaned at the foot of
-  a page — browsers never break between a header group and its first row. They now
-  also reprint atop every page a long table spans.
-- Generic pawns got a titled section of their own.
-- **Add from JSON** merges another project instead of replacing. Colliding card IDs
-  are resolved: identical cards reused, genuinely different ones re-issued a fresh ID
-  with that file's attachments redirected.
-- **Images are compressed on import** — capped at 1200px, re-encoded to WebP (keeps
-  alpha). Skipped when it would make the file larger.
+For high-HP monsters, "Adaptive HP" splits the pool into 10 / 5 / 2 / 1 point boxes
+instead of one box per hit point — a 256 HP dragon becomes 61 boxes rather than 256.
+Denominations differ by border weight, box size *and* printed number, so they stay
+distinguishable on a cheap laser printer.
 
-### Round 4 — Page-break integrity
+The distribution is lossless: the boxes always sum to exactly the stated HP total.
 
-- **Each pawn now occupies its own `<tbody>`**, so its stat row and consumables row
-  move as one unit. Previously a page break could land between a monster and its HP
-  boxes, stranding them on separate sheets.
+The HP controls only appear where they mean something. Savage Worlds has no HP stat
+at all (Wounds and Fatigue are fixed-length tracks), so neither control shows.
+Daggerheart and Cosmere keep Standard/Adaptive but hide the x1/x5/x10 box scaling,
+since their pools are already small. A previously saved scale value is preserved even
+while the control is hidden.
 
-### Round 5 — Labelling
+Savage Worlds **Power Points are numbered** (1..N) — pools run to 15-20, and unnumbered
+squares are unreadable mid-fight. Bennies stay blank, since three boxes need no labels.
 
-- **Icons replaced by text abbreviations** (`AC`, `Init`, `LegRes`, `STR`) and the
-  legend removed. Measured against the 7.5in printable width, abbreviations cost
-  29–66px more table width — which the `width: 100%` table already had spare in every
-  system — while the legend was costing 43–79px of height on *every* page, since it
-  repeated. Net ≈17% more monster rows per page.
-- Removed the icon machinery this made dead: six SVG maps, three legend arrays and
-  five orphaned helper functions (−17 KB).
+## Empty projects
 
-### Round 6 — Cosmere detail
-
-- Cosmere **action costs became symbols**: `▷` free · `▶`/`▶▶`/`▶▶▶` 1–3 actions ·
-  `↻` reaction · `★` special · `∞` at-will. Stored as stable keys, not glyphs.
-- **Focus and Investiture became numbered consumption trackers** rather than bare
-  numbers in a column.
-- Existing Cosmere cards migrate automatically.
-
-### Round 7 — Layout, controls, privacy
-
-- Briefly tried flex "chips" for stats; **reverted to stacked columns** — a tracker is
-  read by scanning *down* a column ("did that hit AC 15?"), and chips destroyed that.
-  The cramping that prompted the experiment was fixed properly instead: tighter cell
-  padding, wrapping values, fixed-width labels so values align vertically.
-- **Action cards gained a Cost field** in every system, for abilities that spend from
-  a pool — Cosmere Investiture or Focus, Savage Worlds Power Points, Daggerheart
-  Stress, 5e legendary actions. Printed highlighted, overridable per pawn.
-- **Control bar rebuilt** so it no longer scrolls. Step 1 is now *Add Pawn via…*
-  (paste / browse / **blank pawn**) with the base-size dropdown beneath it. Credits
-  moved into an About modal.
-- **Blank pawn** creation — start from a coloured placeholder with no image file.
-- **Privacy ribbon and modal** added.
-
----
-
-## Design decisions worth knowing
-
-**Tracker layout is columns, not chips.** Each column holds one class of information
-(Basic, Legendary, Stats/Saves, Traits) and entries stack vertically inside it, with
-fixed-width labels so values align. A column no pawn in that section uses is dropped
-entirely; a stat an individual pawn lacks emits no line.
-
-**Adaptive HP boxes are distinguished three ways at once** — border weight, box size
-*and* printed number — because border weight alone doesn't survive a cheap laser
-printer, which is the actual use case.
-
-**Action card IDs are never positional.** `renderAll` re-sorts pawns by width on every
-render, so anything index-keyed would break. Attachments reference card IDs, and the
-editor drawer keys off `pawn.isEditing` rather than an index.
-
-**Cosmere action costs store keys, not glyphs.** Storing `▶▶` directly would mean that
-changing a symbol later silently orphaned every saved card.
-
-**Ability costs are free text.** The wording varies too much for a structured
-amount-and-pool pair — "2 Investiture, 1 Focus", "Mark 1 Stress", "2 legendary
-actions".
-
-**1200px image cap** is the point past which extra pixels can't reach paper: pawns
-print at 300 DPI on a panel at most 1.25" wide, ~1125px even at the scale slider's 3x
-maximum.
-
-### Known limits
-
-- If a single pawn's block is taller than a printed page, the browser will break it
-  anyway — `break-inside: avoid` is a strong hint, not a guarantee.
-- WebP encoding needs Safari 16+. Older Safari falls back to PNG — still downscaled,
-  just less efficiently.
-- `▷ ▶ ↻ ★ ∞` render in standard Windows and macOS fonts, but an unusual printer font
-  could box-out `↻`. It's a one-line change in `COSMERE_ACTION_COSTS`.
-
----
-
-## Privacy
-
-The app collects nothing. Everything is processed in your browser; images and projects
-never leave your device. There are no accounts, analytics, cookies or browser storage,
-and the page loads no third-party scripts, fonts or images.
-
-The one thing outside our control is hosting: the live site is served through
-Cloudflare, which as host and CDN may process technical connection data (IP address,
-request time, user-agent, bot-mitigation signals) while delivering the page. That
-processing is Cloudflare's, described in their
-[privacy policy](https://www.cloudflare.com/privacypolicy/).
-
-The in-app **Privacy** ribbon states all of this in full.
-
----
+With no pawns loaded you get a start-here panel including a **Load the sample
+encounter** button. That sample is also what loads on first run: eight pawns spanning
+all six systems, all three pawn sizes, both HP modes, traits, and Action Cards with
+per-pawn overrides — with both output sheets already enabled so the tracker and card
+reference are visible immediately.
 
 ## Project files
 
-`Save` writes a `.json` you can reload later. Version 1 files — saved before Action
-Cards existed — load without modification; missing fields are filled with blanks.
+`Save` writes a `.json` you can reload later. Version 1 files (saved before Action
+Cards existed) load without modification — missing fields are filled with blanks.
+
+- **Glue tab and image names:** the glue tab (with the optional QR) is at the left end of each pawn strip, so it tucks in and glues under the back panel's far edge. Images added from files take their file name as the pawn name (extension removed, underscores read as spaces); pasted images are left unnamed.
