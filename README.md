@@ -163,3 +163,4 @@ reference are visible immediately.
 Cards existed) load without modification — missing fields are filled with blanks.
 
 - **Glue tab and image names:** the glue tab (with the optional QR) is at the left end of each pawn strip, so it tucks in and glues under the back panel's far edge. Images added from files take their file name as the pawn name (extension removed, underscores read as spaces); pasted images are left unnamed.
+- **Naming a batch:** after adding images from files, a dialog asks for each pawn's name, number and system (with a *System for all* shortcut). The footer's **Names, numbers & system...** button reopens it for all pawns at any time.

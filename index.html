@@ -519,6 +519,25 @@
         .new-card-btn:hover { background: #27ae60; }
         .card-empty { color: #888; font-size: 12px; font-style: italic; }
 
+        /* Bulk naming dialog (after adding images from files, or from the footer). */
+        .import-row {
+            display: grid; grid-template-columns: 44px 1fr 74px 150px; gap: 8px;
+            align-items: center; margin-bottom: 6px;
+        }
+        .import-row.import-head { color: #999; font-size: 11px; margin-bottom: 4px; }
+        .import-row img {
+            width: 44px; height: 44px; object-fit: contain; background: #fff; border-radius: 4px;
+        }
+        .import-row input, .import-row select {
+            width: 100%; box-sizing: border-box; padding: 5px 7px; font-size: 12px;
+            background: #1e1e1e; color: #fff; border: 1px solid #555; border-radius: 4px;
+        }
+        .import-foot { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-top: 1px solid #444; }
+        .import-foot .import-count { color: #999; font-size: 11px; margin-right: auto; }
+        .import-foot .import-count { white-space: nowrap; }
+        .import-foot button { width: auto; flex: 0 0 auto; padding: 8px 26px; }
+        @media (max-width: 560px) { .import-row { grid-template-columns: 36px 1fr 60px; } .import-row select { grid-column: 1 / -1; } }
+
         .card-row { background: #222; border: 1px solid #3a3a3a; border-radius: 6px; margin-bottom: 8px; }
         .card-row-head { display: flex; align-items: center; gap: 8px; padding: 9px 12px; }
         .card-row-name { font-size: 13px; font-weight: bold; color: #fff; flex: 1; }
@@ -1183,6 +1202,8 @@
                     </div>
                     <input type="file" id="file-input" multiple accept="image/*" style="display:none">
                     <p class="footer-hint">Or drop transparent PNGs anywhere on the page.</p>
+                    <button class="secondary" style="width:100%;margin-bottom:6px" onclick="openImportModal()"
+                            title="Edit the name, number and system of every pawn in one list">✎ Names, numbers &amp; system…</button>
                     <label class="sub-label" for="size-select">New pawn base size</label>
                     <select id="size-select" onchange="updateGlobalSize()">
                         <option value="medium">Medium — 1" base × 1.5" tall</option>
@@ -1406,6 +1427,22 @@
                     Edit Controls panel, then override individual values per pawn.
                 </p>
                 <div class="card-modal-body" id="card-modal-body"></div>
+            </div>
+        </div>
+
+        <!-- Names, numbers and system for a batch of pawns. Edits apply as you type. -->
+        <div class="card-modal" id="import-modal">
+            <div class="card-modal-panel">
+                <div class="card-modal-header">
+                    <h2 id="import-modal-title">Name your pawns</h2>
+                    <button class="card-modal-close" onclick="closeImportModal()" title="Close">&times;</button>
+                </div>
+                <p class="card-modal-hint" id="import-modal-hint"></p>
+                <div class="card-modal-body" id="import-modal-body"></div>
+                <div class="import-foot">
+                    <span class="import-count" id="import-modal-count"></span>
+                    <button class="primary" onclick="closeImportModal()">Done</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1692,6 +1729,118 @@
             if (n < 1024 * 1024) return (n / 1024).toFixed(0) + ' KB';
             return (n / (1024 * 1024)).toFixed(1) + ' MB';
         }
+        // ---- Bulk naming dialog ---------------------------------------------------
+        // The last system picked is remembered (this browser only) so a second
+        // batch starts where the first one ended.
+        function lastImportSystem() {
+            try {
+                const v = localStorage.getItem('trifold.importSystem');
+                if (v && SYSTEMS.includes(v)) return v;
+            } catch (err) { /* storage can be blocked; fall back to Generic */ }
+            return 'Generic';
+        }
+        function rememberImportSystem(v) {
+            try { localStorage.setItem('trifold.importSystem', v); } catch (err) { /* ignore */ }
+        }
+
+        // Same effect as the drawer's System picker, minus the re-render.
+        function applySystemToPawn(pawn, value) {
+            pawn.system = value;
+            ensurePawnShape(pawn);
+            pawn.actions = pawn.actions.filter(a => {
+                const card = getActionCard(a.cardId);
+                return card && card.system === value;
+            });
+        }
+
+        // Holds the pawn objects themselves, not indices: renderAll() re-sorts
+        // state.pawns, which would make indices point at the wrong pawn.
+        let importList = [];
+
+        function openImportModal(pawns) {
+            const justAdded = Array.isArray(pawns);
+            importList = justAdded ? pawns : state.pawns.slice();
+            if (importList.length === 0) { showToast('Add some pawns first.'); return; }
+            document.getElementById('import-modal-title').innerText = justAdded ? 'Name your new pawns' : 'Names, numbers & system';
+            document.getElementById('import-modal-hint').innerText = justAdded
+                ? 'Images are named from their file names. Fix names, add numbers and pick the game system for each pawn; changes apply as you type.'
+                : 'Changes apply as you type.';
+            renderImportModal();
+            document.getElementById('import-modal').style.display = 'flex';
+            const first = document.querySelector('#import-modal-body .import-name');
+            if (first) { first.focus(); first.select(); }
+        }
+
+        function renderImportModal() {
+            const body = document.getElementById('import-modal-body');
+            body.innerHTML = '';
+
+            // One picker sets every row; each row can still differ afterwards.
+            const bar = document.createElement('div'); bar.className = 'card-modal-bar';
+            const lab = document.createElement('label'); lab.className = 'system-label'; lab.innerText = 'System for all:';
+            const all = document.createElement('select'); all.className = 'system-select';
+            const keep = document.createElement('option'); keep.value = ''; keep.innerText = '(choose to apply to all)';
+            all.appendChild(keep);
+            SYSTEMS.forEach(sys => { const o = document.createElement('option'); o.value = sys; o.innerText = sys; all.appendChild(o); });
+            all.onchange = (e) => {
+                if (!e.target.value) return;
+                importList.forEach(p => applySystemToPawn(p, e.target.value));
+                rememberImportSystem(e.target.value);
+                body.querySelectorAll('.import-sys').forEach(sel => { sel.value = e.target.value; });
+                renderAll();
+            };
+            bar.appendChild(lab); bar.appendChild(all);
+            body.appendChild(bar);
+
+            const head = document.createElement('div'); head.className = 'import-row import-head';
+            ['', 'Name', 'Number', 'System'].forEach(t => { const d = document.createElement('div'); d.innerText = t; head.appendChild(d); });
+            body.appendChild(head);
+
+            const names = [];
+            importList.forEach((pawn, i) => {
+                const row = document.createElement('div'); row.className = 'import-row';
+                const img = document.createElement('img'); img.src = pawn.dataUrl || ''; img.alt = '';
+                const name = document.createElement('input'); name.type = 'text'; name.className = 'import-name';
+                name.placeholder = 'Name'; name.value = pawn.name || '';
+                name.oninput = (e) => { pawn.name = e.target.value; refreshAfterRename(); };
+                const num = document.createElement('input'); num.type = 'text'; num.placeholder = '#'; num.value = pawn.number || '';
+                num.oninput = (e) => { pawn.number = e.target.value; refreshAfterRename(); };
+                const sel = document.createElement('select'); sel.className = 'import-sys';
+                SYSTEMS.forEach(sys => {
+                    const o = document.createElement('option'); o.value = sys; o.innerText = sys;
+                    if ((pawn.system || 'Generic') === sys) o.selected = true;
+                    sel.appendChild(o);
+                });
+                sel.onchange = (e) => { applySystemToPawn(pawn, e.target.value); rememberImportSystem(e.target.value); renderAll(); };
+                // Enter moves down the list, so a batch can be named from the keyboard.
+                [name, num].forEach(inp => inp.onkeydown = (e) => {
+                    if (e.key !== 'Enter') return;
+                    e.preventDefault();
+                    const next = names[i + 1];
+                    if (next) { next.focus(); next.select(); } else closeImportModal();
+                });
+                names.push(name);
+                row.appendChild(img); row.appendChild(name); row.appendChild(num); row.appendChild(sel);
+                body.appendChild(row);
+            });
+            document.getElementById('import-modal-count').innerText = importList.length + ' pawn' + (importList.length === 1 ? '' : 's');
+        }
+
+        // The sheet is redrawn in the background while typing; the dialog itself
+        // is left alone so the field being typed in keeps focus.
+        let renameTimer = null;
+        function refreshAfterRename() {
+            clearTimeout(renameTimer);
+            renameTimer = setTimeout(() => renderAll(), 250);
+        }
+
+        function closeImportModal() {
+            clearTimeout(renameTimer);
+            document.getElementById('import-modal').style.display = 'none';
+            importList = [];
+            renderAll();
+        }
+
         // "goblin_archer-2.PNG" -> "goblin archer-2": the file name minus its
         // extension, with underscores read as spaces. Names the user types later win.
         function nameFromFilename(fileName) {
@@ -1702,6 +1851,8 @@
             if (!files) return;
 
             let totalSaved = 0, compressedCount = 0;
+            const added = [];
+            const chosenSystem = lastImportSystem();
 
             for (let file of files) {
                 if (!file.type.startsWith('image/')) continue;
@@ -1732,7 +1883,7 @@
                 const emptyStats = {};
                 STAT_KEYS.forEach(key => emptyStats[key] = '');
 
-                state.pawns.push(ensurePawnShape({
+                const newPawn = ensurePawnShape({
                     img: img, dataUrl: storedUrl, name: (e.target.id || '').startsWith('paste') ? '' : nameFromFilename(file.name), number: '', isEditing: false,
                     isDark: calculateDarkness(img), isFlipped: false, showBorder: false, 
                     borderColor: '#000000', textColor: '#000000', textBgColor: '#FFFFFFEE',
@@ -1741,15 +1892,20 @@
                     trackerScale: 1,
                     hpMode: state.hpMode || 'standard',
                     showQr: true,
-                    system: 'Generic',
+                    system: chosenSystem,
                     stats: emptyStats,
                     traits: emptyTraits(),
                     actions: []
-                }));
+                });
+                state.pawns.push(newPawn);
+                added.push(newPawn);
             }
 
             if (e.target.id === 'file-input') e.target.value = ''; 
             renderAll();
+            // Images from files (browse or drop) get the naming dialog; pasted ones don't.
+            const fromPaste = (e.target.id || '').startsWith('paste');
+            if (added.length > 0 && !fromPaste) openImportModal(added);
 
             if (compressedCount > 0) {
                 // base64 is ~4/3 of the byte size it encodes.
