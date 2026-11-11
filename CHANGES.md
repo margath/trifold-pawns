@@ -1,6 +1,6 @@
 # Change log: Tri-Fold Pawn Maker beta (overhead tokens)
 
-Based on `beta/` of github.com/margath/trifold-pawns. Files changed: `index.html`, `README.md`, `service-worker.js` (cache version bumped to `trifold-v2026.10.28.01`).
+Based on `beta/` of github.com/margath/trifold-pawns. Files changed: `index.html`, `README.md`, `service-worker.js` (cache version bumped to `trifold-v2026.11.10.01`).
 
 ## Added
 
@@ -40,6 +40,8 @@ So the topper lifts the pawn when picked up:
 - New footer button **Names, numbers & system...** (under *Add Pawn via*) opens the same list for every pawn in the project.
 
 ## Changed
+- **Printed pieces are centred and spread evenly:** standee strips and overhead tokens are centred on the sheet, and when they run to several columns they are spread evenly across the page width (a short last row is centred too). The Word and OpenDoc exports do the same, using rows of equal-width cells.
+- **Saved project files** now start with a `_note` line saying the file is meant to be loaded at https://trifold.gameportal.win (Load, or Add JSON to merge). Loaders ignore it, and older files without it still load.
 - **Glue tab** (with optional QR) moved to the **left end** of the pawn strip, so it glues under the back panel's far edge.
 - **Importing images from files** now names each pawn after its file (extension removed, underscores read as spaces). Pasted images stay unnamed.
 

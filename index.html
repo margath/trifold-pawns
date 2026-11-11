@@ -1128,11 +1128,16 @@
             .page { break-before: page; page-break-before: always; }
             .page.print-first { break-before: auto; page-break-before: auto; }
 
+            /* Pieces are centred on the sheet and, when they run to several
+               columns, spread evenly across its width (the gap above is the
+               minimum between pieces). A short last row is centred too. */
+            .pawn-page, .token-page.has-tokens { justify-content: space-evenly; }
+
             /* Tokens never ride along inside the standee flow (that is what
                pushed the strips out of step); they print on their own sheet. */
             .token-wrapper { display: none !important; }
             .token-page.has-tokens {
-                display: flex; flex-wrap: wrap; align-content: flex-start; gap: 0.1in;
+                display: flex; flex-wrap: wrap; align-content: flex-start; gap: 0.1in 0.25in;
             }
             .token-page canvas { display: block; border-radius: 0; }
         }
@@ -2188,6 +2193,8 @@
         function saveProject() {
             if (state.pawns.length === 0) { alert("Please add at least one pawn before saving."); return; }
             const projectData = {
+                // Kept first so it is the first thing seen when the file is opened in a text editor.
+                _note: "This is a Tri-Fold Pawn Maker project file. It is meant to be loaded at https://trifold.gameportal.win - open the site and use Load (or Add JSON to merge it into what you have).",
                 version: 2,
                 pawnWidth: state.pawnWidth, pawnHeight: state.pawnHeight,
                 showTable: state.showTable, showCards: state.showCards,
@@ -2632,6 +2639,20 @@
         }
         const EXPORT_EMPTY_MSG = "Nothing to export. Tick Standees and/or Overhead tokens under \"Sheets to print\" - the Word and OpenDoc exports contain those two sheets.";
 
+        // Greedy rows: as many pieces per row as fit the printable width
+        // (0.25in minimum between pieces), the same way the printed page wraps.
+        function exportRows(canvases) {
+            const usable = paperDims().wIn - 1;          // 0.5in margins each side
+            const rows = []; let row = [], used = 0;
+            canvases.forEach(cv => {
+                const w = parseFloat(cv.style.width);
+                if (row.length && used + 0.25 + w > usable) { rows.push(row); row = []; used = 0; }
+                used += (row.length ? 0.25 : 0) + w; row.push(cv);
+            });
+            if (row.length) rows.push(row);
+            return rows;
+        }
+
         function exportWord() {
             if (state.pawns.length === 0) { alert("Please add at least one pawn before exporting."); return; }
             const parts = exportParts();
@@ -2645,13 +2666,19 @@
             let htmlContent = `
                 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
                 <head><meta charset="utf-8"><title>Pawns Export</title>
-                <style>@page { margin: 0.5in; size: ${wIn}in ${hIn}in; } @page Section1 { size: ${wIn}in ${hIn}in; mso-page-orientation: ${state.orientation}; margin: 0.5in; } div.Section1 { page: Section1; } body { margin: 0; padding: 0; font-family: Arial, sans-serif; } img { margin: 0 0.25in 0.25in 0; display: inline-block; }</style>
+                <style>@page { margin: 0.5in; size: ${wIn}in ${hIn}in; } @page Section1 { size: ${wIn}in ${hIn}in; mso-page-orientation: ${state.orientation}; margin: 0.5in; } div.Section1 { page: Section1; } body { margin: 0; padding: 0; font-family: Arial, sans-serif; } img { display: inline-block; }</style>
                 </head><body><div class="Section1">
             `;
-            parts.standees.forEach(cv => { htmlContent += imgTag(cv); });
+            // Each row is a table of equal-width cells with the piece centred in each,
+            // which centres the pieces and spreads them evenly across the page.
+            const rowsHtml = (list) => exportRows(list).map(r =>
+                `<table width="100%" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;margin-bottom:0.25in"><tr>` +
+                r.map(cv => `<td width="${Math.floor(100 / r.length)}%" align="center" valign="top" style="text-align:center;vertical-align:top">${imgTag(cv)}</td>`).join('') +
+                `</tr></table>`).join('');
+            htmlContent += rowsHtml(parts.standees);
             if (parts.tokens.length) {
                 if (parts.standees.length) htmlContent += `<br clear="all" style="page-break-before:always" />`;
-                parts.tokens.forEach(cv => { htmlContent += imgTag(cv); });
+                htmlContent += rowsHtml(parts.tokens);
             }
             htmlContent += `</div></body></html>`;
             const blob = new Blob(['﻿', htmlContent], { type: 'application/msword' });
@@ -2664,17 +2691,30 @@
             const parts = exportParts();
             if (!parts.standees.length && !parts.tokens.length) { alert(EXPORT_EMPTY_MSG); return; }
             const d = paperDims();
-            const frame = (cv) => `<draw:frame svg:width="${cv.style.width}" svg:height="${cv.style.height}"><draw:image><office:binary-data>${cv.toDataURL('image/png').split(',')[1]}</office:binary-data></draw:image></draw:frame><text:s text:c="2"/>`;
+            const frame = (cv) => `<draw:frame text:anchor-type="as-char" svg:width="${cv.style.width}" svg:height="${cv.style.height}"><draw:image><office:binary-data>${cv.toDataURL('image/png').split(',')[1]}</office:binary-data></draw:image></draw:frame>`;
+            // Rows of equal-width cells, each piece centred in its cell: centred on the page and spread evenly.
+            const usableIn = +(d.wIn - 1).toFixed(3);
+            const rowsXml = (list) => exportRows(list).map(r =>
+                `<table:table table:style-name="PTbl"><table:table-column table:style-name="PCol${r.length}" table:number-columns-repeated="${r.length}"/><table:table-row>` +
+                r.map(cv => `<table:table-cell office:value-type="string" table:style-name="PCell"><text:p text:style-name="PCenter">${frame(cv)}</text:p></table:table-cell>`).join('') +
+                `</table:table-row></table:table><text:p text:style-name="PGap"/>`).join('');
+            const colStyles = [1, 2, 3, 4, 5, 6, 7, 8].map(n =>
+                `<style:style style:name="PCol${n}" style:family="table-column"><style:table-column-properties style:column-width="${+(usableIn / n).toFixed(3)}in"/></style:style>`).join('');
             let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
-            <office:document xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" office:version="1.2" xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" office:mimetype="application/vnd.oasis.opendocument.text">
+            <office:document xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" office:version="1.2" xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" office:mimetype="application/vnd.oasis.opendocument.text">
               <office:automatic-styles>
                 <style:page-layout style:name="pm1"><style:page-layout-properties fo:page-width="${+d.wIn.toFixed(3)}in" fo:page-height="${+d.hIn.toFixed(3)}in" style:print-orientation="${state.orientation}" fo:margin-top="0.5in" fo:margin-bottom="0.5in" fo:margin-left="0.5in" fo:margin-right="0.5in"/></style:page-layout>
                 <style:style style:name="PBreak" style:family="paragraph"><style:paragraph-properties fo:break-before="page"/></style:style>
+                <style:style style:name="PCenter" style:family="paragraph"><style:paragraph-properties fo:text-align="center"/></style:style>
+                <style:style style:name="PGap" style:family="paragraph"><style:paragraph-properties fo:margin-top="0in" fo:margin-bottom="0.15in"/></style:style>
+                <style:style style:name="PTbl" style:family="table"><style:table-properties style:width="${usableIn}in" table:align="margins"/></style:style>
+                <style:style style:name="PCell" style:family="table-cell"><style:table-cell-properties fo:padding="0in" fo:border="none"/></style:style>
+                ${colStyles}
               </office:automatic-styles>
               <office:master-styles><style:master-page style:name="Standard" style:page-layout-name="pm1"/></office:master-styles>
               <office:body><office:text>`;
-            if (parts.standees.length) xmlContent += `<text:p>${parts.standees.map(frame).join('')}</text:p>`;
-            if (parts.tokens.length) xmlContent += `<text:p${parts.standees.length ? ' text:style-name="PBreak"' : ''}>${parts.tokens.map(frame).join('')}</text:p>`;
+            if (parts.standees.length) xmlContent += rowsXml(parts.standees);
+            if (parts.tokens.length) xmlContent += (parts.standees.length ? '<text:p text:style-name="PBreak"/>' : '') + rowsXml(parts.tokens);
             xmlContent += `</office:text></office:body></office:document>`;
             const blob = new Blob([xmlContent], { type: 'application/vnd.oasis.opendocument.text' });
             const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
