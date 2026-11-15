@@ -1822,13 +1822,20 @@
         // team, so once any pawn has a colour it can be picked again from the swatches.
         function normHex(c) { return String(c || '#000000').slice(0, 7).toLowerCase(); }
 
+        // Counting scans every pawn, and each picker on screen asks for the list,
+        // so it is worked out once per burst of redraws (cleared at the end of the
+        // current task) rather than once per picker.
+        let teamsMemo = null;
         function teamList() {
+            if (teamsMemo) return teamsMemo;
             const map = new Map();
             state.pawns.forEach(p => {
                 const c = normHex(p.borderColor);
                 map.set(c, (map.get(c) || 0) + 1);
             });
-            return Array.from(map, ([color, count]) => ({ color, count }));
+            teamsMemo = Array.from(map, ([color, count]) => ({ color, count }));
+            queueMicrotask(() => { teamsMemo = null; });
+            return teamsMemo;
         }
 
         // Swatches for every team plus a custom colour box. getColor() says which
@@ -1899,6 +1906,14 @@
 
         function openImportModal(pawns) {
             const justAdded = Array.isArray(pawns);
+            // A second batch can finish while the dialog is still open (two drops
+            // in a row). Fold it into the list on screen rather than replacing the
+            // first batch, which would leave those pawns unreachable from here.
+            if (justAdded && document.getElementById('import-modal').style.display === 'flex') {
+                pawns.forEach(p => { if (!importList.includes(p)) importList.push(p); });
+                renderImportModal();
+                return;
+            }
             importList = justAdded ? pawns : state.pawns.slice();
             if (importList.length === 0) { showToast('Add some pawns first.'); return; }
             document.getElementById('import-modal-title').innerText = justAdded ? 'Name your new pawns' : 'Names, numbers & system';
@@ -1913,9 +1928,10 @@
 
         // Every picker lists the same teams, so a new colour has to reach all of them.
         let teamPickers = [];
-        function refreshTeamPickers() { teamPickers.forEach(t => t.refresh()); }
+        function refreshTeamPickers() { teamsMemo = null; teamPickers.forEach(t => t.refresh()); }
 
         function renderImportModal() {
+            teamsMemo = null;
             const body = document.getElementById('import-modal-body');
             body.innerHTML = '';
 
