@@ -65,9 +65,10 @@
 
         /* Header Help Box */
         .header-help {
-            display: flex;
-            flex-wrap: wrap; 
-            gap: 10px;
+            /* Always a 2x2 square (Clone/Delete over Copy/Paste), never 3 + 1. */
+            display: grid;
+            grid-template-columns: repeat(2, max-content);
+            gap: 8px 18px;
             background: #252525;
             padding: 8px 15px;
             border-radius: 8px;
