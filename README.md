@@ -38,6 +38,18 @@ visible beside its own settings. One pawn is open at a time; `Esc` closes it.
 Panel order follows dependency: **System** first (it decides which stat fields exist),
 then Name/Number, stats, traits, Action Cards, appearance, and image position.
 
+## Teams, borders and small screens
+
+- **Teams:** a pawn's **Border/X** colour is its team. Every distinct colour in the project
+  shows as a swatch (with a pawn count) in the pawn editor and in the **Names, numbers &
+  system** dialog, so a colour that any pawn already has can be picked again exactly.
+  The dialog has **Team for all** to set every row at once, and a **+** colour box to start a new team.
+- **Borders:** **Solid**, **Dashed** or **None**, per pawn (editor) or for all pawns / per row (dialog).
+  Saved with the project; older files load as solid.
+- **Phones and tablets:** under 900px wide the sheets scale to fit the screen (print and exports are
+  unaffected); under 700px the header is compact, the control bar scrolls with the page and the
+  pawn editor fills the screen.
+
 ## Overhead tokens
 
 For play on a map viewed from above, pawns can have a **round overhead token** that

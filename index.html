@@ -520,8 +520,9 @@
         .card-empty { color: #888; font-size: 12px; font-style: italic; }
 
         /* Bulk naming dialog (after adding images from files, or from the footer). */
+        #import-modal .card-modal-panel { max-width: 900px; }
         .import-row {
-            display: grid; grid-template-columns: 44px 1fr 74px 150px; gap: 8px;
+            display: grid; grid-template-columns: 44px minmax(90px, 1fr) 70px 140px 84px 150px; gap: 8px;
             align-items: center; margin-bottom: 6px;
         }
         .import-row.import-head { color: #999; font-size: 11px; margin-bottom: 4px; }
@@ -536,7 +537,33 @@
         .import-foot .import-count { color: #999; font-size: 11px; margin-right: auto; }
         .import-foot .import-count { white-space: nowrap; }
         .import-foot button { width: auto; flex: 0 0 auto; padding: 8px 26px; }
-        @media (max-width: 560px) { .import-row { grid-template-columns: 36px 1fr 60px; } .import-row select { grid-column: 1 / -1; } }
+        @media (max-width: 700px) {
+            .import-row { grid-template-columns: 36px 1fr 60px; }
+            .import-row.import-head { display: none; }
+            .import-row select, .import-row .team-picker { grid-column: 1 / -1; }
+            .import-row { padding-bottom: 8px; border-bottom: 1px solid #3a3a3a; }
+        }
+
+        /* Team colours: every distinct Border/X colour in the project is a team. */
+        .team-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+        .team-swatch {
+            width: 22px; height: 22px; min-width: 22px; padding: 0; border-radius: 50%;
+            border: 2px solid #1e1e1e; box-shadow: 0 0 0 1px #777; cursor: pointer;
+            position: relative; flex: 0 0 auto;
+        }
+        .team-swatch:hover { box-shadow: 0 0 0 2px #fff; }
+        .team-swatch.selected { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #3498db; }
+        .team-swatch .team-count {
+            position: absolute; right: -6px; bottom: -6px; min-width: 13px; height: 13px;
+            border-radius: 7px; background: #111; color: #fff; font-size: 9px; line-height: 13px;
+            text-align: center; padding: 0 2px; box-sizing: border-box; pointer-events: none;
+        }
+        .team-picker input[type=color] {
+            width: 26px; height: 22px; min-width: 26px; padding: 0; border: 1px solid #777;
+            border-radius: 4px; background: none; cursor: pointer;
+        }
+        .team-picker .team-label { font-size: 10px; color: #999; }
+        .team-picker.team-editor { padding: 2px 0 6px; }
 
         .card-row { background: #222; border: 1px solid #3a3a3a; border-radius: 6px; margin-bottom: 8px; }
         .card-row-head { display: flex; align-items: center; gap: 8px; padding: 9px 12px; }
@@ -1141,6 +1168,47 @@
             }
             .token-page canvas { display: block; border-radius: 0; }
         }
+
+        /* ==================================================================
+           SMALL SCREENS (tablets and phones)
+           Screen-only: nothing here reaches the printout or the exports.
+           The sheets keep their true paper size and are scaled down as a
+           whole to fit the window (--fit-zoom, set by fitPagesToScreen()),
+           so what you see is still what prints.
+           ================================================================== */
+        @media screen and (max-width: 900px) {
+            .page { zoom: var(--fit-zoom, 1); }
+            .main { padding: 14px 6px 16px; gap: 16px; }
+        }
+        @media screen and (max-width: 700px) {
+            .top-header {
+                position: static; height: auto; flex-wrap: wrap;
+                gap: 6px 10px; padding: 8px 12px;
+            }
+            .header-left, .header-right { flex: 1 1 auto; }
+            .header-left { gap: 10px; }
+            .header-titles { order: 3; flex: 1 1 100%; text-align: left; }
+            .header-titles h1 { font-size: 17px; margin: 0; }
+            .header-titles p, .header-help { display: none; }
+            .content-wrapper { margin-top: 0; min-height: 0; }
+            /* The control bar scrolls with the page instead of covering it. */
+            .credits-footer { position: static; flex-wrap: wrap; padding: 12px 12px 22px; }
+            .footer-col { flex: 1 1 100%; max-width: none; }
+            .footer-col-wide { max-width: none; }
+            /* The editor takes the whole screen. */
+            .edit-drawer { top: 0; width: 100vw; max-width: 100vw; }
+            .card-modal { padding: 8px; }
+            .card-modal-panel { max-height: 92vh; }
+        }
+        /* Touch: bigger targets, and 16px fields so iOS doesn't zoom on focus. */
+        @media screen and (pointer: coarse) {
+            .credits-footer button, .credits-footer select { min-height: 40px; }
+            .edit-drawer input[type=text], .edit-drawer input[type=number],
+            .edit-drawer select, .edit-drawer textarea,
+            .import-row input, .import-row select { font-size: 16px; }
+            .edit-drawer input[type=color], .team-picker input[type=color] { min-width: 36px; min-height: 32px; }
+            .team-swatch { width: 30px; height: 30px; min-width: 30px; }
+        }
     </style>
 </head>
 <body>
@@ -1623,6 +1691,7 @@
             if (!pawn.hpMode) pawn.hpMode = 'standard';
             // Branding is on unless a project explicitly turned it off.
             if (pawn.showQr === undefined) pawn.showQr = true;
+            if (pawn.borderStyle !== 'dashed') pawn.borderStyle = 'solid';
             if (!SYSTEMS.includes(pawn.system)) pawn.system = 'Generic';
             OVERHEAD_KEYS.forEach(k => { if (pawn[k] === undefined) pawn[k] = OVERHEAD_DEFAULTS[k]; });
             return pawn;
@@ -1748,6 +1817,72 @@
             try { localStorage.setItem('trifold.importSystem', v); } catch (err) { /* ignore */ }
         }
 
+        // ---- Teams ----------------------------------------------------------------
+        // A team is simply a Border/X colour. Every distinct colour in use is a
+        // team, so once any pawn has a colour it can be picked again from the swatches.
+        function normHex(c) { return String(c || '#000000').slice(0, 7).toLowerCase(); }
+
+        function teamList() {
+            const map = new Map();
+            state.pawns.forEach(p => {
+                const c = normHex(p.borderColor);
+                map.set(c, (map.get(c) || 0) + 1);
+            });
+            return Array.from(map, ([color, count]) => ({ color, count }));
+        }
+
+        // Swatches for every team plus a custom colour box. getColor() says which
+        // team is current; onPick(hex) applies a choice. refresh() redraws after
+        // anything changed the set of teams.
+        function buildTeamPicker(getColor, onPick, opts) {
+            opts = opts || {};
+            const box = document.createElement('div');
+            box.className = 'team-picker' + (opts.editor ? ' team-editor' : '');
+            // Compact pickers (the one in each dialog row) show only the pawn's own
+            // team until opened, so a long roster doesn't become a wall of dots.
+            let open = false;
+            const draw = () => {
+                box.innerHTML = '';
+                const cur = getColor() ? normHex(getColor()) : null;
+                if (opts.label) {
+                    const l = document.createElement('span'); l.className = 'team-label'; l.innerText = opts.label; box.appendChild(l);
+                }
+                const teams = teamList();
+                const shown = (opts.compact && !open) ? teams.filter(t => t.color === cur) : teams;
+                shown.forEach(t => {
+                    const b = document.createElement('button'); b.type = 'button';
+                    b.className = 'team-swatch' + (t.color === cur ? ' selected' : '');
+                    b.style.background = t.color;
+                    b.title = 'Team ' + t.color.toUpperCase() + ' (' + t.count + ' pawn' + (t.count === 1 ? '' : 's') + ')';
+                    const n = document.createElement('span'); n.className = 'team-count'; n.innerText = t.count; b.appendChild(n);
+                    b.onclick = () => {
+                        if (opts.compact && !open) { open = true; draw(); return; }
+                        open = false; onPick(t.color); draw();
+                    };
+                    if (opts.compact && !open) b.title += ' - click to change team';
+                    box.appendChild(b);
+                });
+                const custom = document.createElement('input'); custom.type = 'color';
+                custom.value = cur || '#000000'; custom.title = 'New team colour';
+                // 'change' fires when the picker closes, so a half-chosen colour
+                // doesn't spawn a swatch for every shade passed on the way.
+                custom.onchange = (e) => { open = false; onPick(e.target.value); draw(); };
+                box.appendChild(custom);
+            };
+            box.refresh = draw;
+            draw();
+            return box;
+        }
+
+        function applyBorderStyle(pawn, value) {
+            if (value === 'none') { pawn.showBorder = false; return; }
+            pawn.showBorder = true;
+            pawn.borderStyle = value === 'dashed' ? 'dashed' : 'solid';
+        }
+        function borderChoice(pawn) {
+            return !pawn.showBorder ? 'none' : (pawn.borderStyle === 'dashed' ? 'dashed' : 'solid');
+        }
+
         // Same effect as the drawer's System picker, minus the re-render.
         function applySystemToPawn(pawn, value) {
             pawn.system = value;
@@ -1776,6 +1911,10 @@
             if (first) { first.focus(); first.select(); }
         }
 
+        // Every picker lists the same teams, so a new colour has to reach all of them.
+        let teamPickers = [];
+        function refreshTeamPickers() { teamPickers.forEach(t => t.refresh()); }
+
         function renderImportModal() {
             const body = document.getElementById('import-modal-body');
             body.innerHTML = '';
@@ -1795,10 +1934,35 @@
                 renderAll();
             };
             bar.appendChild(lab); bar.appendChild(all);
+
+            const bLab = document.createElement('label'); bLab.className = 'system-label'; bLab.innerText = 'Border for all:';
+            const bAll = document.createElement('select'); bAll.className = 'system-select';
+            [['', '(choose to apply to all)'], ['solid', 'Solid'], ['dashed', 'Dashed'], ['none', 'No border']].forEach(([v, t]) => {
+                const o = document.createElement('option'); o.value = v; o.innerText = t; bAll.appendChild(o);
+            });
+            bAll.onchange = (e) => {
+                if (!e.target.value) return;
+                importList.forEach(p => applyBorderStyle(p, e.target.value));
+                body.querySelectorAll('.import-border').forEach(sel => { sel.value = e.target.value; });
+                renderAll();
+            };
+            bar.appendChild(bLab); bar.appendChild(bAll);
             body.appendChild(bar);
 
+            // Team colour for every row at once; swatches are the teams already in use.
+            const teamBar = document.createElement('div'); teamBar.className = 'card-modal-bar';
+            const tLab = document.createElement('label'); tLab.className = 'system-label'; tLab.innerText = 'Team for all:';
+            const tAll = buildTeamPicker(() => null, (c) => {
+                importList.forEach(p => { p.borderColor = c; });
+                refreshTeamPickers();
+                renderAll();
+            });
+            teamBar.appendChild(tLab); teamBar.appendChild(tAll);
+            body.appendChild(teamBar);
+            teamPickers = [tAll];
+
             const head = document.createElement('div'); head.className = 'import-row import-head';
-            ['', 'Name', 'Number', 'System'].forEach(t => { const d = document.createElement('div'); d.innerText = t; head.appendChild(d); });
+            ['', 'Name', 'Number', 'System', 'Border', 'Team'].forEach(t => { const d = document.createElement('div'); d.innerText = t; head.appendChild(d); });
             body.appendChild(head);
 
             const names = [];
@@ -1817,6 +1981,16 @@
                     sel.appendChild(o);
                 });
                 sel.onchange = (e) => { applySystemToPawn(pawn, e.target.value); rememberImportSystem(e.target.value); renderAll(); };
+                const bsel = document.createElement('select'); bsel.className = 'import-border';
+                [['solid', 'Solid'], ['dashed', 'Dashed'], ['none', 'None']].forEach(([v, t]) => {
+                    const o = document.createElement('option'); o.value = v; o.innerText = t; bsel.appendChild(o);
+                });
+                bsel.value = borderChoice(pawn);
+                bsel.onchange = (e) => { applyBorderStyle(pawn, e.target.value); renderAll(); };
+                const team = buildTeamPicker(() => pawn.borderColor, (c) => {
+                    pawn.borderColor = c; refreshTeamPickers(); renderAll();
+                }, { compact: true });
+                teamPickers.push(team);
                 // Enter moves down the list, so a batch can be named from the keyboard.
                 [name, num].forEach(inp => inp.onkeydown = (e) => {
                     if (e.key !== 'Enter') return;
@@ -1826,6 +2000,7 @@
                 });
                 names.push(name);
                 row.appendChild(img); row.appendChild(name); row.appendChild(num); row.appendChild(sel);
+                row.appendChild(bsel); row.appendChild(team);
                 body.appendChild(row);
             });
             document.getElementById('import-modal-count').innerText = importList.length + ' pawn' + (importList.length === 1 ? '' : 's');
@@ -2020,7 +2195,7 @@
             // excluded so pasting appearance never clobbers a pawn's mechanics.
             styleClipboard = {
                 borderColor: p.borderColor, textColor: p.textColor, textBgColor: p.textBgColor,
-                showBorder: p.showBorder, isDark: p.isDark, isFlipped: p.isFlipped,
+                showBorder: p.showBorder, borderStyle: p.borderStyle || 'solid', isDark: p.isDark, isFlipped: p.isFlipped,
                 scale: p.scale, rotation: p.rotation, offsetX: p.offsetX, offsetY: p.offsetY,
                 pawnWidth: p.pawnWidth, pawnHeight: p.pawnHeight,
                 trackerScale: p.trackerScale, hpMode: p.hpMode || 'standard',
@@ -2211,7 +2386,7 @@
                     return {
                         dataUrl: p.dataUrl, name: p.name, number: p.number,
                         borderColor: p.borderColor, textColor: p.textColor, textBgColor: p.textBgColor,
-                        isDark: p.isDark, isFlipped: p.isFlipped, showBorder: p.showBorder,
+                        isDark: p.isDark, isFlipped: p.isFlipped, showBorder: p.showBorder, borderStyle: p.borderStyle || 'solid',
                         scale: p.scale, rotation: p.rotation, offsetX: p.offsetX, offsetY: p.offsetY,
                         pawnWidth: p.pawnWidth || state.pawnWidth, pawnHeight: p.pawnHeight || state.pawnHeight,
                         trackerScale: p.trackerScale || 1,
@@ -2247,7 +2422,7 @@
                 img: img, dataUrl: p.dataUrl, name: p.name || '', number: p.number || '', isEditing: false,
                 borderColor: p.borderColor || '#000000', textColor: p.textColor || '#000000', textBgColor: p.textBgColor || '#FFFFFFEE',
                 isDark: p.isDark !== undefined ? p.isDark : calculateDarkness(img),
-                isFlipped: p.isFlipped || false, showBorder: p.showBorder || false,
+                isFlipped: p.isFlipped || false, showBorder: p.showBorder || false, borderStyle: p.borderStyle === 'dashed' ? 'dashed' : 'solid',
                 scale: p.scale || 1.0, rotation: p.rotation || 0, offsetX: p.offsetX || 0, offsetY: p.offsetY || 0,
                 pawnWidth: p.pawnWidth || state.pawnWidth, pawnHeight: p.pawnHeight || state.pawnHeight,
                 trackerScale: p.trackerScale || 1,
@@ -2496,6 +2671,7 @@
             const orientSel = document.getElementById('paper-orient');
             if (sizeSel) sizeSel.value = state.paper;
             if (orientSel) orientSel.value = state.orientation;
+            if (typeof fitPagesToScreen === 'function') fitPagesToScreen();
         }
 
         function setPaper() {
@@ -3229,6 +3405,13 @@
             optionsRow.appendChild(borderHexLabel); optionsRow.appendChild(textHexLabel);
             optionsRow.appendChild(textBgHexLabel); optionsRow.appendChild(sizeLabel);
 
+            // Team: re-use a colour any pawn already has, so a side stays one exact shade.
+            const teamRow = buildTeamPicker(() => state.pawns[index].borderColor, (c) => {
+                updatePawnColor(index, 'borderColor', c);
+                borderHexInput.value = c;
+            }, { editor: true, label: 'Team:' });
+            borderHexInput.addEventListener('change', () => teamRow.refresh());
+
             const systemName = pawn.system || 'Generic';
             const pHpMode = pawn.hpMode || 'standard';
 
@@ -3272,6 +3455,7 @@
             }
 
             settingsDiv.appendChild(optionsRow);
+            settingsDiv.appendChild(teamRow);
 
             const checksRow = document.createElement('div'); checksRow.className = 'pawn-options';
             checksRow.style.paddingTop = '0';
@@ -3279,6 +3463,12 @@
             const borderCheckbox = document.createElement('input'); borderCheckbox.type = 'checkbox';
             borderCheckbox.checked = pawn.showBorder; borderCheckbox.onchange = (e) => updatePawnValue(index, 'showBorder', e.target.checked);
             borderLabel.appendChild(borderCheckbox); borderLabel.appendChild(document.createTextNode("Draw Border"));
+            const dashSel = document.createElement('select'); dashSel.style.width = 'auto'; dashSel.style.padding = '2px';
+            dashSel.innerHTML = '<option value="solid">Solid</option><option value="dashed">Dashed</option>';
+            dashSel.value = pawn.borderStyle === 'dashed' ? 'dashed' : 'solid';
+            dashSel.title = 'Line style for the drawn border';
+            dashSel.onchange = (e) => { state.pawns[index].showBorder = true; borderCheckbox.checked = true; updatePawnValue(index, 'borderStyle', e.target.value); };
+            borderLabel.appendChild(dashSel);
 
             const darkLabel = document.createElement('label');
             const darkCheckbox = document.createElement('input'); darkCheckbox.type = 'checkbox';
@@ -3901,7 +4091,9 @@
 
                 if (pawn.showBorder) {
                     ctx.save();
-                    ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 12; ctx.setLineDash([]);
+                    ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 12;
+                    // Dashes are sized from the line width so they read the same at every pawn size.
+                    ctx.setLineDash(pawn.borderStyle === 'dashed' ? [36, 24] : []);
                     ctx.strokeRect(xBase + 6, 6, internalPanelWidth - 12, internalHeight - 12);
                     ctx.restore();
                 }
@@ -5458,6 +5650,24 @@
             if (modal && modal.style.display === 'flex') { closeCardManager(); return; }
             if (document.body.classList.contains('drawer-open')) closeEditDrawer();
         });
+
+        // Scales the sheets to the window on small screens; see the SMALL SCREENS CSS.
+        function fitPagesToScreen() {
+            const root = document.documentElement;
+            if (!window.matchMedia('(max-width: 900px)').matches) { root.style.removeProperty('--fit-zoom'); return; }
+            let probe = document.getElementById('paper-probe');
+            if (!probe) {
+                probe = document.createElement('div'); probe.id = 'paper-probe';
+                probe.style.cssText = 'position:absolute;visibility:hidden;height:0;pointer-events:none;width:var(--paper-w, 8.5in)';
+                document.body.appendChild(probe);
+            }
+            const paperPx = probe.getBoundingClientRect().width;
+            if (!paperPx) return;
+            const zoom = Math.min(1, (root.clientWidth - 12) / paperPx);
+            root.style.setProperty('--fit-zoom', zoom.toFixed(4));
+        }
+        window.addEventListener('resize', fitPagesToScreen);
+        window.addEventListener('orientationchange', fitPagesToScreen);
 
         window.addEventListener('DOMContentLoaded', async () => {
             const badge = document.getElementById('brand-badge-qr');
