@@ -547,6 +547,16 @@
 
         .restore-note { font-size: 10px; color: #999; text-align: center; margin-top: 2px; }
         .restore-note.warn { color: #e6a23c; }
+        #previous-data-controls { display: grid; gap: 6px; margin-top: 6px; }
+        #previous-data-controls button { width: 100%; }
+        #previous-data-controls .previous-clear { color: #ffb3a8; }
+        /* Covers the page while a project loads; the page itself is inert. */
+        #import-busy { position: fixed; inset: 0; z-index: 10000; display: none; cursor: progress;
+                       align-items: center; justify-content: center; }
+        #import-busy.active { display: flex; }
+        #import-busy span { display: none; background: rgba(20,20,20,0.9); color: #fff; padding: 10px 18px;
+                            border-radius: 8px; font-size: 14px; }
+        #import-busy.show span { display: block; }
 
         /* Team colours: every distinct Border/X colour in the project is a team. */
         .team-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
@@ -1299,8 +1309,11 @@
                         <button class="secondary" title="Merge another project into this one instead of replacing it"
                                 onclick="document.getElementById('add-file-input').click()">Add JSON</button>
                     </div>
-                    <button class="secondary" id="restore-previous-btn" style="display:none;width:100%;margin-top:6px"
-                            onclick="restorePreviousData()">&#8635; Restore previous data</button>
+                    <div id="previous-data-controls" style="display:none">
+                        <button class="secondary" id="restore-previous-btn" onclick="restorePreviousData()">&#8635; Restore previous data</button>
+                        <button class="secondary" id="append-previous-btn" onclick="appendPreviousData()">&#65291; Append previous data</button>
+                        <button class="secondary previous-clear" id="clear-previous-btn" onclick="clearPreviousData()">&#128465; Clear previous data</button>
+                    </div>
                     <div id="restore-previous-note" class="restore-note"></div>
                     <input type="file" id="load-file-input" style="display:none" accept=".json" onchange="handleFileLoad(event)">
                     <input type="file" id="add-file-input" style="display:none" accept=".json" onchange="handleFileAdd(event)">
@@ -2453,19 +2466,45 @@
         // Rebuilds one saved pawn into a live one. `mapCardId` lets the importer
         // redirect attachments when an incoming card had to be given a new id to
         // avoid colliding with one already in the library.
+        // Ceilings on what one project file may ask the browser to hold. The app
+        // itself never stores an image past 1200px, so these only ever stop files
+        // that were built to exhaust memory (or are far past anything real).
+        const IMPORT_LIMITS = {
+            imageChars: 40e6,     // one embedded image, as text
+            totalChars: 400e6,    // all embedded images, as text
+            imagePixels: 25e6,    // one image once decoded (5000 x 5000)
+            totalPixels: 250e6    // every image in the file, decoded
+        };
+
         // Text fields come from a file anyone could have edited; the renderers call
         // string methods on them, so a number or object would throw mid-render.
         const asText = (v) => (v === undefined || v === null) ? '' : String(v);
+        // Gives an imported value the same type as the field's empty default
+        // (text stays text, a tick-box stays true/false).
+        function coerceLike(blank, v) {
+            if (typeof blank === 'boolean') return v === true;
+            if (typeof blank === 'string') return asText(v);
+            return v;
+        }
 
         // `defaults` supplies the fallback pawn size, so a staged import can be
         // hydrated before it is committed to `state`.
-        async function hydratePawn(p, knownCardIds, mapCardId, defaults) {
+        async function hydratePawn(p, knownCardIds, mapCardId, defaults, budget) {
             defaults = defaults || state;
             const img = new Image();
             let failed = false;
             await new Promise(r => { img.onload = r; img.onerror = () => { failed = true; r(); }; img.src = p.dataUrl; });
             // A pawn that can't draw would break every render after the import.
             if (failed) throw new Error('its image could not be loaded.');
+            // Dimensions are known as soon as the image loads, before anything draws it.
+            const pixels = (img.naturalWidth || 0) * (img.naturalHeight || 0);
+            if (pixels > IMPORT_LIMITS.imagePixels) {
+                throw new Error('its image is too large (' + img.naturalWidth + ' x ' + img.naturalHeight + ' pixels).');
+            }
+            if (budget) {
+                budget.pixels += pixels;
+                if (budget.pixels > IMPORT_LIMITS.totalPixels) throw new Error('the images in this file are too large to open together.');
+            }
 
             const pawn = ensurePawnShape({
                 img: img, dataUrl: p.dataUrl, name: asText(p.name), number: asText(p.number), isEditing: false,
@@ -2493,13 +2532,13 @@
                 const key = SYSTEM_STAT_KEYS[sysName];
                 const loaded = p[key] || {};
                 Object.keys(pawn[key]).forEach(f => {
-                    if (loaded[f] !== undefined) pawn[key][f] = loaded[f];
+                    if (loaded[f] !== undefined) pawn[key][f] = coerceLike(pawn[key][f], loaded[f]);
                 });
             });
 
             const loadedTraits = p.traits || {};
             Object.keys(pawn.traits).forEach(f => {
-                if (loadedTraits[f] !== undefined) pawn.traits[f] = loadedTraits[f];
+                if (loadedTraits[f] !== undefined) pawn.traits[f] = coerceLike(pawn.traits[f], loadedTraits[f]);
             });
 
             // Drop attachments pointing at cards that no longer exist -
@@ -2547,22 +2586,65 @@
             importChain = run.catch(() => {});
             return run;
         }
+        //
+        // While an import is queued or running the page is locked (inert), so no
+        // edit can land between the moment its images are read and the moment it
+        // is committed. The place in the queue is taken when the request is made,
+        // not when its file has been read, so imports commit in the order asked;
+        // projectData may therefore be a promise (a file still being read).
+        let importBusyCount = 0, busyTimer = null;
+        const busyInerted = [];
+        function importBusyBegin() {
+            if (importBusyCount++ > 0) return;
+            let overlay = document.getElementById('import-busy');
+            if (!overlay) {
+                overlay = document.createElement('div'); overlay.id = 'import-busy';
+                overlay.innerHTML = '<span>Loading project\u2026</span>';
+                document.body.appendChild(overlay);
+            }
+            [...document.body.children].forEach(el => {
+                if (el === overlay || el.inert || /^(SCRIPT|STYLE|LINK)$/.test(el.tagName) || el.classList.contains('app-toast')) return;
+                el.inert = true; busyInerted.push(el);
+            });
+            overlay.classList.add('active');
+            // Only say anything if it takes long enough to notice.
+            busyTimer = setTimeout(() => overlay.classList.add('show'), 300);
+        }
+        function importBusyEnd() {
+            if (--importBusyCount > 0) return;
+            clearTimeout(busyTimer);
+            busyInerted.splice(0).forEach(el => { el.inert = false; });
+            const overlay = document.getElementById('import-busy');
+            if (overlay) overlay.classList.remove('active', 'show');
+        }
         async function loadProjectFromJSON(projectData) {
-            autosaveHold++;
-            try { return await runImport(() => _loadProjectFromJSON(projectData)); }
-            finally { autosaveHold--; scheduleAutosave(); }
+            autosaveHold++; importBusyBegin();
+            try { return await runImport(async () => _loadProjectFromJSON(await projectData)); }
+            finally { importBusyEnd(); autosaveHold--; scheduleAutosave(); }
         }
         async function addProjectFromJSON(projectData) {
-            autosaveHold++;
-            try { return await runImport(() => _addProjectFromJSON(projectData)); }
-            finally { autosaveHold--; scheduleAutosave(); }
+            autosaveHold++; importBusyBegin();
+            try { return await runImport(async () => _addProjectFromJSON(await projectData)); }
+            finally { importBusyEnd(); autosaveHold--; scheduleAutosave(); }
+        }
+        function readJsonFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error('Could not read that file.'));
+                reader.onload = () => {
+                    try { resolve(JSON.parse(reader.result)); }
+                    catch (err) { reject(new Error('That file is not a readable project.')); }
+                };
+                reader.readAsText(file);
+            });
         }
 
         // Hydrates every pawn before anything is committed; a failure names the pawn.
         async function hydrateAll(pawnData, knownCardIds, mapCardId, defaults) {
             const out = [];
+            const budget = { pixels: 0 };
             for (let i = 0; i < pawnData.length; i++) {
-                try { out.push(await hydratePawn(pawnData[i], knownCardIds, mapCardId, defaults)); }
+                try { out.push(await hydratePawn(pawnData[i], knownCardIds, mapCardId, defaults, budget)); }
                 catch (err) { throw new Error('Pawn ' + (i + 1) + ': ' + ((err && err.message) || 'could not be read.')); }
             }
             return out;
@@ -2580,6 +2662,13 @@
             const embedded = /^data:image\/[a-z0-9.+-]+[;,]/i;
             const bad = projectData.pawns.findIndex(p => !p || typeof p !== 'object' || Array.isArray(p) || typeof p.dataUrl !== 'string' || !embedded.test(p.dataUrl));
             if (bad !== -1) return notProject + ' (pawn ' + (bad + 1) + ' is missing, or its image is not embedded in the file.)';
+            let totalChars = 0;
+            for (let i = 0; i < projectData.pawns.length; i++) {
+                const n = projectData.pawns[i].dataUrl.length;
+                totalChars += n;
+                if (n > IMPORT_LIMITS.imageChars) return 'Pawn ' + (i + 1) + ' has an image that is too large to open.';
+            }
+            if (totalChars > IMPORT_LIMITS.totalChars) return 'The images in that file are too large to open together.';
             return '';
         }
 
@@ -2684,7 +2773,11 @@
 
             // Commit synchronously.
             newCards.forEach(c => state.actionCards.push(c));
-            hydrated.forEach(pw => state.pawns.push(pw));
+            // Cards are checked again against the library as it is now.
+            hydrated.forEach(pw => {
+                pw.actions = pw.actions.filter(a => getActionCard(a.cardId));
+                state.pawns.push(pw);
+            });
             const added = hydrated.length;
             renderAll();
 
@@ -2693,28 +2786,21 @@
             showToast(msg);
         }
 
+        // The file is read after the request is queued, so two imports chosen in
+        // quick succession still commit in the order they were chosen.
         async function handleFileLoad(e) {
             const file = e.target.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                try {
-                    const projectData = JSON.parse(event.target.result);
-                    await loadProjectFromJSON(projectData);
-                } catch (error) { alert((error && error.message) || 'Error loading project.'); }
-            };
-            reader.readAsText(file); e.target.value = ''; 
+            const data = readJsonFile(file);
+            e.target.value = '';
+            try { await loadProjectFromJSON(data); }
+            catch (error) { alert((error && error.message) || 'Error loading project.'); }
         }
         async function handleFileAdd(e) {
             const file = e.target.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                try {
-                    await addProjectFromJSON(JSON.parse(event.target.result));
-                } catch (error) {
-                    alert((error && error.message) || 'Could not read that project file.');
-                }
-            };
-            reader.readAsText(file); e.target.value = ''; 
+            const data = readJsonFile(file);
+            e.target.value = '';
+            try { await addProjectFromJSON(data); }
+            catch (error) { alert((error && error.message) || 'Could not read that project file.'); }
         }
 
         /* ==================================================================
@@ -5992,12 +6078,17 @@
             return when + ' · ' + snap.pawnCount + ' pawn' + (snap.pawnCount === 1 ? '' : 's');
         }
         function updateRestoreButton() {
-            const btn = document.getElementById('restore-previous-btn');
+            const box = document.getElementById('previous-data-controls');
             const note = document.getElementById('restore-previous-note');
-            if (btn) {
-                btn.style.display = previousSnapshot ? '' : 'none';
-                btn.disabled = restoring;
-                if (previousSnapshot) btn.title = 'Replace what is on screen with the copy saved in this browser (' + describeSnapshot(previousSnapshot) + ')';
+            if (box) {
+                box.style.display = previousSnapshot ? '' : 'none';
+                box.querySelectorAll('button').forEach(b => { b.disabled = restoring; });
+                if (previousSnapshot) {
+                    const when = describeSnapshot(previousSnapshot);
+                    document.getElementById('restore-previous-btn').title = 'Replace what is on screen with the copy saved in this browser (' + when + ')';
+                    document.getElementById('append-previous-btn').title = 'Add the pawns from that copy (' + when + ') to what is on screen';
+                    document.getElementById('clear-previous-btn').title = 'Delete the copies saved by earlier sessions';
+                }
             }
             if (note) {
                 note.classList.toggle('warn', !!autosaveError);
@@ -6006,30 +6097,71 @@
             }
         }
 
-        // Swaps rather than overwrites: what is on screen first goes into a slot
-        // of its own, so a restore that wasn't wanted is undone by pressing the
-        // button again (that slot is then the newest copy on offer).
-        async function restorePreviousData() {
+        // Restore and Append run inside the import queue, so they are ordered with
+        // any Load or Add and nothing can change the project between taking the
+        // undo copy and replacing it. The page is locked for the duration.
+        async function withPreviousData(work) {
             if (!previousSnapshot || restoring) return;
             let data;
             try { data = JSON.parse(previousSnapshot.json); }
             catch (err) { alert('The saved copy could not be read.'); return; }
             restoring = true; updateRestoreButton();
+            autosaveHold++; importBusyBegin();
             try {
+                await runImport(() => work(data));
+            } catch (err) {
+                console.warn('[autosave] previous data failed', err);
+                alert((err && err.message) || 'Could not use the saved copy.');
+            } finally {
+                importBusyEnd(); autosaveHold--; scheduleAutosave();
+                restoring = false; updateRestoreButton();
+            }
+        }
+
+        // Swaps rather than overwrites: what is on screen first goes into a slot
+        // of its own, so a restore that wasn't wanted is undone by pressing the
+        // button again (that slot is then the newest copy on offer).
+        function restorePreviousData() {
+            return withPreviousData(async (data) => {
                 // Keep the current project first; if that can't be written the
                 // restore is abandoned rather than risking the work on screen.
                 const undo = makeSnapshot();
                 await queueWrite(() => idbTx('readwrite', st => st.put(undo, 'undo:' + newSlotId())));
-                await loadProjectFromJSON(data);
+                await _loadProjectFromJSON(data);
                 lastSavedJson = null; autosaveSuppress = null;
                 previousSnapshot = pickCandidate(await readSlots(), JSON.stringify(buildProjectData()));
                 showToast('Restored your saved copy.');
+            });
+        }
+
+        // Adds the saved copy's pawns to what is on screen. Nothing is replaced, so
+        // there is nothing to undo; the saved copy stays on offer.
+        function appendPreviousData() {
+            return withPreviousData(async (data) => { await _addProjectFromJSON(data); });
+        }
+
+        // Deletes the copies left by earlier sessions (and undo copies), but not
+        // this session's own autosave, in a single transaction.
+        async function clearPreviousData() {
+            if (!previousSnapshot || restoring) return;
+            if (!confirm('Delete the previous data saved in this browser? The project on screen and this session’s autosave are not affected.')) return;
+            try {
+                await queueWrite(() => idbTx('readwrite', st => {
+                    const req = st.openKeyCursor();
+                    req.onsuccess = () => {
+                        const c = req.result;
+                        if (c) { if (c.key !== autosaveKey) st.delete(c.key); c.continue(); }
+                    };
+                    return req;
+                }));
             } catch (err) {
-                console.warn('[autosave] restore failed', err);
-                alert('Could not restore the saved copy: ' + ((err && err.message) || err));
-            } finally {
-                restoring = false; updateRestoreButton();
+                console.warn('[autosave] clear previous failed', err);
+                alert('Could not delete the previous data: ' + ((err && err.message) || err));
+                return;
             }
+            previousSnapshot = null;
+            updateRestoreButton();
+            showToast('Previous data deleted.');
         }
 
         // Deletes every copy this browser holds, in one transaction. Anything
