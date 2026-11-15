@@ -544,6 +544,8 @@
             .import-row { padding-bottom: 8px; border-bottom: 1px solid #3a3a3a; }
         }
 
+        .restore-note { font-size: 10px; color: #999; text-align: center; margin-top: 2px; }
+
         /* Team colours: every distinct Border/X colour in the project is a team. */
         .team-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
         .team-swatch {
@@ -1295,6 +1297,9 @@
                         <button class="secondary" title="Merge another project into this one instead of replacing it"
                                 onclick="document.getElementById('add-file-input').click()">Add JSON</button>
                     </div>
+                    <button class="secondary" id="restore-previous-btn" style="display:none;width:100%;margin-top:6px"
+                            onclick="restorePreviousData()">&#8635; Restore previous data</button>
+                    <div id="restore-previous-note" class="restore-note"></div>
                     <input type="file" id="load-file-input" style="display:none" accept=".json" onchange="handleFileLoad(event)">
                     <input type="file" id="add-file-input" style="display:none" accept=".json" onchange="handleFileAdd(event)">
                     <label class="sub-label">Action cards</label>
@@ -1384,8 +1389,8 @@
         </div>
 
         <!-- Privacy notice. Claims here are deliberately narrow and checkable:
-             the app makes no third-party requests, uses no browser storage, and
-             uploads nothing. What it cannot claim is anything about the host,
+             the app makes no third-party requests, keeps its autosave only in this
+             browser, and uploads nothing. What it cannot claim is anything about the host,
              so Cloudflare's role is stated plainly rather than glossed over. -->
         <div class="card-modal" id="privacy-modal">
             <div class="card-modal-panel privacy-panel">
@@ -1403,14 +1408,20 @@
                         <h3>✅ Your work never leaves your device</h3>
                         <p>Images, pawn names, stat blocks and action cards are all processed in your
                            browser. None of it is uploaded anywhere. Saving a project writes a
-                           <code>.json</code> file to your own computer, and only when you click Save.</p>
+                           <code>.json</code> file to your own computer, and only when you click Save.
+                           As a safety net, a copy of your current project is also kept in this
+                           browser's own storage on your device, so it can be restored if the tab
+                           closes unexpectedly.</p>
                     </section>
 
                     <section class="privacy-item">
                         <h3>✅ No accounts, analytics, cookies or tracking</h3>
                         <p>There is no sign-in, no analytics script, and no advertising. The app sets no
-                           cookies and writes nothing to browser storage — closing the tab without
-                           saving genuinely discards your work.</p>
+                           cookies. Its only browser storage is the saved copy of your project
+                           described above and a couple of small settings (paper size, last game
+                           system). Clearing site data for this site removes all of it, and so does
+                           the button below.</p>
+                        <p><button class="inline-link" onclick="clearSavedData()">Delete the saved copy of my project</button></p>
                     </section>
 
                     <section class="privacy-item">
@@ -2381,9 +2392,10 @@
             if (others > 0) baseName += ` (and ${others} other${others > 1 ? 's' : ''})`;
             return baseName.replace(/[<>:"/\\|?*]/g, '') + extension;
         }
-        function saveProject() {
-            if (state.pawns.length === 0) { alert("Please add at least one pawn before saving."); return; }
-            const projectData = {
+        // The project as plain data. Shared by Save (to a file) and the autosave
+        // that keeps a copy in this browser.
+        function buildProjectData() {
+            return {
                 // Kept first so it is the first thing seen when the file is opened in a text editor.
                 _note: "This is a Tri-Fold Pawn Maker project file. It is meant to be loaded at https://trifold.gameportal.win - open the site and use Load (or Add JSON to merge it into what you have).",
                 version: 2,
@@ -2418,6 +2430,10 @@
                     };
                 })
             };
+        }
+        function saveProject() {
+            if (state.pawns.length === 0) { alert("Please add at least one pawn before saving."); return; }
+            const projectData = buildProjectData();
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projectData));
             const a = document.createElement('a'); a.href = dataStr; 
             a.download = getExportFilename('.json');
@@ -3243,6 +3259,7 @@
             return html;
         }
         function renderAll() {
+            scheduleAutosave();
             state.pawns.sort((a, b) => {
                 const widthA = a.pawnWidth || state.pawnWidth;
                 const widthB = b.pawnWidth || state.pawnWidth;
@@ -3640,6 +3657,7 @@
         }
 
         function renderSinglePawn(index) {
+            scheduleAutosave();
             const pawn = state.pawns[index];
             const container = document.getElementById(`canvas-container-${index}`);
             if (!container) return;
@@ -3976,6 +3994,7 @@
         }
 
         function renderOverhead(index) {
+            scheduleAutosave();
             const pawn = state.pawns[index];
             const container = document.getElementById(`token-container-${index}`);
             if (!container || !pawn.overhead) return;
@@ -5695,6 +5714,7 @@
                 if (response.ok) {
                     const initData = await response.json();
                     await loadProjectFromJSON(initData);
+                    await initAutosave();
                     return;
                 }
                 console.log("No default-pawns.json found. Loading built-in fallback pawns.");
@@ -5702,6 +5722,7 @@
                 console.log("Could not load default-pawns.json. Loading built-in fallback pawns.");
             }
             await loadProjectFromJSON(getFallbackProjectData());
+            await initAutosave();
         });
 
         /* ==================================================================
@@ -5744,6 +5765,139 @@
         // results, which are worth surfacing but not worth an alert() that has
         // to be dismissed before work continues.
         let toastTimer = null;
+        // ---- Autosave in this browser ---------------------------------------------
+        // The project is copied into IndexedDB (not localStorage: the embedded
+        // images easily outgrow its ~5 MB limit) a moment after each change, so a
+        // closed tab or a crash doesn't lose work that was never saved to a file.
+        //
+        // Two slots: 'current' is this session's copy. When a new session starts
+        // and finds a 'current' from before, it is kept as 'previous' and offered
+        // by the Restore previous data button, so opening the app can never
+        // overwrite what was saved last time. Nothing is written until the
+        // project differs from the starter project the page opened with.
+        const AUTOSAVE_DB = 'trifold-autosave', AUTOSAVE_STORE = 'projects';
+        let autosaveTimer = null, autosaveReady = false, autosaveBaseline = null, previousSnapshot = null;
+
+        function idbOpen() {
+            return new Promise((resolve, reject) => {
+                if (!window.indexedDB) { reject(new Error('IndexedDB unavailable')); return; }
+                const req = indexedDB.open(AUTOSAVE_DB, 1);
+                req.onupgradeneeded = () => req.result.createObjectStore(AUTOSAVE_STORE);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+        async function idbRun(mode, fn) {
+            const db = await idbOpen();
+            try {
+                return await new Promise((resolve, reject) => {
+                    const tx = db.transaction(AUTOSAVE_STORE, mode);
+                    const req = fn(tx.objectStore(AUTOSAVE_STORE));
+                    tx.oncomplete = () => resolve(req ? req.result : undefined);
+                    tx.onerror = tx.onabort = () => reject(tx.error);
+                });
+            } finally { db.close(); }
+        }
+        const idbGet = (key) => idbRun('readonly', st => st.get(key));
+        const idbPut = (key, val) => idbRun('readwrite', st => st.put(val, key));
+        const idbDel = (key) => idbRun('readwrite', st => st.delete(key));
+
+        function snapshotNow() {
+            if (state.pawns.length === 0) return null;
+            return { savedAt: Date.now(), pawnCount: state.pawns.length, json: JSON.stringify(buildProjectData()) };
+        }
+
+        function scheduleAutosave() {
+            if (!autosaveReady) return;
+            clearTimeout(autosaveTimer);
+            autosaveTimer = setTimeout(runAutosave, 1500);
+        }
+        async function runAutosave() {
+            clearTimeout(autosaveTimer);
+            if (!autosaveReady) return;
+            try {
+                const snap = snapshotNow();
+                // An empty sheet never replaces a saved one, and the untouched
+                // starter project isn't worth keeping.
+                if (!snap || snap.json === autosaveBaseline) return;
+                await idbPut('current', snap);
+            } catch (err) { console.warn('[autosave] could not save', err); }
+        }
+        // Tabs are often closed with no further warning, so flush on the way out.
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') runAutosave(); });
+        window.addEventListener('pagehide', runAutosave);
+
+        async function initAutosave() {
+            try {
+                autosaveBaseline = JSON.stringify(buildProjectData());
+                const saved = await idbGet('current');
+                if (saved && saved.json && saved.json !== autosaveBaseline) {
+                    previousSnapshot = saved;
+                    await idbPut('previous', saved);
+                } else {
+                    previousSnapshot = (await idbGet('previous')) || null;
+                }
+                // Best effort: ask the browser not to evict this under storage pressure.
+                if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+            } catch (err) {
+                console.warn('[autosave] unavailable', err);
+                previousSnapshot = null;
+            }
+            autosaveReady = true;
+            updateRestoreButton();
+            if (previousSnapshot) {
+                showToast('Found a copy of your last session saved in this browser. Use \u201cRestore previous data\u201d under Project to bring it back.', 12000);
+            }
+        }
+
+        function describeSnapshot(snap) {
+            const d = new Date(snap.savedAt);
+            const when = d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+            return when + ' \u00b7 ' + snap.pawnCount + ' pawn' + (snap.pawnCount === 1 ? '' : 's');
+        }
+        function updateRestoreButton() {
+            const btn = document.getElementById('restore-previous-btn');
+            if (!btn) return;
+            btn.style.display = previousSnapshot ? '' : 'none';
+            if (previousSnapshot) btn.title = 'Replace what is on screen with the copy saved in this browser (' + describeSnapshot(previousSnapshot) + ')';
+            const note = document.getElementById('restore-previous-note');
+            if (note) note.innerText = previousSnapshot ? 'Saved ' + describeSnapshot(previousSnapshot) : '';
+        }
+
+        // Swaps rather than overwrites: what is on screen now becomes the
+        // 'previous' copy, so a restore that wasn't wanted can be undone by
+        // pressing the button again.
+        async function restorePreviousData() {
+            if (!previousSnapshot) return;
+            let data;
+            try { data = JSON.parse(previousSnapshot.json); }
+            catch (err) { alert('The saved copy could not be read.'); return; }
+            const here = snapshotNow();
+            const hasWork = here && here.json !== autosaveBaseline;
+            autosaveReady = false;                     // no autosave mid-swap
+            try {
+                await loadProjectFromJSON(data);
+                previousSnapshot = hasWork ? here : null;
+                if (previousSnapshot) await idbPut('previous', previousSnapshot); else await idbDel('previous');
+                await idbPut('current', snapshotNow());
+            } catch (err) {
+                console.warn('[autosave] restore failed', err);
+                alert('Could not restore the saved copy.');
+            }
+            autosaveReady = true;
+            updateRestoreButton();
+            showToast('Restored your saved copy.');
+        }
+
+        async function clearSavedData() {
+            if (!confirm('Delete the copies of your project that this browser has saved? Files you saved to your computer are not affected.')) return;
+            clearTimeout(autosaveTimer);
+            try { await idbDel('current'); await idbDel('previous'); } catch (err) { console.warn(err); }
+            previousSnapshot = null;
+            updateRestoreButton();
+            showToast('Saved copies deleted from this browser.');
+        }
+
         function showToast(message, ms) {
             let toast = document.getElementById('app-toast');
             if (!toast) {
