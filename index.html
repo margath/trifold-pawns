@@ -545,6 +545,7 @@
         }
 
         .restore-note { font-size: 10px; color: #999; text-align: center; margin-top: 2px; }
+        .restore-note.warn { color: #e6a23c; }
 
         /* Team colours: every distinct Border/X colour in the project is a team. */
         .team-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
@@ -1417,11 +1418,14 @@
                     <section class="privacy-item">
                         <h3>✅ No accounts, analytics, cookies or tracking</h3>
                         <p>There is no sign-in, no analytics script, and no advertising. The app sets no
-                           cookies. Its only browser storage is the saved copy of your project
-                           described above and a couple of small settings (paper size, last game
-                           system). Clearing site data for this site removes all of it, and so does
-                           the button below.</p>
-                        <p><button class="inline-link" onclick="clearSavedData()">Delete the saved copy of my project</button></p>
+                           cookies. Its browser storage is the saved copy of your project described
+                           above, a couple of small settings (paper size, last game system), and, if
+                           installed, its own offline files. Clearing site data for this site removes
+                           all of it.</p>
+                        <p>The button below deletes only the saved copies of your project. The
+                           settings and offline files stay. Your project is saved again the next time
+                           you change it.</p>
+                        <p><button class="inline-link" onclick="clearSavedData()">Delete the saved copies of my project</button></p>
                     </section>
 
                     <section class="privacy-item">
@@ -2519,7 +2523,21 @@
         // file doesn't carry is filled from the empty-factory defaults, so an
         // old .json opens cleanly with blank traits / no cards rather than
         // throwing on a missing key.
+        // Both of these build state.pawns one image at a time. Autosave is held
+        // for the duration so a flush mid-way can't store a half-loaded project
+        // over a complete one; it runs once the project is whole again.
         async function loadProjectFromJSON(projectData) {
+            autosaveHold++;
+            try { return await _loadProjectFromJSON(projectData); }
+            finally { autosaveHold--; scheduleAutosave(); }
+        }
+        async function addProjectFromJSON(projectData) {
+            autosaveHold++;
+            try { return await _addProjectFromJSON(projectData); }
+            finally { autosaveHold--; scheduleAutosave(); }
+        }
+
+        async function _loadProjectFromJSON(projectData) {
             state.pawnWidth = projectData.pawnWidth || 1.0; 
             state.pawnHeight = projectData.pawnHeight || 1.5;
             state.showTable = projectData.showTable || false;
@@ -2574,7 +2592,7 @@
         // cards are silently reused; genuinely different ones sharing an id are
         // re-issued a fresh id, and that file's attachments are redirected to it,
         // so neither project's cards are corrupted by the merge.
-        async function addProjectFromJSON(projectData) {
+        async function _addProjectFromJSON(projectData) {
             if (!projectData || !Array.isArray(projectData.pawns)) {
                 alert('That file does not look like a Tri-Fold Pawn project.');
                 return;
@@ -5769,133 +5787,207 @@
         let toastTimer = null;
         // ---- Autosave in this browser ---------------------------------------------
         // The project is copied into IndexedDB (not localStorage: the embedded
-        // images easily outgrow its ~5 MB limit) a moment after each change, so a
+        // images easily outgrow its ~5 MB limit) a moment after a change, so a
         // closed tab or a crash doesn't lose work that was never saved to a file.
         //
-        // Two slots: 'current' is this session's copy. When a new session starts
-        // and finds a 'current' from before, it is kept as 'previous' and offered
-        // by the Restore previous data button, so opening the app can never
-        // overwrite what was saved last time. Nothing is written until the
-        // project differs from the starter project the page opened with.
+        // Every page load writes to a slot of its own ('tab:<id>'), so two tabs
+        // can never overwrite each other. On start-up the newest slot written by
+        // anyone else that differs from what is on screen is offered by the
+        // Restore previous data button. Opening the app never touches those
+        // slots; old ones are pruned after 30 days or beyond the newest eight.
+        // Nothing is written until the project differs from the starter project.
         const AUTOSAVE_DB = 'trifold-autosave', AUTOSAVE_STORE = 'projects';
-        let autosaveTimer = null, autosaveReady = false, autosaveBaseline = null, previousSnapshot = null;
+        const AUTOSAVE_KEEP = 8, AUTOSAVE_MAX_AGE = 30 * 24 * 3600 * 1000;
+        const newSlotId = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2);
+        const autosaveKey = 'tab:' + newSlotId();
+
+        let autosaveTimer = null;
+        let autosaveStarted = false;        // set once start-up has read the saved slots
+        let autosaveHold = 0;               // >0 while a project is being loaded or merged
+        let autosaveGen = 0;                // bumped by delete, so queued writes die with it
+        let autosaveBaseline = null;        // the starter project, never worth keeping
+        let autosaveSuppress = null;        // state deleted by the user; not re-saved until it changes
+        let lastSavedJson = null;
+        let autosaveError = '';
+        let autosaveWarned = false;
+        let restoring = false;
+        let previousSnapshot = null;        // { key, savedAt, pawnCount, json } offered for restore
+        let writeChain = Promise.resolve(); // every write goes through here, in order
+
+        function queueWrite(fn) {
+            const run = writeChain.then(fn);
+            writeChain = run.catch(() => {});
+            return run;
+        }
 
         function idbOpen() {
             return new Promise((resolve, reject) => {
-                if (!window.indexedDB) { reject(new Error('IndexedDB unavailable')); return; }
+                if (!window.indexedDB) { reject(new Error('IndexedDB is not available')); return; }
                 const req = indexedDB.open(AUTOSAVE_DB, 1);
                 req.onupgradeneeded = () => req.result.createObjectStore(AUTOSAVE_STORE);
                 req.onsuccess = () => resolve(req.result);
-                req.onerror = () => reject(req.error);
+                req.onerror = () => reject(req.error || new Error('could not open storage'));
+                req.onblocked = () => reject(new Error('storage is blocked'));
             });
         }
-        async function idbRun(mode, fn) {
+        // Runs fn(store) in one transaction and resolves when it has committed.
+        // fn returns a request, or an array of them; their results come back.
+        async function idbTx(mode, fn) {
             const db = await idbOpen();
             try {
                 return await new Promise((resolve, reject) => {
                     const tx = db.transaction(AUTOSAVE_STORE, mode);
-                    const req = fn(tx.objectStore(AUTOSAVE_STORE));
-                    tx.oncomplete = () => resolve(req ? req.result : undefined);
-                    tx.onerror = tx.onabort = () => reject(tx.error);
+                    const r = fn(tx.objectStore(AUTOSAVE_STORE));
+                    tx.oncomplete = () => resolve(Array.isArray(r) ? r.map(x => x.result) : (r ? r.result : undefined));
+                    tx.onerror = tx.onabort = () => reject(tx.error || new Error('storage write failed'));
                 });
             } finally { db.close(); }
         }
-        const idbGet = (key) => idbRun('readonly', st => st.get(key));
-        const idbPut = (key, val) => idbRun('readwrite', st => st.put(val, key));
-        const idbDel = (key) => idbRun('readwrite', st => st.delete(key));
+        async function readSlots() {
+            const [keys, vals] = await idbTx('readonly', st => [st.getAllKeys(), st.getAll()]);
+            return keys.map((key, i) => ({ key, ...vals[i] })).filter(v => v && typeof v.json === 'string');
+        }
 
-        function snapshotNow() {
-            if (state.pawns.length === 0) return null;
+        function makeSnapshot() {
             return { savedAt: Date.now(), pawnCount: state.pawns.length, json: JSON.stringify(buildProjectData()) };
         }
 
+        // A burst of changes costs one save: the timer starts at the first change
+        // and is not pushed back by later ones, so constant editing can't starve it.
         function scheduleAutosave() {
-            if (!autosaveReady) return;
-            clearTimeout(autosaveTimer);
+            if (!autosaveStarted || autosaveTimer) return;
             autosaveTimer = setTimeout(runAutosave, 1500);
         }
-        async function runAutosave() {
-            clearTimeout(autosaveTimer);
-            if (!autosaveReady) return;
-            try {
-                const snap = snapshotNow();
-                // An empty sheet never replaces a saved one, and the untouched
-                // starter project isn't worth keeping.
-                if (!snap || snap.json === autosaveBaseline) return;
-                await idbPut('current', snap);
-            } catch (err) { console.warn('[autosave] could not save', err); }
+        function runAutosave() {
+            clearTimeout(autosaveTimer); autosaveTimer = null;
+            if (!autosaveStarted || autosaveHold > 0) return Promise.resolve();
+            const gen = autosaveGen;
+            return queueWrite(async () => {
+                // Checked again here: a delete or a project load may have started
+                // while this write waited its turn.
+                if (gen !== autosaveGen || autosaveHold > 0) return;
+                // An empty sheet never replaces a saved copy.
+                if (state.pawns.length === 0) return;
+                const snap = makeSnapshot();
+                if (snap.json === autosaveBaseline || snap.json === lastSavedJson || snap.json === autosaveSuppress) return;
+                await idbTx('readwrite', st => st.put(snap, autosaveKey));
+                lastSavedJson = snap.json; autosaveSuppress = null;
+                if (autosaveError) { autosaveError = ''; updateRestoreButton(); }
+            }).catch(err => autosaveFailed(err));
         }
+
+        // Said out loud, because a recovery copy that silently isn't being kept
+        // is worse than none.
+        function autosaveFailed(err) {
+            console.warn('[autosave]', err);
+            autosaveError = (err && err.message) ? err.message : 'storage is unavailable';
+            updateRestoreButton();
+            if (!autosaveWarned) {
+                autosaveWarned = true;
+                showToast('Autosave is not working in this browser (' + autosaveError + '). Use Save to keep your work.', 15000);
+            }
+        }
+
+        // Anything the page does that changes the project ends in one of these
+        // events (or in a render, which also schedules a save), so listening here
+        // covers handlers that never go through a render function.
+        ['input', 'change', 'click', 'keyup', 'pointerup', 'wheel', 'drop', 'paste']
+            .forEach(ev => document.addEventListener(ev, scheduleAutosave, true));
         // Tabs are often closed with no further warning, so flush on the way out.
         document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') runAutosave(); });
         window.addEventListener('pagehide', runAutosave);
 
+        function pickCandidate(slots, onScreenJson) {
+            return slots
+                .filter(sl => sl.key !== autosaveKey && sl.json !== onScreenJson)
+                .sort((x, y) => y.savedAt - x.savedAt)[0] || null;
+        }
+
         async function initAutosave() {
+            autosaveBaseline = JSON.stringify(buildProjectData());
             try {
-                autosaveBaseline = JSON.stringify(buildProjectData());
-                const saved = await idbGet('current');
-                if (saved && saved.json && saved.json !== autosaveBaseline) {
-                    previousSnapshot = saved;
-                    await idbPut('previous', saved);
-                } else {
-                    previousSnapshot = (await idbGet('previous')) || null;
-                }
+                const slots = await readSlots();
+                // Housekeeping only ever removes old slots, never this page's.
+                const others = slots.filter(sl => sl.key !== autosaveKey).sort((x, y) => y.savedAt - x.savedAt);
+                const drop = others.filter((sl, i) => i >= AUTOSAVE_KEEP || Date.now() - sl.savedAt > AUTOSAVE_MAX_AGE).map(sl => sl.key);
+                if (drop.length) await queueWrite(() => idbTx('readwrite', st => { drop.forEach(k => st.delete(k)); }));
+                previousSnapshot = pickCandidate(slots.filter(sl => !drop.includes(sl.key)), autosaveBaseline);
                 // Best effort: ask the browser not to evict this under storage pressure.
                 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
             } catch (err) {
-                console.warn('[autosave] unavailable', err);
+                autosaveFailed(err);
                 previousSnapshot = null;
             }
-            autosaveReady = true;
+            autosaveStarted = true;
             updateRestoreButton();
             if (previousSnapshot) {
-                showToast('Found a copy of your last session saved in this browser. Use \u201cRestore previous data\u201d under Project to bring it back.', 12000);
+                showToast('Found a copy of your last session saved in this browser. Use “Restore previous data” under Project to bring it back.', 12000);
             }
         }
 
         function describeSnapshot(snap) {
             const d = new Date(snap.savedAt);
             const when = d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-            return when + ' \u00b7 ' + snap.pawnCount + ' pawn' + (snap.pawnCount === 1 ? '' : 's');
+            return when + ' · ' + snap.pawnCount + ' pawn' + (snap.pawnCount === 1 ? '' : 's');
         }
         function updateRestoreButton() {
             const btn = document.getElementById('restore-previous-btn');
-            if (!btn) return;
-            btn.style.display = previousSnapshot ? '' : 'none';
-            if (previousSnapshot) btn.title = 'Replace what is on screen with the copy saved in this browser (' + describeSnapshot(previousSnapshot) + ')';
             const note = document.getElementById('restore-previous-note');
-            if (note) note.innerText = previousSnapshot ? 'Saved ' + describeSnapshot(previousSnapshot) : '';
+            if (btn) {
+                btn.style.display = previousSnapshot ? '' : 'none';
+                btn.disabled = restoring;
+                if (previousSnapshot) btn.title = 'Replace what is on screen with the copy saved in this browser (' + describeSnapshot(previousSnapshot) + ')';
+            }
+            if (note) {
+                note.classList.toggle('warn', !!autosaveError);
+                note.innerText = autosaveError ? 'Autosave is off: ' + autosaveError
+                    : (previousSnapshot ? 'Saved ' + describeSnapshot(previousSnapshot) : '');
+            }
         }
 
-        // Swaps rather than overwrites: what is on screen now becomes the
-        // 'previous' copy, so a restore that wasn't wanted can be undone by
-        // pressing the button again.
+        // Swaps rather than overwrites: what is on screen first goes into a slot
+        // of its own, so a restore that wasn't wanted is undone by pressing the
+        // button again (that slot is then the newest copy on offer).
         async function restorePreviousData() {
-            if (!previousSnapshot) return;
+            if (!previousSnapshot || restoring) return;
             let data;
             try { data = JSON.parse(previousSnapshot.json); }
             catch (err) { alert('The saved copy could not be read.'); return; }
-            const here = snapshotNow();
-            const hasWork = here && here.json !== autosaveBaseline;
-            autosaveReady = false;                     // no autosave mid-swap
+            restoring = true; updateRestoreButton();
             try {
+                // Keep the current project first; if that can't be written the
+                // restore is abandoned rather than risking the work on screen.
+                const undo = makeSnapshot();
+                await queueWrite(() => idbTx('readwrite', st => st.put(undo, 'undo:' + newSlotId())));
                 await loadProjectFromJSON(data);
-                previousSnapshot = hasWork ? here : null;
-                if (previousSnapshot) await idbPut('previous', previousSnapshot); else await idbDel('previous');
-                await idbPut('current', snapshotNow());
+                lastSavedJson = null; autosaveSuppress = null;
+                previousSnapshot = pickCandidate(await readSlots(), JSON.stringify(buildProjectData()));
+                showToast('Restored your saved copy.');
             } catch (err) {
                 console.warn('[autosave] restore failed', err);
-                alert('Could not restore the saved copy.');
+                alert('Could not restore the saved copy: ' + ((err && err.message) || err));
+            } finally {
+                restoring = false; updateRestoreButton();
             }
-            autosaveReady = true;
-            updateRestoreButton();
-            showToast('Restored your saved copy.');
         }
 
+        // Deletes every copy this browser holds, in one transaction. Anything
+        // already queued is cancelled or finishes first, and the project that was
+        // on screen is not written back until it changes again.
         async function clearSavedData() {
             if (!confirm('Delete the copies of your project that this browser has saved? Files you saved to your computer are not affected.')) return;
-            clearTimeout(autosaveTimer);
-            try { await idbDel('current'); await idbDel('previous'); } catch (err) { console.warn(err); }
-            previousSnapshot = null;
+            autosaveGen++;
+            clearTimeout(autosaveTimer); autosaveTimer = null;
+            try {
+                await queueWrite(() => idbTx('readwrite', st => st.clear()));
+            } catch (err) {
+                console.warn('[autosave] delete failed', err);
+                alert('Could not delete the saved copies: ' + ((err && err.message) || err));
+                scheduleAutosave();
+                return;
+            }
+            previousSnapshot = null; lastSavedJson = null;
+            autosaveSuppress = state.pawns.length ? makeSnapshot().json : null;
             updateRestoreButton();
             showToast('Saved copies deleted from this browser.');
         }
