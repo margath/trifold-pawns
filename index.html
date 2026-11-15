@@ -1875,7 +1875,7 @@
                     const n = document.createElement('span'); n.className = 'team-count'; n.innerText = t.count; b.appendChild(n);
                     b.onclick = () => {
                         if (opts.compact && !open) { open = true; draw(); return; }
-                        open = false; onPick(t.color); draw();
+                        open = false; onPick(t.color); teamsMemo = null; draw();
                     };
                     if (opts.compact && !open) b.title += ' - click to change team';
                     box.appendChild(b);
@@ -1884,10 +1884,11 @@
                 custom.value = cur || '#000000'; custom.title = 'New team colour';
                 // 'change' fires when the picker closes, so a half-chosen colour
                 // doesn't spawn a swatch for every shade passed on the way.
-                custom.onchange = (e) => { open = false; onPick(e.target.value); draw(); };
+                custom.onchange = (e) => { open = false; onPick(e.target.value); teamsMemo = null; draw(); };
                 box.appendChild(custom);
             };
-            box.refresh = draw;
+            // A colour may have changed since the memoised list was built.
+            box.refresh = () => { teamsMemo = null; draw(); };
             draw();
             return box;
         }
@@ -2343,6 +2344,7 @@
         }
 
         function updatePawnColor(index, field, value, includeAlpha=false) {
+            teamsMemo = null;   // team swatches are built from these colours
             if (includeAlpha) {
                 let currentAlpha = state.pawns[index][field].slice(7) || 'EE';
                 state.pawns[index][field] = value + currentAlpha;
