@@ -22,15 +22,32 @@ const SHELL = [
   './icons/favicon-64.png'
 ];
 
+// The pages the app cannot open offline without. If either fails to cache the
+// install is abandoned, so the previous worker (and its cache) stays in charge
+// instead of being replaced by one with no shell to fall back on.
+const REQUIRED = ['./', './index.html'];
+
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_VERSION)
+    caches.open(CACHE_VERSION).then(cache =>
       // addAll rejects the whole batch if any single file 404s, which would
-      // leave the app permanently uninstallable. Add them individually.
-      .then(cache => Promise.all(SHELL.map(url =>
-        cache.add(url).catch(err => console.warn('[sw] skipped', url, err))
-      )))
-      .then(() => self.skipWaiting())
+      // leave the app permanently uninstallable. Add them individually, and
+      // only treat the required pages as fatal.
+      Promise.all(SHELL.map(url =>
+        cache.add(url).then(() => null, err => {
+          console.warn('[sw] could not cache', url, err);
+          return REQUIRED.includes(url) ? url : null;
+        })
+      )).then(failed => {
+        const missing = failed.filter(Boolean);
+        if (missing.length) {
+          // Drop the half-filled cache; activate would otherwise keep it.
+          return caches.delete(CACHE_VERSION).then(() => {
+            throw new Error('shell not cached: ' + missing.join(', '));
+          });
+        }
+      })
+    ).then(() => self.skipWaiting())
   );
 });
 
