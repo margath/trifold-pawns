@@ -2538,7 +2538,12 @@
             finally { autosaveHold--; scheduleAutosave(); }
         }
 
+        // Thrown for a file that isn't a project. It is raised before anything is
+        // changed, so a bad file leaves the sheet exactly as it was.
         async function _loadProjectFromJSON(projectData) {
+            if (!projectData || typeof projectData !== 'object' || !Array.isArray(projectData.pawns)) {
+                throw new Error('That file does not look like a Tri-Fold Pawn project.');
+            }
             state.pawnWidth = projectData.pawnWidth || 1.0; 
             state.pawnHeight = projectData.pawnHeight || 1.5;
             state.showTable = projectData.showTable || false;
@@ -2644,7 +2649,7 @@
                 try {
                     const projectData = JSON.parse(event.target.result);
                     await loadProjectFromJSON(projectData);
-                } catch (error) { alert('Error loading project.'); }
+                } catch (error) { alert((error && error.message) || 'Error loading project.'); }
             };
             reader.readAsText(file); e.target.value = ''; 
         }
@@ -2717,6 +2722,10 @@
                 style = document.createElement('style'); style.id = 'print-page-style';
                 document.head.appendChild(style);
             }
+            // --paper-w/--paper-h size the on-screen preview sheet only. In print the
+            // .page rule (@media print) switches to width:100%/height:auto, so a
+            // sheet fills the printable area inside these 0.5in margins instead of
+            // being wider than it.
             style.textContent = `@page { size: ${d.wCss} ${d.hCss}; margin: 0.5in; }`;
             document.documentElement.style.setProperty('--paper-w', d.wCss);
             document.documentElement.style.setProperty('--paper-h', d.hCss);
