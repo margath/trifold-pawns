@@ -2538,12 +2538,23 @@
             finally { autosaveHold--; scheduleAutosave(); }
         }
 
-        // Thrown for a file that isn't a project. It is raised before anything is
+        // Why a parsed file can't be a project, or '' if it looks fine. Every pawn
+        // entry is checked here, up front, because hydrating one that is null or has
+        // no image fails halfway through a load, after the current project has
+        // already been cleared.
+        function projectFileError(projectData) {
+            const notProject = 'That file does not look like a Tri-Fold Pawn project.';
+            if (!projectData || typeof projectData !== 'object' || !Array.isArray(projectData.pawns)) return notProject;
+            const bad = projectData.pawns.findIndex(p => !p || typeof p !== 'object' || Array.isArray(p) || typeof p.dataUrl !== 'string');
+            if (bad !== -1) return notProject + ' (pawn ' + (bad + 1) + ' is missing or has no image.)';
+            return '';
+        }
+
+        // Throws for a file that isn't a project. The check runs before anything is
         // changed, so a bad file leaves the sheet exactly as it was.
         async function _loadProjectFromJSON(projectData) {
-            if (!projectData || typeof projectData !== 'object' || !Array.isArray(projectData.pawns)) {
-                throw new Error('That file does not look like a Tri-Fold Pawn project.');
-            }
+            const problem = projectFileError(projectData);
+            if (problem) throw new Error(problem);
             state.pawnWidth = projectData.pawnWidth || 1.0; 
             state.pawnHeight = projectData.pawnHeight || 1.5;
             state.showTable = projectData.showTable || false;
@@ -2599,8 +2610,9 @@
         // re-issued a fresh id, and that file's attachments are redirected to it,
         // so neither project's cards are corrupted by the merge.
         async function _addProjectFromJSON(projectData) {
-            if (!projectData || !Array.isArray(projectData.pawns)) {
-                alert('That file does not look like a Tri-Fold Pawn project.');
+            const problem = projectFileError(projectData);
+            if (problem) {
+                alert(problem);
                 return;
             }
 
