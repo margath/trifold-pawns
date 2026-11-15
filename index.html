@@ -2453,17 +2453,27 @@
         // Rebuilds one saved pawn into a live one. `mapCardId` lets the importer
         // redirect attachments when an incoming card had to be given a new id to
         // avoid colliding with one already in the library.
-        async function hydratePawn(p, knownCardIds, mapCardId) {
+        // Text fields come from a file anyone could have edited; the renderers call
+        // string methods on them, so a number or object would throw mid-render.
+        const asText = (v) => (v === undefined || v === null) ? '' : String(v);
+
+        // `defaults` supplies the fallback pawn size, so a staged import can be
+        // hydrated before it is committed to `state`.
+        async function hydratePawn(p, knownCardIds, mapCardId, defaults) {
+            defaults = defaults || state;
             const img = new Image();
-            await new Promise(r => { img.onload = r; img.onerror = r; img.src = p.dataUrl; });
+            let failed = false;
+            await new Promise(r => { img.onload = r; img.onerror = () => { failed = true; r(); }; img.src = p.dataUrl; });
+            // A pawn that can't draw would break every render after the import.
+            if (failed) throw new Error('its image could not be loaded.');
 
             const pawn = ensurePawnShape({
-                img: img, dataUrl: p.dataUrl, name: p.name || '', number: p.number || '', isEditing: false,
+                img: img, dataUrl: p.dataUrl, name: asText(p.name), number: asText(p.number), isEditing: false,
                 borderColor: p.borderColor || '#000000', textColor: p.textColor || '#000000', textBgColor: p.textBgColor || '#FFFFFFEE',
                 isDark: p.isDark !== undefined ? p.isDark : calculateDarkness(img),
                 isFlipped: p.isFlipped || false, showBorder: p.showBorder || false, borderStyle: p.borderStyle === 'dashed' ? 'dashed' : 'solid',
                 scale: p.scale || 1.0, rotation: p.rotation || 0, offsetX: p.offsetX || 0, offsetY: p.offsetY || 0,
-                pawnWidth: p.pawnWidth || state.pawnWidth, pawnHeight: p.pawnHeight || state.pawnHeight,
+                pawnWidth: p.pawnWidth || defaults.pawnWidth, pawnHeight: p.pawnHeight || defaults.pawnHeight,
                 trackerScale: p.trackerScale || 1,
                 hpMode: p.hpMode || 'standard',
                 // Absent means "saved before this existed", which should get the
@@ -2477,7 +2487,7 @@
             // Merge each saved block over its empty factory result, so keys
             // added in later versions simply stay blank on older files.
             const loadedStats = p.stats || {};
-            STAT_KEYS.forEach(key => pawn.stats[key] = loadedStats[key] || '');
+            STAT_KEYS.forEach(key => pawn.stats[key] = asText(loadedStats[key]));
 
             Object.keys(SYSTEM_STAT_FACTORIES).forEach(sysName => {
                 const key = SYSTEM_STAT_KEYS[sysName];
@@ -2527,15 +2537,35 @@
         // Both of these build state.pawns one image at a time. Autosave is held
         // for the duration so a flush mid-way can't store a half-loaded project
         // over a complete one; it runs once the project is whole again.
+        //
+        // Imports also run strictly one at a time. Each one hydrates its images
+        // before committing, and a second started in the middle would otherwise
+        // be working from a project the first is about to replace.
+        let importChain = Promise.resolve();
+        function runImport(fn) {
+            const run = importChain.then(fn);
+            importChain = run.catch(() => {});
+            return run;
+        }
         async function loadProjectFromJSON(projectData) {
             autosaveHold++;
-            try { return await _loadProjectFromJSON(projectData); }
+            try { return await runImport(() => _loadProjectFromJSON(projectData)); }
             finally { autosaveHold--; scheduleAutosave(); }
         }
         async function addProjectFromJSON(projectData) {
             autosaveHold++;
-            try { return await _addProjectFromJSON(projectData); }
+            try { return await runImport(() => _addProjectFromJSON(projectData)); }
             finally { autosaveHold--; scheduleAutosave(); }
+        }
+
+        // Hydrates every pawn before anything is committed; a failure names the pawn.
+        async function hydrateAll(pawnData, knownCardIds, mapCardId, defaults) {
+            const out = [];
+            for (let i = 0; i < pawnData.length; i++) {
+                try { out.push(await hydratePawn(pawnData[i], knownCardIds, mapCardId, defaults)); }
+                catch (err) { throw new Error('Pawn ' + (i + 1) + ': ' + ((err && err.message) || 'could not be read.')); }
+            }
+            return out;
         }
 
         // Why a parsed file can't be a project, or '' if it looks fine. Every pawn
@@ -2545,8 +2575,11 @@
         function projectFileError(projectData) {
             const notProject = 'That file does not look like a Tri-Fold Pawn project.';
             if (!projectData || typeof projectData !== 'object' || !Array.isArray(projectData.pawns)) return notProject;
-            const bad = projectData.pawns.findIndex(p => !p || typeof p !== 'object' || Array.isArray(p) || typeof p.dataUrl !== 'string');
-            if (bad !== -1) return notProject + ' (pawn ' + (bad + 1) + ' is missing or has no image.)';
+            // Images must be embedded. Anything else (an http(s) address, say) would
+            // make the browser fetch it the moment the file is opened.
+            const embedded = /^data:image\/[a-z0-9.+-]+[;,]/i;
+            const bad = projectData.pawns.findIndex(p => !p || typeof p !== 'object' || Array.isArray(p) || typeof p.dataUrl !== 'string' || !embedded.test(p.dataUrl));
+            if (bad !== -1) return notProject + ' (pawn ' + (bad + 1) + ' is missing, or its image is not embedded in the file.)';
             return '';
         }
 
@@ -2555,8 +2588,25 @@
         async function _loadProjectFromJSON(projectData) {
             const problem = projectFileError(projectData);
             if (problem) throw new Error(problem);
-            state.pawnWidth = projectData.pawnWidth || 1.0; 
-            state.pawnHeight = projectData.pawnHeight || 1.5;
+
+            // Stage: everything slow (image loading) happens first, against local
+            // variables. Nothing on screen or in `state` changes until it all worked.
+            const pawnWidth = projectData.pawnWidth || 1.0;
+            const pawnHeight = projectData.pawnHeight || 1.5;
+            // Cards load first so attachment validation has a library to check
+            // against. Malformed entries are skipped rather than fatal.
+            const cards = [];
+            if (Array.isArray(projectData.actionCards)) {
+                projectData.actionCards.forEach(c => {
+                    if (c && c.id) cards.push(normaliseCard(c));
+                });
+            }
+            const knownCardIds = new Set(cards.map(c => c.id));
+            const pawns = await hydrateAll(projectData.pawns, knownCardIds, null, { pawnWidth, pawnHeight });
+
+            // Commit: synchronous, so it can't interleave with anything.
+            state.pawnWidth = pawnWidth;
+            state.pawnHeight = pawnHeight;
             state.showTable = projectData.showTable || false;
             state.showCards = projectData.showCards || false;
             state.showOverhead = !!projectData.showOverhead;
@@ -2584,20 +2634,8 @@
             if (overheadToggle) overheadToggle.checked = state.showOverhead;
             syncOverheadControls();
 
-            // Cards load first so attachment validation has a library to check
-            // against. Malformed entries are skipped rather than fatal.
-            state.actionCards = [];
-            if (Array.isArray(projectData.actionCards)) {
-                projectData.actionCards.forEach(c => {
-                    if (c && c.id) state.actionCards.push(normaliseCard(c));
-                });
-            }
-            const knownCardIds = new Set(state.actionCards.map(c => c.id));
-
-            state.pawns = [];
-            for (let p of projectData.pawns) {
-                state.pawns.push(await hydratePawn(p, knownCardIds, null));
-            }
+            state.actionCards = cards;
+            state.pawns = pawns;
             renderAll();
         }
 
@@ -2618,13 +2656,15 @@
 
             const idMap = {};
             let renamed = 0;
+            const newCards = [];   // committed only after every image has loaded
+            const cardById = (id) => getActionCard(id) || newCards.find(c => c.id === id);
 
-            (projectData.actionCards || []).forEach(raw => {
+            (Array.isArray(projectData.actionCards) ? projectData.actionCards : []).forEach(raw => {
                 if (!raw || !raw.id) return;
                 const incoming = normaliseCard(raw);
-                const existing = getActionCard(incoming.id);
+                const existing = cardById(incoming.id);
 
-                if (!existing) { state.actionCards.push(incoming); return; }
+                if (!existing) { newCards.push(incoming); return; }
 
                 const sameCard = existing.system === incoming.system &&
                                  existing.name === incoming.name &&
@@ -2635,18 +2675,17 @@
                 idMap[incoming.id] = freshId;
                 incoming.id = freshId;
                 incoming.name = incoming.name + ' (imported)';
-                state.actionCards.push(incoming);
+                newCards.push(incoming);
                 renamed++;
             });
 
-            const knownCardIds = new Set(state.actionCards.map(c => c.id));
+            const knownCardIds = new Set(state.actionCards.map(c => c.id).concat(newCards.map(c => c.id)));
+            const hydrated = await hydrateAll(projectData.pawns, knownCardIds, idMap, state);
 
-            let added = 0;
-            for (let p of (projectData.pawns || [])) {
-                state.pawns.push(await hydratePawn(p, knownCardIds, idMap));
-                added++;
-            }
-
+            // Commit synchronously.
+            newCards.forEach(c => state.actionCards.push(c));
+            hydrated.forEach(pw => state.pawns.push(pw));
+            const added = hydrated.length;
             renderAll();
 
             let msg = `Added ${added} pawn${added === 1 ? '' : 's'}.`;
@@ -2672,7 +2711,7 @@
                 try {
                     await addProjectFromJSON(JSON.parse(event.target.result));
                 } catch (error) {
-                    alert('Could not read that project file.');
+                    alert((error && error.message) || 'Could not read that project file.');
                 }
             };
             reader.readAsText(file); e.target.value = ''; 
