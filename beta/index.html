@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The *Beta* Tri-Fold Pawn Maker</title>
+    <title>The Tri-Fold Pawn Maker</title>
 
     <!-- Progressive Web App -->
     <link rel="manifest" href="manifest.json">
@@ -65,9 +65,10 @@
 
         /* Header Help Box */
         .header-help {
-            display: flex;
-            flex-wrap: wrap; 
-            gap: 10px;
+            /* Always a 2x2 square (Clone/Delete over Copy/Paste), never 3 + 1. */
+            display: grid;
+            grid-template-columns: repeat(2, max-content);
+            gap: 8px 18px;
             background: #252525;
             padding: 8px 15px;
             border-radius: 8px;
@@ -518,6 +519,77 @@
         .new-card-btn { background: #2ecc71; margin-left: auto; }
         .new-card-btn:hover { background: #27ae60; }
         .card-empty { color: #888; font-size: 12px; font-style: italic; }
+
+        /* Bulk naming dialog (after adding images from files, or from the footer). */
+        #import-modal .card-modal-panel { max-width: 900px; }
+        .import-row {
+            display: grid; grid-template-columns: 44px minmax(90px, 1fr) 70px 140px 84px 150px; gap: 8px;
+            align-items: center; margin-bottom: 6px;
+        }
+        .import-row.import-head { color: #999; font-size: 11px; margin-bottom: 4px; }
+        .import-row img {
+            width: 44px; height: 44px; object-fit: contain; background: #fff; border-radius: 4px;
+        }
+        .import-row input, .import-row select {
+            width: 100%; box-sizing: border-box; padding: 5px 7px; font-size: 12px;
+            background: #1e1e1e; color: #fff; border: 1px solid #555; border-radius: 4px;
+        }
+        .import-foot { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-top: 1px solid #444; }
+        .import-foot .import-count { color: #999; font-size: 11px; margin-right: auto; }
+        .import-foot .import-count { white-space: nowrap; }
+        .import-foot button { width: auto; flex: 0 0 auto; padding: 8px 26px; }
+        @media (max-width: 700px) {
+            .import-row { grid-template-columns: 36px 1fr 60px; }
+            .import-row.import-head { display: none; }
+            .import-row select, .import-row .team-picker { grid-column: 1 / -1; }
+            .import-row { padding-bottom: 8px; border-bottom: 1px solid #3a3a3a; }
+        }
+
+        .restore-note { font-size: 10px; color: #999; text-align: center; margin-top: 2px; }
+        .restore-note.warn { color: #e6a23c; }
+        .team-names-btn { width: 100%; margin: 2px 0 6px; }
+        .tracker-table td.name-col.team-stripe {
+            border-left: 7px solid var(--team, #888);
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
+        }
+        .tracker-table .team-tag { font-size: 10px; font-weight: normal; color: #555; margin-top: 2px; }
+        .tracker-table tbody.pawn-group.team-start .pawn-stat-row td { border-top: 2px solid #444 !important; }
+        .teams-row { display: grid; grid-template-columns: 26px 1fr 56px 56px; gap: 8px; align-items: center; margin-bottom: 8px; }
+        .teams-row .team-dot { width: 22px; height: 22px; border-radius: 50%; box-shadow: 0 0 0 1px #777; }
+        .teams-row .team-n { font-size: 11px; color: #999; text-align: right; }
+        .teams-row .team-move { display: flex; gap: 4px; }
+        .teams-row .team-move button { padding: 2px 8px; }
+        #previous-data-controls { display: grid; gap: 6px; margin-top: 6px; }
+        #previous-data-controls button { width: 100%; }
+        #previous-data-controls .previous-clear { color: #ffb3a8; }
+        /* Covers the page while a project loads; the page itself is inert. */
+        #import-busy { position: fixed; inset: 0; z-index: 10000; display: none; cursor: progress;
+                       align-items: center; justify-content: center; }
+        #import-busy.active { display: flex; }
+        #import-busy span { display: none; background: rgba(20,20,20,0.9); color: #fff; padding: 10px 18px;
+                            border-radius: 8px; font-size: 14px; }
+        #import-busy.show span { display: block; }
+
+        /* Team colours: every distinct Border/X colour in the project is a team. */
+        .team-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+        .team-swatch {
+            width: 22px; height: 22px; min-width: 22px; padding: 0; border-radius: 50%;
+            border: 2px solid #1e1e1e; box-shadow: 0 0 0 1px #777; cursor: pointer;
+            position: relative; flex: 0 0 auto;
+        }
+        .team-swatch:hover { box-shadow: 0 0 0 2px #fff; }
+        .team-swatch.selected { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #3498db; }
+        .team-swatch .team-count {
+            position: absolute; right: -6px; bottom: -6px; min-width: 13px; height: 13px;
+            border-radius: 7px; background: #111; color: #fff; font-size: 9px; line-height: 13px;
+            text-align: center; padding: 0 2px; box-sizing: border-box; pointer-events: none;
+        }
+        .team-picker input[type=color] {
+            width: 26px; height: 22px; min-width: 26px; padding: 0; border: 1px solid #777;
+            border-radius: 4px; background: none; cursor: pointer;
+        }
+        .team-picker .team-label { font-size: 10px; color: #999; }
+        .team-picker.team-editor { padding: 2px 0 6px; }
 
         .card-row { background: #222; border: 1px solid #3a3a3a; border-radius: 6px; margin-bottom: 8px; }
         .card-row-head { display: flex; align-items: center; gap: 8px; padding: 9px 12px; }
@@ -1109,13 +1181,59 @@
             .page { break-before: page; page-break-before: always; }
             .page.print-first { break-before: auto; page-break-before: auto; }
 
+            /* Pieces are centred on the sheet and, when they run to several
+               columns, spread evenly across its width (the gap above is the
+               minimum between pieces). A short last row is centred too. */
+            .pawn-page, .token-page.has-tokens { justify-content: space-evenly; }
+
             /* Tokens never ride along inside the standee flow (that is what
                pushed the strips out of step); they print on their own sheet. */
             .token-wrapper { display: none !important; }
             .token-page.has-tokens {
-                display: flex; flex-wrap: wrap; align-content: flex-start; gap: 0.1in;
+                display: flex; flex-wrap: wrap; align-content: flex-start; gap: 0.1in 0.25in;
             }
             .token-page canvas { display: block; border-radius: 0; }
+        }
+
+        /* ==================================================================
+           SMALL SCREENS (tablets and phones)
+           Screen-only: nothing here reaches the printout or the exports.
+           The sheets keep their true paper size and are scaled down as a
+           whole to fit the window (--fit-zoom, set by fitPagesToScreen()),
+           so what you see is still what prints.
+           ================================================================== */
+        @media screen and (max-width: 900px) {
+            .page { zoom: var(--fit-zoom, 1); }
+            .main { padding: 14px 6px 16px; gap: 16px; }
+        }
+        @media screen and (max-width: 700px) {
+            .top-header {
+                position: static; height: auto; flex-wrap: wrap;
+                gap: 6px 10px; padding: 8px 12px;
+            }
+            .header-left, .header-right { flex: 1 1 auto; }
+            .header-left { gap: 10px; }
+            .header-titles { order: 3; flex: 1 1 100%; text-align: left; }
+            .header-titles h1 { font-size: 17px; margin: 0; }
+            .header-titles p, .header-help { display: none; }
+            .content-wrapper { margin-top: 0; min-height: 0; }
+            /* The control bar scrolls with the page instead of covering it. */
+            .credits-footer { position: static; flex-wrap: wrap; padding: 12px 12px 22px; }
+            .footer-col { flex: 1 1 100%; max-width: none; }
+            .footer-col-wide { max-width: none; }
+            /* The editor takes the whole screen. */
+            .edit-drawer { top: 0; width: 100vw; max-width: 100vw; }
+            .card-modal { padding: 8px; }
+            .card-modal-panel { max-height: 92vh; }
+        }
+        /* Touch: bigger targets, and 16px fields so iOS doesn't zoom on focus. */
+        @media screen and (pointer: coarse) {
+            .credits-footer button, .credits-footer select { min-height: 40px; }
+            .edit-drawer input[type=text], .edit-drawer input[type=number],
+            .edit-drawer select, .edit-drawer textarea,
+            .import-row input, .import-row select { font-size: 16px; }
+            .edit-drawer input[type=color], .team-picker input[type=color] { min-width: 36px; min-height: 32px; }
+            .team-swatch { width: 30px; height: 30px; min-width: 30px; }
         }
     </style>
 </head>
@@ -1183,6 +1301,8 @@
                     </div>
                     <input type="file" id="file-input" multiple accept="image/*" style="display:none">
                     <p class="footer-hint">Or drop transparent PNGs anywhere on the page.</p>
+                    <button class="secondary" style="width:100%;margin-bottom:6px" onclick="openImportModal()"
+                            title="Edit the name, number and system of every pawn in one list">✎ Names, numbers &amp; system…</button>
                     <label class="sub-label" for="size-select">New pawn base size</label>
                     <select id="size-select" onchange="updateGlobalSize()">
                         <option value="medium">Medium — 1" base × 1.5" tall</option>
@@ -1201,6 +1321,12 @@
                         <button class="secondary" title="Merge another project into this one instead of replacing it"
                                 onclick="document.getElementById('add-file-input').click()">Add JSON</button>
                     </div>
+                    <div id="previous-data-controls" style="display:none">
+                        <button class="secondary" id="restore-previous-btn" onclick="restorePreviousData()">&#8635; Restore previous data</button>
+                        <button class="secondary" id="append-previous-btn" onclick="appendPreviousData()">&#65291; Append previous data</button>
+                        <button class="secondary previous-clear" id="clear-previous-btn" onclick="clearPreviousData()">&#128465; Clear previous data</button>
+                    </div>
+                    <div id="restore-previous-note" class="restore-note"></div>
                     <input type="file" id="load-file-input" style="display:none" accept=".json" onchange="handleFileLoad(event)">
                     <input type="file" id="add-file-input" style="display:none" accept=".json" onchange="handleFileAdd(event)">
                     <label class="sub-label">Action cards</label>
@@ -1229,6 +1355,11 @@
                         <input type="checkbox" id="toggle-table" onchange="toggleTable(event)">
                         GM summary sheet
                     </label>
+                    <label class="check-row sub-check" title="Group pawns on the GM sheet by team (their Border/X colour), with a colour stripe and the team's name">
+                        <input type="checkbox" id="toggle-team-order" checked onchange="toggleTeamOrder(event)">
+                        order by team
+                    </label>
+                    <button class="secondary team-names-btn" onclick="openTeamsModal()" title="Name your teams and choose their order on the GM sheet">Teams&hellip;</button>
                     <label class="check-row" title="The action cards attached to your pawns">
                         <input type="checkbox" id="toggle-cards" onchange="toggleCards(event)">
                         Power cards
@@ -1290,8 +1421,8 @@
         </div>
 
         <!-- Privacy notice. Claims here are deliberately narrow and checkable:
-             the app makes no third-party requests, uses no browser storage, and
-             uploads nothing. What it cannot claim is anything about the host,
+             the app makes no third-party requests, keeps its autosave only in this
+             browser, and uploads nothing. What it cannot claim is anything about the host,
              so Cloudflare's role is stated plainly rather than glossed over. -->
         <div class="card-modal" id="privacy-modal">
             <div class="card-modal-panel privacy-panel">
@@ -1309,14 +1440,23 @@
                         <h3>✅ Your work never leaves your device</h3>
                         <p>Images, pawn names, stat blocks and action cards are all processed in your
                            browser. None of it is uploaded anywhere. Saving a project writes a
-                           <code>.json</code> file to your own computer, and only when you click Save.</p>
+                           <code>.json</code> file to your own computer, and only when you click Save.
+                           As a safety net, a copy of your current project is also kept in this
+                           browser's own storage on your device, so it can be restored if the tab
+                           closes unexpectedly.</p>
                     </section>
 
                     <section class="privacy-item">
                         <h3>✅ No accounts, analytics, cookies or tracking</h3>
                         <p>There is no sign-in, no analytics script, and no advertising. The app sets no
-                           cookies and writes nothing to browser storage — closing the tab without
-                           saving genuinely discards your work.</p>
+                           cookies. Its browser storage is the saved copy of your project described
+                           above, a couple of small settings (paper size, last game system), and, if
+                           installed, its own offline files. Clearing site data for this site removes
+                           all of it.</p>
+                        <p>The button below deletes only the saved copies of your project. The
+                           settings and offline files stay. Your project is saved again the next time
+                           you change it.</p>
+                        <p><button class="inline-link" onclick="clearSavedData()">Delete the saved copies of my project</button></p>
                     </section>
 
                     <section class="privacy-item">
@@ -1408,12 +1548,46 @@
                 <div class="card-modal-body" id="card-modal-body"></div>
             </div>
         </div>
+
+        <!-- Names, numbers and system for a batch of pawns. Edits apply as you type. -->
+        <div class="card-modal" id="import-modal">
+            <div class="card-modal-panel">
+                <div class="card-modal-header">
+                    <h2 id="import-modal-title">Name your pawns</h2>
+                    <button class="card-modal-close" onclick="closeImportModal()" title="Close">&times;</button>
+                </div>
+                <p class="card-modal-hint" id="import-modal-hint"></p>
+                <div class="card-modal-body" id="import-modal-body"></div>
+                <div class="import-foot">
+                    <span class="import-count" id="import-modal-count"></span>
+                    <button class="primary" onclick="closeImportModal()">Done</button>
+                </div>
+            </div>
+        </div>
+        <div class="card-modal" id="teams-modal">
+            <div class="card-modal-panel">
+                <div class="card-modal-header">
+                    <h2>Teams</h2>
+                    <button class="card-modal-close" onclick="closeTeamsModal()" title="Close">&times;</button>
+                </div>
+                <p class="card-modal-hint">A team is a Border/X colour. Name each team, and use the arrows to set the order they appear in on the GM sheet.</p>
+                <div class="card-modal-body" id="teams-modal-body"></div>
+                <div class="import-foot">
+                    <span class="import-count" id="teams-modal-count"></span>
+                    <button class="primary" onclick="closeTeamsModal()">Done</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
         const state = {
             pawns: [], pawnWidth: 1.0, pawnHeight: 1.5,
             showTable: false,
+            // Teams are the pawns' Border/X colours. state.teams is the ordered list
+            // of { color, name }; its order is the order pawns appear on the GM
+            // sheet when orderByTeam is on.
+            teams: [], orderByTeam: true,
             // Project-wide master switch for the round overhead tokens. Each
             // pawn also has its own opt-out, so this is "show tokens at all".
             showOverhead: false,
@@ -1581,6 +1755,7 @@
             if (!pawn.hpMode) pawn.hpMode = 'standard';
             // Branding is on unless a project explicitly turned it off.
             if (pawn.showQr === undefined) pawn.showQr = true;
+            if (pawn.borderStyle !== 'dashed') pawn.borderStyle = 'solid';
             if (!SYSTEMS.includes(pawn.system)) pawn.system = 'Generic';
             OVERHEAD_KEYS.forEach(k => { if (pawn[k] === undefined) pawn[k] = OVERHEAD_DEFAULTS[k]; });
             return pawn;
@@ -1692,6 +1867,338 @@
             if (n < 1024 * 1024) return (n / 1024).toFixed(0) + ' KB';
             return (n / (1024 * 1024)).toFixed(1) + ' MB';
         }
+        // ---- Bulk naming dialog ---------------------------------------------------
+        // The last system picked is remembered (this browser only) so a second
+        // batch starts where the first one ended.
+        function lastImportSystem() {
+            try {
+                const v = localStorage.getItem('trifold.importSystem');
+                if (v && SYSTEMS.includes(v)) return v;
+            } catch (err) { /* storage can be blocked; fall back to Generic */ }
+            return 'Generic';
+        }
+        function rememberImportSystem(v) {
+            try { localStorage.setItem('trifold.importSystem', v); } catch (err) { /* ignore */ }
+        }
+
+        // ---- Teams ----------------------------------------------------------------
+        // A team is simply a Border/X colour. Every distinct colour in use is a
+        // team, so once any pawn has a colour it can be picked again from the swatches.
+        // Always '#rrggbb'. Colours come from files too, and end up in style
+        // attributes, so anything else becomes black instead of passing through.
+        function normHex(c) {
+            const m = /^#[0-9a-f]{6}/i.exec(String(c || ''));
+            return m ? m[0].toLowerCase() : '#000000';
+        }
+
+        // Counting scans every pawn, and each picker on screen asks for the list,
+        // so it is worked out once per burst of redraws (cleared at the end of the
+        // current task) rather than once per picker.
+        let teamsMemo = null;
+        function teamList() {
+            if (teamsMemo) return teamsMemo;
+            const map = new Map();
+            state.pawns.forEach(p => {
+                const c = normHex(p.borderColor);
+                map.set(c, (map.get(c) || 0) + 1);
+            });
+            teamsMemo = Array.from(map, ([color, count]) => ({ color, count }));
+            queueMicrotask(() => { teamsMemo = null; });
+            return teamsMemo;
+        }
+
+        // Brings state.teams in line with the colours in use: any colour not yet
+        // listed joins the end, in the order the pawns appear. Entries for colours
+        // no pawn has any more are kept (their name survives a recolour) but are
+        // not shown or sorted by.
+        function syncTeams() {
+            teamsMemo = null;
+            teamList().forEach(t => {
+                if (!state.teams.some(x => x.color === t.color)) state.teams.push({ color: t.color, name: '' });
+            });
+        }
+        function teamName(color) {
+            const t = state.teams.find(x => x.color === normHex(color));
+            return t ? t.name : '';
+        }
+        // The teams that currently have pawns, in sheet order.
+        function activeTeams() {
+            syncTeams();
+            const counts = new Map(teamList().map(t => [t.color, t.count]));
+            return state.teams.filter(t => counts.has(t.color)).map(t => ({ ...t, count: counts.get(t.color) }));
+        }
+        // Stable: pawns keep their existing order within a team.
+        function sortByTeam(list) {
+            if (!state.orderByTeam) return list;
+            syncTeams();
+            const rank = new Map(state.teams.map((t, i) => [t.color, i]));
+            return list.slice().sort((a, b) => rank.get(normHex(a.borderColor)) - rank.get(normHex(b.borderColor)));
+        }
+        // Teams from a file: only well-formed colours, short plain names, no repeats.
+        function cleanTeams(raw) {
+            const out = [], seen = new Set();
+            (Array.isArray(raw) ? raw : []).slice(0, 64).forEach(t => {
+                if (!t || typeof t !== 'object' || typeof t.color !== 'string' || !/^#[0-9a-f]{6}$/i.test(t.color)) return;
+                const color = t.color.toLowerCase();
+                if (seen.has(color)) return;
+                seen.add(color);
+                out.push({ color, name: (typeof t.name === 'string' ? t.name : '').replace(/[\u0000-\u001f]/g, '').slice(0, 40) });
+            });
+            return out;
+        }
+
+        // Swatches for every team plus a custom colour box. getColor() says which
+        // team is current; onPick(hex) applies a choice. refresh() redraws after
+        // anything changed the set of teams.
+        function buildTeamPicker(getColor, onPick, opts) {
+            opts = opts || {};
+            const box = document.createElement('div');
+            box.className = 'team-picker' + (opts.editor ? ' team-editor' : '');
+            // Compact pickers (the one in each dialog row) show only the pawn's own
+            // team until opened, so a long roster doesn't become a wall of dots.
+            let open = false;
+            const draw = () => {
+                box.innerHTML = '';
+                const cur = getColor() ? normHex(getColor()) : null;
+                if (opts.label) {
+                    const l = document.createElement('span'); l.className = 'team-label'; l.innerText = opts.label; box.appendChild(l);
+                }
+                const teams = teamList();
+                const shown = (opts.compact && !open) ? teams.filter(t => t.color === cur) : teams;
+                shown.forEach(t => {
+                    const b = document.createElement('button'); b.type = 'button';
+                    b.className = 'team-swatch' + (t.color === cur ? ' selected' : '');
+                    b.style.background = t.color;
+                    b.title = (teamName(t.color) || 'Team ' + t.color.toUpperCase()) + ' (' + t.count + ' pawn' + (t.count === 1 ? '' : 's') + ')';
+                    const n = document.createElement('span'); n.className = 'team-count'; n.innerText = t.count; b.appendChild(n);
+                    b.onclick = () => {
+                        if (opts.compact && !open) { open = true; draw(); return; }
+                        open = false; onPick(t.color); teamsMemo = null; draw();
+                    };
+                    if (opts.compact && !open) b.title += ' - click to change team';
+                    box.appendChild(b);
+                });
+                const custom = document.createElement('input'); custom.type = 'color';
+                custom.value = cur || '#000000'; custom.title = 'New team colour';
+                // 'change' fires when the picker closes, so a half-chosen colour
+                // doesn't spawn a swatch for every shade passed on the way.
+                custom.onchange = (e) => { open = false; onPick(e.target.value); teamsMemo = null; draw(); };
+                box.appendChild(custom);
+            };
+            // A colour may have changed since the memoised list was built.
+            box.refresh = () => { teamsMemo = null; draw(); };
+            draw();
+            return box;
+        }
+
+        function applyBorderStyle(pawn, value) {
+            if (value === 'none') { pawn.showBorder = false; return; }
+            pawn.showBorder = true;
+            pawn.borderStyle = value === 'dashed' ? 'dashed' : 'solid';
+        }
+        function borderChoice(pawn) {
+            return !pawn.showBorder ? 'none' : (pawn.borderStyle === 'dashed' ? 'dashed' : 'solid');
+        }
+
+        // Same effect as the drawer's System picker, minus the re-render.
+        function applySystemToPawn(pawn, value) {
+            pawn.system = value;
+            ensurePawnShape(pawn);
+            pawn.actions = pawn.actions.filter(a => {
+                const card = getActionCard(a.cardId);
+                return card && card.system === value;
+            });
+        }
+
+        // Holds the pawn objects themselves, not indices: renderAll() re-sorts
+        // state.pawns, which would make indices point at the wrong pawn.
+        let importList = [];
+
+        function openImportModal(pawns) {
+            const justAdded = Array.isArray(pawns);
+            // A second batch can finish while the dialog is still open (two drops
+            // in a row). Fold it into the list on screen rather than replacing the
+            // first batch, which would leave those pawns unreachable from here.
+            if (justAdded && document.getElementById('import-modal').style.display === 'flex') {
+                pawns.forEach(p => { if (!importList.includes(p)) importList.push(p); });
+                renderImportModal();
+                return;
+            }
+            importList = justAdded ? pawns : state.pawns.slice();
+            if (importList.length === 0) { showToast('Add some pawns first.'); return; }
+            document.getElementById('import-modal-title').innerText = justAdded ? 'Name your new pawns' : 'Names, numbers & system';
+            document.getElementById('import-modal-hint').innerText = justAdded
+                ? 'Images are named from their file names. Fix names, add numbers and pick the game system for each pawn; changes apply as you type.'
+                : 'Changes apply as you type.';
+            renderImportModal();
+            document.getElementById('import-modal').style.display = 'flex';
+            const first = document.querySelector('#import-modal-body .import-name');
+            if (first) { first.focus(); first.select(); }
+        }
+
+        // Every picker lists the same teams, so a new colour has to reach all of them.
+        let teamPickers = [];
+        function refreshTeamPickers() { teamsMemo = null; teamPickers.forEach(t => t.refresh()); }
+
+        function renderImportModal() {
+            teamsMemo = null;
+            const body = document.getElementById('import-modal-body');
+            body.innerHTML = '';
+
+            // One picker sets every row; each row can still differ afterwards.
+            const bar = document.createElement('div'); bar.className = 'card-modal-bar';
+            const lab = document.createElement('label'); lab.className = 'system-label'; lab.innerText = 'System for all:';
+            const all = document.createElement('select'); all.className = 'system-select';
+            const keep = document.createElement('option'); keep.value = ''; keep.innerText = '(choose to apply to all)';
+            all.appendChild(keep);
+            SYSTEMS.forEach(sys => { const o = document.createElement('option'); o.value = sys; o.innerText = sys; all.appendChild(o); });
+            all.onchange = (e) => {
+                if (!e.target.value) return;
+                importList.forEach(p => applySystemToPawn(p, e.target.value));
+                rememberImportSystem(e.target.value);
+                body.querySelectorAll('.import-sys').forEach(sel => { sel.value = e.target.value; });
+                renderAll();
+            };
+            bar.appendChild(lab); bar.appendChild(all);
+
+            const bLab = document.createElement('label'); bLab.className = 'system-label'; bLab.innerText = 'Border for all:';
+            const bAll = document.createElement('select'); bAll.className = 'system-select';
+            [['', '(choose to apply to all)'], ['solid', 'Solid'], ['dashed', 'Dashed'], ['none', 'No border']].forEach(([v, t]) => {
+                const o = document.createElement('option'); o.value = v; o.innerText = t; bAll.appendChild(o);
+            });
+            bAll.onchange = (e) => {
+                if (!e.target.value) return;
+                importList.forEach(p => applyBorderStyle(p, e.target.value));
+                body.querySelectorAll('.import-border').forEach(sel => { sel.value = e.target.value; });
+                renderAll();
+            };
+            bar.appendChild(bLab); bar.appendChild(bAll);
+            body.appendChild(bar);
+
+            // Team colour for every row at once; swatches are the teams already in use.
+            const teamBar = document.createElement('div'); teamBar.className = 'card-modal-bar';
+            const tLab = document.createElement('label'); tLab.className = 'system-label'; tLab.innerText = 'Team for all:';
+            const tAll = buildTeamPicker(() => null, (c) => {
+                importList.forEach(p => { p.borderColor = c; });
+                refreshTeamPickers();
+                renderAll();
+            });
+            const tNames = document.createElement('button'); tNames.className = 'secondary'; tNames.innerText = 'Name teams\u2026';
+            tNames.onclick = openTeamsModal;
+            teamBar.appendChild(tLab); teamBar.appendChild(tAll); teamBar.appendChild(tNames);
+            body.appendChild(teamBar);
+            teamPickers = [tAll];
+
+            const head = document.createElement('div'); head.className = 'import-row import-head';
+            ['', 'Name', 'Number', 'System', 'Border', 'Team'].forEach(t => { const d = document.createElement('div'); d.innerText = t; head.appendChild(d); });
+            body.appendChild(head);
+
+            const names = [];
+            importList.forEach((pawn, i) => {
+                const row = document.createElement('div'); row.className = 'import-row';
+                const img = document.createElement('img'); img.src = pawn.dataUrl || ''; img.alt = '';
+                const name = document.createElement('input'); name.type = 'text'; name.className = 'import-name';
+                name.placeholder = 'Name'; name.value = pawn.name || '';
+                name.oninput = (e) => { pawn.name = e.target.value; refreshAfterRename(); };
+                const num = document.createElement('input'); num.type = 'text'; num.placeholder = '#'; num.value = pawn.number || '';
+                num.oninput = (e) => { pawn.number = e.target.value; refreshAfterRename(); };
+                const sel = document.createElement('select'); sel.className = 'import-sys';
+                SYSTEMS.forEach(sys => {
+                    const o = document.createElement('option'); o.value = sys; o.innerText = sys;
+                    if ((pawn.system || 'Generic') === sys) o.selected = true;
+                    sel.appendChild(o);
+                });
+                sel.onchange = (e) => { applySystemToPawn(pawn, e.target.value); rememberImportSystem(e.target.value); renderAll(); };
+                const bsel = document.createElement('select'); bsel.className = 'import-border';
+                [['solid', 'Solid'], ['dashed', 'Dashed'], ['none', 'None']].forEach(([v, t]) => {
+                    const o = document.createElement('option'); o.value = v; o.innerText = t; bsel.appendChild(o);
+                });
+                bsel.value = borderChoice(pawn);
+                bsel.onchange = (e) => { applyBorderStyle(pawn, e.target.value); renderAll(); };
+                const team = buildTeamPicker(() => pawn.borderColor, (c) => {
+                    pawn.borderColor = c; refreshTeamPickers(); renderAll();
+                }, { compact: true });
+                teamPickers.push(team);
+                // Enter moves down the list, so a batch can be named from the keyboard.
+                [name, num].forEach(inp => inp.onkeydown = (e) => {
+                    if (e.key !== 'Enter') return;
+                    e.preventDefault();
+                    const next = names[i + 1];
+                    if (next) { next.focus(); next.select(); } else closeImportModal();
+                });
+                names.push(name);
+                row.appendChild(img); row.appendChild(name); row.appendChild(num); row.appendChild(sel);
+                row.appendChild(bsel); row.appendChild(team);
+                body.appendChild(row);
+            });
+            document.getElementById('import-modal-count').innerText = importList.length + ' pawn' + (importList.length === 1 ? '' : 's');
+        }
+
+        // The sheet is redrawn in the background while typing; the dialog itself
+        // is left alone so the field being typed in keeps focus.
+        let renameTimer = null;
+        function refreshAfterRename() {
+            clearTimeout(renameTimer);
+            renameTimer = setTimeout(() => renderAll(), 250);
+        }
+
+        // ---- Teams dialog ----------------------------------------------------------
+        function openTeamsModal() {
+            renderTeamsModal();
+            document.getElementById('teams-modal').style.display = 'flex';
+        }
+        function closeTeamsModal() {
+            document.getElementById('teams-modal').style.display = 'none';
+            if (typeof refreshTeamPickers === 'function') refreshTeamPickers();
+            renderTable();
+            scheduleAutosave();
+        }
+        function moveTeam(color, dir) {
+            const active = activeTeams().map(t => t.color);
+            const i = active.indexOf(color), j = i + dir;
+            if (i < 0 || j < 0 || j >= active.length) return;
+            // Swap with the neighbouring *shown* team, wherever the hidden ones sit.
+            const a = state.teams.findIndex(t => t.color === active[i]);
+            const b = state.teams.findIndex(t => t.color === active[j]);
+            [state.teams[a], state.teams[b]] = [state.teams[b], state.teams[a]];
+            renderTeamsModal();
+            renderTable();
+            scheduleAutosave();
+        }
+        function renderTeamsModal() {
+            const body = document.getElementById('teams-modal-body');
+            body.innerHTML = '';
+            const teams = activeTeams();
+            teams.forEach((t, i) => {
+                const row = document.createElement('div'); row.className = 'teams-row';
+                const dot = document.createElement('span'); dot.className = 'team-dot'; dot.style.background = t.color;
+                const name = document.createElement('input'); name.type = 'text'; name.maxLength = 40;
+                name.placeholder = 'Team ' + t.color.toUpperCase(); name.value = t.name;
+                name.oninput = () => {
+                    const entry = state.teams.find(x => x.color === t.color);
+                    if (entry) entry.name = name.value;
+                    renderTable(); scheduleAutosave();
+                };
+                const n = document.createElement('span'); n.className = 'team-n'; n.innerText = t.count + (t.count === 1 ? ' pawn' : ' pawns');
+                const mv = document.createElement('span'); mv.className = 'team-move';
+                const up = document.createElement('button'); up.className = 'secondary'; up.innerHTML = '&uarr;'; up.title = 'Earlier on the sheet';
+                up.disabled = i === 0; up.onclick = () => moveTeam(t.color, -1);
+                const dn = document.createElement('button'); dn.className = 'secondary'; dn.innerHTML = '&darr;'; dn.title = 'Later on the sheet';
+                dn.disabled = i === teams.length - 1; dn.onclick = () => moveTeam(t.color, 1);
+                mv.appendChild(up); mv.appendChild(dn);
+                row.appendChild(dot); row.appendChild(name); row.appendChild(n); row.appendChild(mv);
+                body.appendChild(row);
+            });
+            document.getElementById('teams-modal-count').innerText = teams.length + (teams.length === 1 ? ' team' : ' teams');
+        }
+
+        function closeImportModal() {
+            clearTimeout(renameTimer);
+            document.getElementById('import-modal').style.display = 'none';
+            importList = [];
+            renderAll();
+        }
+
         // "goblin_archer-2.PNG" -> "goblin archer-2": the file name minus its
         // extension, with underscores read as spaces. Names the user types later win.
         function nameFromFilename(fileName) {
@@ -1702,6 +2209,8 @@
             if (!files) return;
 
             let totalSaved = 0, compressedCount = 0;
+            const added = [];
+            const chosenSystem = lastImportSystem();
 
             for (let file of files) {
                 if (!file.type.startsWith('image/')) continue;
@@ -1732,7 +2241,7 @@
                 const emptyStats = {};
                 STAT_KEYS.forEach(key => emptyStats[key] = '');
 
-                state.pawns.push(ensurePawnShape({
+                const newPawn = ensurePawnShape({
                     img: img, dataUrl: storedUrl, name: (e.target.id || '').startsWith('paste') ? '' : nameFromFilename(file.name), number: '', isEditing: false,
                     isDark: calculateDarkness(img), isFlipped: false, showBorder: false, 
                     borderColor: '#000000', textColor: '#000000', textBgColor: '#FFFFFFEE',
@@ -1741,15 +2250,20 @@
                     trackerScale: 1,
                     hpMode: state.hpMode || 'standard',
                     showQr: true,
-                    system: 'Generic',
+                    system: chosenSystem,
                     stats: emptyStats,
                     traits: emptyTraits(),
                     actions: []
-                }));
+                });
+                state.pawns.push(newPawn);
+                added.push(newPawn);
             }
 
             if (e.target.id === 'file-input') e.target.value = ''; 
             renderAll();
+            // Images from files (browse or drop) get the naming dialog; pasted ones don't.
+            const fromPaste = (e.target.id || '').startsWith('paste');
+            if (added.length > 0 && !fromPaste) openImportModal(added);
 
             if (compressedCount > 0) {
                 // base64 is ~4/3 of the byte size it encodes.
@@ -1859,7 +2373,7 @@
             // excluded so pasting appearance never clobbers a pawn's mechanics.
             styleClipboard = {
                 borderColor: p.borderColor, textColor: p.textColor, textBgColor: p.textBgColor,
-                showBorder: p.showBorder, isDark: p.isDark, isFlipped: p.isFlipped,
+                showBorder: p.showBorder, borderStyle: p.borderStyle || 'solid', isDark: p.isDark, isFlipped: p.isFlipped,
                 scale: p.scale, rotation: p.rotation, offsetX: p.offsetX, offsetY: p.offsetY,
                 pawnWidth: p.pawnWidth, pawnHeight: p.pawnHeight,
                 trackerScale: p.trackerScale, hpMode: p.hpMode || 'standard',
@@ -1980,6 +2494,8 @@
         }
 
         function updatePawnColor(index, field, value, includeAlpha=false) {
+            teamsMemo = null;   // team swatches are built from these colours
+            if (field === 'borderColor' && state.showTable) setTimeout(renderTable, 0);
             if (includeAlpha) {
                 let currentAlpha = state.pawns[index][field].slice(7) || 'EE';
                 state.pawns[index][field] = value + currentAlpha;
@@ -2021,6 +2537,11 @@
             state.showTable = e.target.checked;
             renderTable();
         }
+        function toggleTeamOrder(e) {
+            state.orderByTeam = e.target.checked;
+            renderTable();
+            scheduleAutosave();
+        }
 
         function getExportFilename(extension) {
             if (state.pawns.length === 0) return `Pawns_Project${extension}`;
@@ -2029,12 +2550,17 @@
             if (others > 0) baseName += ` (and ${others} other${others > 1 ? 's' : ''})`;
             return baseName.replace(/[<>:"/\\|?*]/g, '') + extension;
         }
-        function saveProject() {
-            if (state.pawns.length === 0) { alert("Please add at least one pawn before saving."); return; }
-            const projectData = {
+        // The project as plain data. Shared by Save (to a file) and the autosave
+        // that keeps a copy in this browser.
+        function buildProjectData() {
+            return {
+                // Kept first so it is the first thing seen when the file is opened in a text editor.
+                _note: "This is a Tri-Fold Pawn Maker project file. It is meant to be loaded at https://trifold.gameportal.win - open the site and use Load (or Add JSON to merge it into what you have).",
                 version: 2,
                 pawnWidth: state.pawnWidth, pawnHeight: state.pawnHeight,
                 showTable: state.showTable, showCards: state.showCards,
+                orderByTeam: state.orderByTeam !== false,
+                teams: (syncTeams(), state.teams.filter(t => t.name || state.pawns.some(p => normHex(p.borderColor) === t.color))),
                 showOverhead: !!state.showOverhead,
                 showSpine: state.showSpine !== false,
                 printStandees: state.printStandees !== false,
@@ -2048,7 +2574,7 @@
                     return {
                         dataUrl: p.dataUrl, name: p.name, number: p.number,
                         borderColor: p.borderColor, textColor: p.textColor, textBgColor: p.textBgColor,
-                        isDark: p.isDark, isFlipped: p.isFlipped, showBorder: p.showBorder,
+                        isDark: p.isDark, isFlipped: p.isFlipped, showBorder: p.showBorder, borderStyle: p.borderStyle || 'solid',
                         scale: p.scale, rotation: p.rotation, offsetX: p.offsetX, offsetY: p.offsetY,
                         pawnWidth: p.pawnWidth || state.pawnWidth, pawnHeight: p.pawnHeight || state.pawnHeight,
                         trackerScale: p.trackerScale || 1,
@@ -2064,6 +2590,10 @@
                     };
                 })
             };
+        }
+        function saveProject() {
+            if (state.pawns.length === 0) { alert("Please add at least one pawn before saving."); return; }
+            const projectData = buildProjectData();
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projectData));
             const a = document.createElement('a'); a.href = dataStr; 
             a.download = getExportFilename('.json');
@@ -2076,17 +2606,53 @@
         // Rebuilds one saved pawn into a live one. `mapCardId` lets the importer
         // redirect attachments when an incoming card had to be given a new id to
         // avoid colliding with one already in the library.
-        async function hydratePawn(p, knownCardIds, mapCardId) {
+        // Ceilings on what one project file may ask the browser to hold. The app
+        // itself never stores an image past 1200px, so these only ever stop files
+        // that were built to exhaust memory (or are far past anything real).
+        const IMPORT_LIMITS = {
+            imageChars: 40e6,     // one embedded image, as text
+            totalChars: 400e6,    // all embedded images, as text
+            imagePixels: 25e6,    // one image once decoded (5000 x 5000)
+            totalPixels: 250e6    // every image in the file, decoded
+        };
+
+        // Text fields come from a file anyone could have edited; the renderers call
+        // string methods on them, so a number or object would throw mid-render.
+        const asText = (v) => (v === undefined || v === null) ? '' : String(v);
+        // Gives an imported value the same type as the field's empty default
+        // (text stays text, a tick-box stays true/false).
+        function coerceLike(blank, v) {
+            if (typeof blank === 'boolean') return v === true;
+            if (typeof blank === 'string') return asText(v);
+            return v;
+        }
+
+        // `defaults` supplies the fallback pawn size, so a staged import can be
+        // hydrated before it is committed to `state`.
+        async function hydratePawn(p, knownCardIds, mapCardId, defaults, budget) {
+            defaults = defaults || state;
             const img = new Image();
-            await new Promise(r => { img.onload = r; img.onerror = r; img.src = p.dataUrl; });
+            let failed = false;
+            await new Promise(r => { img.onload = r; img.onerror = () => { failed = true; r(); }; img.src = p.dataUrl; });
+            // A pawn that can't draw would break every render after the import.
+            if (failed) throw new Error('its image could not be loaded.');
+            // Dimensions are known as soon as the image loads, before anything draws it.
+            const pixels = (img.naturalWidth || 0) * (img.naturalHeight || 0);
+            if (pixels > IMPORT_LIMITS.imagePixels) {
+                throw new Error('its image is too large (' + img.naturalWidth + ' x ' + img.naturalHeight + ' pixels).');
+            }
+            if (budget) {
+                budget.pixels += pixels;
+                if (budget.pixels > IMPORT_LIMITS.totalPixels) throw new Error('the images in this file are too large to open together.');
+            }
 
             const pawn = ensurePawnShape({
-                img: img, dataUrl: p.dataUrl, name: p.name || '', number: p.number || '', isEditing: false,
+                img: img, dataUrl: p.dataUrl, name: asText(p.name), number: asText(p.number), isEditing: false,
                 borderColor: p.borderColor || '#000000', textColor: p.textColor || '#000000', textBgColor: p.textBgColor || '#FFFFFFEE',
                 isDark: p.isDark !== undefined ? p.isDark : calculateDarkness(img),
-                isFlipped: p.isFlipped || false, showBorder: p.showBorder || false,
+                isFlipped: p.isFlipped || false, showBorder: p.showBorder || false, borderStyle: p.borderStyle === 'dashed' ? 'dashed' : 'solid',
                 scale: p.scale || 1.0, rotation: p.rotation || 0, offsetX: p.offsetX || 0, offsetY: p.offsetY || 0,
-                pawnWidth: p.pawnWidth || state.pawnWidth, pawnHeight: p.pawnHeight || state.pawnHeight,
+                pawnWidth: p.pawnWidth || defaults.pawnWidth, pawnHeight: p.pawnHeight || defaults.pawnHeight,
                 trackerScale: p.trackerScale || 1,
                 hpMode: p.hpMode || 'standard',
                 // Absent means "saved before this existed", which should get the
@@ -2100,19 +2666,19 @@
             // Merge each saved block over its empty factory result, so keys
             // added in later versions simply stay blank on older files.
             const loadedStats = p.stats || {};
-            STAT_KEYS.forEach(key => pawn.stats[key] = loadedStats[key] || '');
+            STAT_KEYS.forEach(key => pawn.stats[key] = asText(loadedStats[key]));
 
             Object.keys(SYSTEM_STAT_FACTORIES).forEach(sysName => {
                 const key = SYSTEM_STAT_KEYS[sysName];
                 const loaded = p[key] || {};
                 Object.keys(pawn[key]).forEach(f => {
-                    if (loaded[f] !== undefined) pawn[key][f] = loaded[f];
+                    if (loaded[f] !== undefined) pawn[key][f] = coerceLike(pawn[key][f], loaded[f]);
                 });
             });
 
             const loadedTraits = p.traits || {};
             Object.keys(pawn.traits).forEach(f => {
-                if (loadedTraits[f] !== undefined) pawn.traits[f] = loadedTraits[f];
+                if (loadedTraits[f] !== undefined) pawn.traits[f] = coerceLike(pawn.traits[f], loadedTraits[f]);
             });
 
             // Drop attachments pointing at cards that no longer exist -
@@ -2147,11 +2713,135 @@
         // file doesn't carry is filled from the empty-factory defaults, so an
         // old .json opens cleanly with blank traits / no cards rather than
         // throwing on a missing key.
+        // Both of these build state.pawns one image at a time. Autosave is held
+        // for the duration so a flush mid-way can't store a half-loaded project
+        // over a complete one; it runs once the project is whole again.
+        //
+        // Imports also run strictly one at a time. Each one hydrates its images
+        // before committing, and a second started in the middle would otherwise
+        // be working from a project the first is about to replace.
+        let importChain = Promise.resolve();
+        function runImport(fn) {
+            const run = importChain.then(fn);
+            importChain = run.catch(() => {});
+            return run;
+        }
+        //
+        // While an import is queued or running the page is locked (inert), so no
+        // edit can land between the moment its images are read and the moment it
+        // is committed. The place in the queue is taken when the request is made,
+        // not when its file has been read, so imports commit in the order asked;
+        // projectData may therefore be a promise (a file still being read).
+        let importBusyCount = 0, busyTimer = null;
+        const busyInerted = [];
+        function importBusyBegin() {
+            if (importBusyCount++ > 0) return;
+            let overlay = document.getElementById('import-busy');
+            if (!overlay) {
+                overlay = document.createElement('div'); overlay.id = 'import-busy';
+                overlay.innerHTML = '<span>Loading project\u2026</span>';
+                document.body.appendChild(overlay);
+            }
+            [...document.body.children].forEach(el => {
+                if (el === overlay || el.inert || /^(SCRIPT|STYLE|LINK)$/.test(el.tagName) || el.classList.contains('app-toast')) return;
+                el.inert = true; busyInerted.push(el);
+            });
+            overlay.classList.add('active');
+            // Only say anything if it takes long enough to notice.
+            busyTimer = setTimeout(() => overlay.classList.add('show'), 300);
+        }
+        function importBusyEnd() {
+            if (--importBusyCount > 0) return;
+            clearTimeout(busyTimer);
+            busyInerted.splice(0).forEach(el => { el.inert = false; });
+            const overlay = document.getElementById('import-busy');
+            if (overlay) overlay.classList.remove('active', 'show');
+        }
         async function loadProjectFromJSON(projectData) {
-            state.pawnWidth = projectData.pawnWidth || 1.0; 
-            state.pawnHeight = projectData.pawnHeight || 1.5;
+            autosaveHold++; importBusyBegin();
+            try { return await runImport(async () => _loadProjectFromJSON(await projectData)); }
+            finally { importBusyEnd(); autosaveHold--; scheduleAutosave(); }
+        }
+        async function addProjectFromJSON(projectData) {
+            autosaveHold++; importBusyBegin();
+            try { return await runImport(async () => _addProjectFromJSON(await projectData)); }
+            finally { importBusyEnd(); autosaveHold--; scheduleAutosave(); }
+        }
+        function readJsonFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error('Could not read that file.'));
+                reader.onload = () => {
+                    try { resolve(JSON.parse(reader.result)); }
+                    catch (err) { reject(new Error('That file is not a readable project.')); }
+                };
+                reader.readAsText(file);
+            });
+        }
+
+        // Hydrates every pawn before anything is committed; a failure names the pawn.
+        async function hydrateAll(pawnData, knownCardIds, mapCardId, defaults) {
+            const out = [];
+            const budget = { pixels: 0 };
+            for (let i = 0; i < pawnData.length; i++) {
+                try { out.push(await hydratePawn(pawnData[i], knownCardIds, mapCardId, defaults, budget)); }
+                catch (err) { throw new Error('Pawn ' + (i + 1) + ': ' + ((err && err.message) || 'could not be read.')); }
+            }
+            return out;
+        }
+
+        // Why a parsed file can't be a project, or '' if it looks fine. Every pawn
+        // entry is checked here, up front, because hydrating one that is null or has
+        // no image fails halfway through a load, after the current project has
+        // already been cleared.
+        function projectFileError(projectData) {
+            const notProject = 'That file does not look like a Tri-Fold Pawn project.';
+            if (!projectData || typeof projectData !== 'object' || !Array.isArray(projectData.pawns)) return notProject;
+            // Images must be embedded. Anything else (an http(s) address, say) would
+            // make the browser fetch it the moment the file is opened.
+            const embedded = /^data:image\/[a-z0-9.+-]+[;,]/i;
+            const bad = projectData.pawns.findIndex(p => !p || typeof p !== 'object' || Array.isArray(p) || typeof p.dataUrl !== 'string' || !embedded.test(p.dataUrl));
+            if (bad !== -1) return notProject + ' (pawn ' + (bad + 1) + ' is missing, or its image is not embedded in the file.)';
+            let totalChars = 0;
+            for (let i = 0; i < projectData.pawns.length; i++) {
+                const n = projectData.pawns[i].dataUrl.length;
+                totalChars += n;
+                if (n > IMPORT_LIMITS.imageChars) return 'Pawn ' + (i + 1) + ' has an image that is too large to open.';
+            }
+            if (totalChars > IMPORT_LIMITS.totalChars) return 'The images in that file are too large to open together.';
+            return '';
+        }
+
+        // Throws for a file that isn't a project. The check runs before anything is
+        // changed, so a bad file leaves the sheet exactly as it was.
+        async function _loadProjectFromJSON(projectData) {
+            const problem = projectFileError(projectData);
+            if (problem) throw new Error(problem);
+
+            // Stage: everything slow (image loading) happens first, against local
+            // variables. Nothing on screen or in `state` changes until it all worked.
+            const pawnWidth = projectData.pawnWidth || 1.0;
+            const pawnHeight = projectData.pawnHeight || 1.5;
+            // Cards load first so attachment validation has a library to check
+            // against. Malformed entries are skipped rather than fatal.
+            const cards = [];
+            if (Array.isArray(projectData.actionCards)) {
+                projectData.actionCards.forEach(c => {
+                    if (c && c.id) cards.push(normaliseCard(c));
+                });
+            }
+            const knownCardIds = new Set(cards.map(c => c.id));
+            const pawns = await hydrateAll(projectData.pawns, knownCardIds, null, { pawnWidth, pawnHeight });
+
+            // Commit: synchronous, so it can't interleave with anything.
+            state.pawnWidth = pawnWidth;
+            state.pawnHeight = pawnHeight;
             state.showTable = projectData.showTable || false;
             state.showCards = projectData.showCards || false;
+            state.orderByTeam = projectData.orderByTeam !== false;
+            state.teams = cleanTeams(projectData.teams);
+            const teamOrderToggle = document.getElementById('toggle-team-order');
+            if (teamOrderToggle) teamOrderToggle.checked = state.orderByTeam;
             state.showOverhead = !!projectData.showOverhead;
             // Absent in files from before the spine existed, which should get it.
             state.showSpine = projectData.showSpine !== false;
@@ -2177,20 +2867,8 @@
             if (overheadToggle) overheadToggle.checked = state.showOverhead;
             syncOverheadControls();
 
-            // Cards load first so attachment validation has a library to check
-            // against. Malformed entries are skipped rather than fatal.
-            state.actionCards = [];
-            if (Array.isArray(projectData.actionCards)) {
-                projectData.actionCards.forEach(c => {
-                    if (c && c.id) state.actionCards.push(normaliseCard(c));
-                });
-            }
-            const knownCardIds = new Set(state.actionCards.map(c => c.id));
-
-            state.pawns = [];
-            for (let p of projectData.pawns) {
-                state.pawns.push(await hydratePawn(p, knownCardIds, null));
-            }
+            state.actionCards = cards;
+            state.pawns = pawns;
             renderAll();
         }
 
@@ -2202,21 +2880,24 @@
         // cards are silently reused; genuinely different ones sharing an id are
         // re-issued a fresh id, and that file's attachments are redirected to it,
         // so neither project's cards are corrupted by the merge.
-        async function addProjectFromJSON(projectData) {
-            if (!projectData || !Array.isArray(projectData.pawns)) {
-                alert('That file does not look like a Tri-Fold Pawn project.');
+        async function _addProjectFromJSON(projectData) {
+            const problem = projectFileError(projectData);
+            if (problem) {
+                alert(problem);
                 return;
             }
 
             const idMap = {};
             let renamed = 0;
+            const newCards = [];   // committed only after every image has loaded
+            const cardById = (id) => getActionCard(id) || newCards.find(c => c.id === id);
 
-            (projectData.actionCards || []).forEach(raw => {
+            (Array.isArray(projectData.actionCards) ? projectData.actionCards : []).forEach(raw => {
                 if (!raw || !raw.id) return;
                 const incoming = normaliseCard(raw);
-                const existing = getActionCard(incoming.id);
+                const existing = cardById(incoming.id);
 
-                if (!existing) { state.actionCards.push(incoming); return; }
+                if (!existing) { newCards.push(incoming); return; }
 
                 const sameCard = existing.system === incoming.system &&
                                  existing.name === incoming.name &&
@@ -2227,18 +2908,27 @@
                 idMap[incoming.id] = freshId;
                 incoming.id = freshId;
                 incoming.name = incoming.name + ' (imported)';
-                state.actionCards.push(incoming);
+                newCards.push(incoming);
                 renamed++;
             });
 
-            const knownCardIds = new Set(state.actionCards.map(c => c.id));
+            const knownCardIds = new Set(state.actionCards.map(c => c.id).concat(newCards.map(c => c.id)));
+            const hydrated = await hydrateAll(projectData.pawns, knownCardIds, idMap, state);
 
-            let added = 0;
-            for (let p of (projectData.pawns || [])) {
-                state.pawns.push(await hydratePawn(p, knownCardIds, idMap));
-                added++;
-            }
-
+            // Commit synchronously.
+            newCards.forEach(c => state.actionCards.push(c));
+            // Cards are checked again against the library as it is now.
+            hydrated.forEach(pw => {
+                pw.actions = pw.actions.filter(a => getActionCard(a.cardId));
+                state.pawns.push(pw);
+            });
+            // Names carry over for teams that had none here; new colours join the end.
+            cleanTeams(projectData.teams).forEach(t => {
+                const mine = state.teams.find(x => x.color === t.color);
+                if (!mine) state.teams.push(t);
+                else if (!mine.name && t.name) mine.name = t.name;
+            });
+            const added = hydrated.length;
             renderAll();
 
             let msg = `Added ${added} pawn${added === 1 ? '' : 's'}.`;
@@ -2246,28 +2936,21 @@
             showToast(msg);
         }
 
+        // The file is read after the request is queued, so two imports chosen in
+        // quick succession still commit in the order they were chosen.
         async function handleFileLoad(e) {
             const file = e.target.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                try {
-                    const projectData = JSON.parse(event.target.result);
-                    await loadProjectFromJSON(projectData);
-                } catch (error) { alert('Error loading project.'); }
-            };
-            reader.readAsText(file); e.target.value = ''; 
+            const data = readJsonFile(file);
+            e.target.value = '';
+            try { await loadProjectFromJSON(data); }
+            catch (error) { alert((error && error.message) || 'Error loading project.'); }
         }
         async function handleFileAdd(e) {
             const file = e.target.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                try {
-                    await addProjectFromJSON(JSON.parse(event.target.result));
-                } catch (error) {
-                    alert('Could not read that project file.');
-                }
-            };
-            reader.readAsText(file); e.target.value = ''; 
+            const data = readJsonFile(file);
+            e.target.value = '';
+            try { await addProjectFromJSON(data); }
+            catch (error) { alert((error && error.message) || 'Could not read that project file.'); }
         }
 
         /* ==================================================================
@@ -2326,6 +3009,10 @@
                 style = document.createElement('style'); style.id = 'print-page-style';
                 document.head.appendChild(style);
             }
+            // --paper-w/--paper-h size the on-screen preview sheet only. In print the
+            // .page rule (@media print) switches to width:100%/height:auto, so a
+            // sheet fills the printable area inside these 0.5in margins instead of
+            // being wider than it.
             style.textContent = `@page { size: ${d.wCss} ${d.hCss}; margin: 0.5in; }`;
             document.documentElement.style.setProperty('--paper-w', d.wCss);
             document.documentElement.style.setProperty('--paper-h', d.hCss);
@@ -2333,6 +3020,7 @@
             const orientSel = document.getElementById('paper-orient');
             if (sizeSel) sizeSel.value = state.paper;
             if (orientSel) orientSel.value = state.orientation;
+            if (typeof fitPagesToScreen === 'function') fitPagesToScreen();
         }
 
         function setPaper() {
@@ -2476,6 +3164,20 @@
         }
         const EXPORT_EMPTY_MSG = "Nothing to export. Tick Standees and/or Overhead tokens under \"Sheets to print\" - the Word and OpenDoc exports contain those two sheets.";
 
+        // Greedy rows: as many pieces per row as fit the printable width
+        // (0.25in minimum between pieces), the same way the printed page wraps.
+        function exportRows(canvases) {
+            const usable = paperDims().wIn - 1;          // 0.5in margins each side
+            const rows = []; let row = [], used = 0;
+            canvases.forEach(cv => {
+                const w = parseFloat(cv.style.width);
+                if (row.length && used + 0.25 + w > usable) { rows.push(row); row = []; used = 0; }
+                used += (row.length ? 0.25 : 0) + w; row.push(cv);
+            });
+            if (row.length) rows.push(row);
+            return rows;
+        }
+
         function exportWord() {
             if (state.pawns.length === 0) { alert("Please add at least one pawn before exporting."); return; }
             const parts = exportParts();
@@ -2489,13 +3191,19 @@
             let htmlContent = `
                 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
                 <head><meta charset="utf-8"><title>Pawns Export</title>
-                <style>@page { margin: 0.5in; size: ${wIn}in ${hIn}in; } @page Section1 { size: ${wIn}in ${hIn}in; mso-page-orientation: ${state.orientation}; margin: 0.5in; } div.Section1 { page: Section1; } body { margin: 0; padding: 0; font-family: Arial, sans-serif; } img { margin: 0 0.25in 0.25in 0; display: inline-block; }</style>
+                <style>@page { margin: 0.5in; size: ${wIn}in ${hIn}in; } @page Section1 { size: ${wIn}in ${hIn}in; mso-page-orientation: ${state.orientation}; margin: 0.5in; } div.Section1 { page: Section1; } body { margin: 0; padding: 0; font-family: Arial, sans-serif; } img { display: inline-block; }</style>
                 </head><body><div class="Section1">
             `;
-            parts.standees.forEach(cv => { htmlContent += imgTag(cv); });
+            // Each row is a table of equal-width cells with the piece centred in each,
+            // which centres the pieces and spreads them evenly across the page.
+            const rowsHtml = (list) => exportRows(list).map(r =>
+                `<table width="100%" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;margin-bottom:0.25in"><tr>` +
+                r.map(cv => `<td width="${Math.floor(100 / r.length)}%" align="center" valign="top" style="text-align:center;vertical-align:top">${imgTag(cv)}</td>`).join('') +
+                `</tr></table>`).join('');
+            htmlContent += rowsHtml(parts.standees);
             if (parts.tokens.length) {
                 if (parts.standees.length) htmlContent += `<br clear="all" style="page-break-before:always" />`;
-                parts.tokens.forEach(cv => { htmlContent += imgTag(cv); });
+                htmlContent += rowsHtml(parts.tokens);
             }
             htmlContent += `</div></body></html>`;
             const blob = new Blob(['﻿', htmlContent], { type: 'application/msword' });
@@ -2508,17 +3216,30 @@
             const parts = exportParts();
             if (!parts.standees.length && !parts.tokens.length) { alert(EXPORT_EMPTY_MSG); return; }
             const d = paperDims();
-            const frame = (cv) => `<draw:frame svg:width="${cv.style.width}" svg:height="${cv.style.height}"><draw:image><office:binary-data>${cv.toDataURL('image/png').split(',')[1]}</office:binary-data></draw:image></draw:frame><text:s text:c="2"/>`;
+            const frame = (cv) => `<draw:frame text:anchor-type="as-char" svg:width="${cv.style.width}" svg:height="${cv.style.height}"><draw:image><office:binary-data>${cv.toDataURL('image/png').split(',')[1]}</office:binary-data></draw:image></draw:frame>`;
+            // Rows of equal-width cells, each piece centred in its cell: centred on the page and spread evenly.
+            const usableIn = +(d.wIn - 1).toFixed(3);
+            const rowsXml = (list) => exportRows(list).map(r =>
+                `<table:table table:style-name="PTbl"><table:table-column table:style-name="PCol${r.length}" table:number-columns-repeated="${r.length}"/><table:table-row>` +
+                r.map(cv => `<table:table-cell office:value-type="string" table:style-name="PCell"><text:p text:style-name="PCenter">${frame(cv)}</text:p></table:table-cell>`).join('') +
+                `</table:table-row></table:table><text:p text:style-name="PGap"/>`).join('');
+            const colStyles = [1, 2, 3, 4, 5, 6, 7, 8].map(n =>
+                `<style:style style:name="PCol${n}" style:family="table-column"><style:table-column-properties style:column-width="${+(usableIn / n).toFixed(3)}in"/></style:style>`).join('');
             let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
-            <office:document xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" office:version="1.2" xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" office:mimetype="application/vnd.oasis.opendocument.text">
+            <office:document xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" office:version="1.2" xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" office:mimetype="application/vnd.oasis.opendocument.text">
               <office:automatic-styles>
                 <style:page-layout style:name="pm1"><style:page-layout-properties fo:page-width="${+d.wIn.toFixed(3)}in" fo:page-height="${+d.hIn.toFixed(3)}in" style:print-orientation="${state.orientation}" fo:margin-top="0.5in" fo:margin-bottom="0.5in" fo:margin-left="0.5in" fo:margin-right="0.5in"/></style:page-layout>
                 <style:style style:name="PBreak" style:family="paragraph"><style:paragraph-properties fo:break-before="page"/></style:style>
+                <style:style style:name="PCenter" style:family="paragraph"><style:paragraph-properties fo:text-align="center"/></style:style>
+                <style:style style:name="PGap" style:family="paragraph"><style:paragraph-properties fo:margin-top="0in" fo:margin-bottom="0.15in"/></style:style>
+                <style:style style:name="PTbl" style:family="table"><style:table-properties style:width="${usableIn}in" table:align="margins"/></style:style>
+                <style:style style:name="PCell" style:family="table-cell"><style:table-cell-properties fo:padding="0in" fo:border="none"/></style:style>
+                ${colStyles}
               </office:automatic-styles>
               <office:master-styles><style:master-page style:name="Standard" style:page-layout-name="pm1"/></office:master-styles>
               <office:body><office:text>`;
-            if (parts.standees.length) xmlContent += `<text:p>${parts.standees.map(frame).join('')}</text:p>`;
-            if (parts.tokens.length) xmlContent += `<text:p${parts.standees.length ? ' text:style-name="PBreak"' : ''}>${parts.tokens.map(frame).join('')}</text:p>`;
+            if (parts.standees.length) xmlContent += rowsXml(parts.standees);
+            if (parts.tokens.length) xmlContent += (parts.standees.length ? '<text:p text:style-name="PBreak"/>' : '') + rowsXml(parts.tokens);
             xmlContent += `</office:text></office:body></office:document>`;
             const blob = new Blob([xmlContent], { type: 'application/vnd.oasis.opendocument.text' });
             const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
@@ -2691,6 +3412,23 @@
 
         // Combines the pawn's number and name into one compact cell, e.g. "#1
         // Adult Red Dragon" - saves a whole column versus separate Name/# cells.
+        // How a pawn's name cell shows its team on the GM sheet: a colour stripe,
+        // the team's name if it has one, and a heavier rule where the team changes.
+        // The colour is always a validated #rrggbb, never raw file text.
+        function teamCellParts(pawn, prevColor) {
+            const none = { color: null, cls: '', style: '', tag: '', start: false };
+            if (!state.orderByTeam) return none;
+            const color = normHex(pawn.borderColor);
+            const name = teamName(color);
+            return {
+                color,
+                cls: ' team-stripe',
+                style: ` style="--team:${color}"`,
+                tag: name ? `<div class="team-tag">${esc(name)}</div>` : '',
+                start: prevColor !== null && prevColor !== color
+            };
+        }
+
         function buildComboNameNumberCell(pawn) {
             const name = esc(pawn.name || '-');
             const num = (pawn.number || '').toString().trim();
@@ -2758,13 +3496,13 @@
             let html = `<div class="sheet-head"><h2>Encounter Stat Tracker</h2>` +
                        brandBlockHtml(52, 'brand-sheet') + `</div>`;
 
-            const genericPawns = state.pawns.filter(p => (p.system || 'Generic') === 'Generic');
+            const genericPawns = sortByTeam(state.pawns.filter(p => (p.system || 'Generic') === 'Generic'));
             if (genericPawns.length > 0) html += renderGenericTrackerTable(genericPawns);
 
             // Data-driven: one section per system that has pawns, in SYSTEMS order.
             SYSTEMS.forEach(sysName => {
                 if (sysName === 'Generic') return;
-                const list = state.pawns.filter(p => p.system === sysName);
+                const list = sortByTeam(state.pawns.filter(p => p.system === sysName));
                 if (list.length === 0) return;
                 const cfg = SYSTEM_TRACKER_CONFIGS[sysName];
                 if (!cfg) return;
@@ -2815,10 +3553,12 @@
             if (activeTraits.length) html += `<th style="width:20%">Traits</th>`;
             html += `</tr></thead>`;
 
+            let prevTeam = null;
             pawnList.forEach(p => {
                 ensurePawnShape(p);
-                html += `<tbody class="pawn-group">`;
-                html += `<tr class="pawn-stat-row"><td class="name-col">${buildComboNameNumberCell(p)}</td>`;
+                const tm = teamCellParts(p, prevTeam); prevTeam = tm.color;
+                html += `<tbody class="pawn-group${tm.start ? ' team-start' : ''}">`;
+                html += `<tr class="pawn-stat-row"><td class="name-col${tm.cls}"${tm.style}>${buildComboNameNumberCell(p)}${tm.tag}</td>`;
 
                 activeStatKeys.forEach(k => {
                     const raw = p.stats[k] || '';
@@ -2855,6 +3595,7 @@
             return html;
         }
         function renderAll() {
+            scheduleAutosave();
             state.pawns.sort((a, b) => {
                 const widthA = a.pawnWidth || state.pawnWidth;
                 const widthB = b.pawnWidth || state.pawnWidth;
@@ -2909,7 +3650,8 @@
 
             updateCardCountBadge();
             const modal = document.getElementById('card-modal');
-            if (modal && modal.style.display === 'flex') renderCardManager();
+            // Skipped while typing into a card field: rebuilding the modal would drop the input's focus.
+            if (modal && modal.style.display === 'flex' && !renderAll.keepCardManager) renderCardManager();
         }
 
         // Shown when a project has no pawns at all - an empty white page gives no
@@ -3032,6 +3774,13 @@
             optionsRow.appendChild(borderHexLabel); optionsRow.appendChild(textHexLabel);
             optionsRow.appendChild(textBgHexLabel); optionsRow.appendChild(sizeLabel);
 
+            // Team: re-use a colour any pawn already has, so a side stays one exact shade.
+            const teamRow = buildTeamPicker(() => state.pawns[index].borderColor, (c) => {
+                updatePawnColor(index, 'borderColor', c);
+                borderHexInput.value = c;
+            }, { editor: true, label: 'Team:' });
+            borderHexInput.addEventListener('change', () => teamRow.refresh());
+
             const systemName = pawn.system || 'Generic';
             const pHpMode = pawn.hpMode || 'standard';
 
@@ -3075,6 +3824,7 @@
             }
 
             settingsDiv.appendChild(optionsRow);
+            settingsDiv.appendChild(teamRow);
 
             const checksRow = document.createElement('div'); checksRow.className = 'pawn-options';
             checksRow.style.paddingTop = '0';
@@ -3082,6 +3832,12 @@
             const borderCheckbox = document.createElement('input'); borderCheckbox.type = 'checkbox';
             borderCheckbox.checked = pawn.showBorder; borderCheckbox.onchange = (e) => updatePawnValue(index, 'showBorder', e.target.checked);
             borderLabel.appendChild(borderCheckbox); borderLabel.appendChild(document.createTextNode("Draw Border"));
+            const dashSel = document.createElement('select'); dashSel.style.width = 'auto'; dashSel.style.padding = '2px';
+            dashSel.innerHTML = '<option value="solid">Solid</option><option value="dashed">Dashed</option>';
+            dashSel.value = pawn.borderStyle === 'dashed' ? 'dashed' : 'solid';
+            dashSel.title = 'Line style for the drawn border';
+            dashSel.onchange = (e) => { state.pawns[index].showBorder = true; borderCheckbox.checked = true; updatePawnValue(index, 'borderStyle', e.target.value); };
+            borderLabel.appendChild(dashSel);
 
             const darkLabel = document.createElement('label');
             const darkCheckbox = document.createElement('input'); darkCheckbox.type = 'checkbox';
@@ -3237,6 +3993,7 @@
         }
 
         function renderSinglePawn(index) {
+            scheduleAutosave();
             const pawn = state.pawns[index];
             const container = document.getElementById(`canvas-container-${index}`);
             if (!container) return;
@@ -3573,6 +4330,7 @@
         }
 
         function renderOverhead(index) {
+            scheduleAutosave();
             const pawn = state.pawns[index];
             const container = document.getElementById(`token-container-${index}`);
             if (!container || !pawn.overhead) return;
@@ -3704,7 +4462,9 @@
 
                 if (pawn.showBorder) {
                     ctx.save();
-                    ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 12; ctx.setLineDash([]);
+                    ctx.strokeStyle = pawn.borderColor; ctx.lineWidth = 12;
+                    // Dashes are sized from the line width so they read the same at every pawn size.
+                    ctx.setLineDash(pawn.borderStyle === 'dashed' ? [36, 24] : []);
                     ctx.strokeRect(xBase + 6, 6, internalPanelWidth - 12, internalHeight - 12);
                     ctx.restore();
                 }
@@ -4570,10 +5330,12 @@
                        buildSectionHeadRowHtml(cfg.heading, totalCols) +
                        `<tr>${buildTrackerHeaderRow(activeCols)}</tr></thead>`;
 
+            let prevTeam = null;
             pawnList.forEach(p => {
                 ensurePawnShape(p);
-                html += `<tbody class="pawn-group">`;
-                html += `<tr class="pawn-stat-row"><td class="name-col">${buildComboNameNumberCell(p)}</td>`;
+                const tm = teamCellParts(p, prevTeam); prevTeam = tm.color;
+                html += `<tbody class="pawn-group${tm.start ? ' team-start' : ''}">`;
+                html += `<tr class="pawn-stat-row"><td class="name-col${tm.cls}"${tm.style}>${buildComboNameNumberCell(p)}${tm.tag}</td>`;
                 activeCols.forEach(col => {
                     const isTraits = col.header === 'Traits';
                     html += `<td class="dnd-stack-cell${isTraits ? ' traits-cell' : ''}">`;
@@ -4884,7 +5646,8 @@
             // Re-render attached pawn rows so non-overridden values track the
             // base card live, but don't rebuild the modal (it would steal focus
             // from the input being typed into).
-            renderAll();
+            renderAll.keepCardManager = true;
+            try { renderAll(); } finally { renderAll.keepCardManager = false; }
         }
 
         function duplicateActionCard(cardId) {
@@ -5261,6 +6024,24 @@
             if (document.body.classList.contains('drawer-open')) closeEditDrawer();
         });
 
+        // Scales the sheets to the window on small screens; see the SMALL SCREENS CSS.
+        function fitPagesToScreen() {
+            const root = document.documentElement;
+            if (!window.matchMedia('(max-width: 900px)').matches) { root.style.removeProperty('--fit-zoom'); return; }
+            let probe = document.getElementById('paper-probe');
+            if (!probe) {
+                probe = document.createElement('div'); probe.id = 'paper-probe';
+                probe.style.cssText = 'position:absolute;visibility:hidden;height:0;pointer-events:none;width:var(--paper-w, 8.5in)';
+                document.body.appendChild(probe);
+            }
+            const paperPx = probe.getBoundingClientRect().width;
+            if (!paperPx) return;
+            const zoom = Math.min(1, (root.clientWidth - 12) / paperPx);
+            root.style.setProperty('--fit-zoom', zoom.toFixed(4));
+        }
+        window.addEventListener('resize', fitPagesToScreen);
+        window.addEventListener('orientationchange', fitPagesToScreen);
+
         window.addEventListener('DOMContentLoaded', async () => {
             const badge = document.getElementById('brand-badge-qr');
             if (badge) badge.innerHTML = qrSvgMarkup(46);
@@ -5271,6 +6052,7 @@
                 if (response.ok) {
                     const initData = await response.json();
                     await loadProjectFromJSON(initData);
+                    await initAutosave();
                     return;
                 }
                 console.log("No default-pawns.json found. Loading built-in fallback pawns.");
@@ -5278,6 +6060,7 @@
                 console.log("Could not load default-pawns.json. Loading built-in fallback pawns.");
             }
             await loadProjectFromJSON(getFallbackProjectData());
+            await initAutosave();
         });
 
         /* ==================================================================
@@ -5320,6 +6103,259 @@
         // results, which are worth surfacing but not worth an alert() that has
         // to be dismissed before work continues.
         let toastTimer = null;
+        // ---- Autosave in this browser ---------------------------------------------
+        // The project is copied into IndexedDB (not localStorage: the embedded
+        // images easily outgrow its ~5 MB limit) a moment after a change, so a
+        // closed tab or a crash doesn't lose work that was never saved to a file.
+        //
+        // Every page load writes to a slot of its own ('tab:<id>'), so two tabs
+        // can never overwrite each other. On start-up the newest slot written by
+        // anyone else that differs from what is on screen is offered by the
+        // Restore previous data button. Opening the app never touches those
+        // slots; old ones are pruned after 30 days or beyond the newest eight.
+        // Nothing is written until the project differs from the starter project.
+        const AUTOSAVE_DB = 'trifold-autosave', AUTOSAVE_STORE = 'projects';
+        const AUTOSAVE_KEEP = 8, AUTOSAVE_MAX_AGE = 30 * 24 * 3600 * 1000;
+        const newSlotId = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2);
+        const autosaveKey = 'tab:' + newSlotId();
+
+        let autosaveTimer = null;
+        let autosaveStarted = false;        // set once start-up has read the saved slots
+        let autosaveHold = 0;               // >0 while a project is being loaded or merged
+        let autosaveGen = 0;                // bumped by delete, so queued writes die with it
+        let autosaveBaseline = null;        // the starter project, never worth keeping
+        let autosaveSuppress = null;        // state deleted by the user; not re-saved until it changes
+        let lastSavedJson = null;
+        let autosaveError = '';
+        let autosaveWarned = false;
+        let restoring = false;
+        let previousSnapshot = null;        // { key, savedAt, pawnCount, json } offered for restore
+        let writeChain = Promise.resolve(); // every write goes through here, in order
+
+        function queueWrite(fn) {
+            const run = writeChain.then(fn);
+            writeChain = run.catch(() => {});
+            return run;
+        }
+
+        function idbOpen() {
+            return new Promise((resolve, reject) => {
+                if (!window.indexedDB) { reject(new Error('IndexedDB is not available')); return; }
+                const req = indexedDB.open(AUTOSAVE_DB, 1);
+                req.onupgradeneeded = () => req.result.createObjectStore(AUTOSAVE_STORE);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error || new Error('could not open storage'));
+                req.onblocked = () => reject(new Error('storage is blocked'));
+            });
+        }
+        // Runs fn(store) in one transaction and resolves when it has committed.
+        // fn returns a request, or an array of them; their results come back.
+        async function idbTx(mode, fn) {
+            const db = await idbOpen();
+            try {
+                return await new Promise((resolve, reject) => {
+                    const tx = db.transaction(AUTOSAVE_STORE, mode);
+                    const r = fn(tx.objectStore(AUTOSAVE_STORE));
+                    tx.oncomplete = () => resolve(Array.isArray(r) ? r.map(x => x.result) : (r ? r.result : undefined));
+                    tx.onerror = tx.onabort = () => reject(tx.error || new Error('storage write failed'));
+                });
+            } finally { db.close(); }
+        }
+        async function readSlots() {
+            const [keys, vals] = await idbTx('readonly', st => [st.getAllKeys(), st.getAll()]);
+            return keys.map((key, i) => ({ key, ...vals[i] })).filter(v => v && typeof v.json === 'string');
+        }
+
+        function makeSnapshot() {
+            return { savedAt: Date.now(), pawnCount: state.pawns.length, json: JSON.stringify(buildProjectData()) };
+        }
+
+        // A burst of changes costs one save: the timer starts at the first change
+        // and is not pushed back by later ones, so constant editing can't starve it.
+        function scheduleAutosave() {
+            if (!autosaveStarted || autosaveTimer) return;
+            autosaveTimer = setTimeout(runAutosave, 1500);
+        }
+        function runAutosave() {
+            clearTimeout(autosaveTimer); autosaveTimer = null;
+            if (!autosaveStarted || autosaveHold > 0) return Promise.resolve();
+            const gen = autosaveGen;
+            return queueWrite(async () => {
+                // Checked again here: a delete or a project load may have started
+                // while this write waited its turn.
+                if (gen !== autosaveGen || autosaveHold > 0) return;
+                // An empty sheet never replaces a saved copy.
+                if (state.pawns.length === 0) return;
+                const snap = makeSnapshot();
+                if (snap.json === autosaveBaseline || snap.json === lastSavedJson || snap.json === autosaveSuppress) return;
+                await idbTx('readwrite', st => st.put(snap, autosaveKey));
+                lastSavedJson = snap.json; autosaveSuppress = null;
+                if (autosaveError) { autosaveError = ''; updateRestoreButton(); }
+            }).catch(err => autosaveFailed(err));
+        }
+
+        // Said out loud, because a recovery copy that silently isn't being kept
+        // is worse than none.
+        function autosaveFailed(err) {
+            console.warn('[autosave]', err);
+            autosaveError = (err && err.message) ? err.message : 'storage is unavailable';
+            updateRestoreButton();
+            if (!autosaveWarned) {
+                autosaveWarned = true;
+                showToast('Autosave is not working in this browser (' + autosaveError + '). Use Save to keep your work.', 15000);
+            }
+        }
+
+        // Anything the page does that changes the project ends in one of these
+        // events (or in a render, which also schedules a save), so listening here
+        // covers handlers that never go through a render function.
+        ['input', 'change', 'click', 'keyup', 'pointerup', 'wheel', 'drop', 'paste']
+            .forEach(ev => document.addEventListener(ev, scheduleAutosave, true));
+        // Tabs are often closed with no further warning, so flush on the way out.
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') runAutosave(); });
+        window.addEventListener('pagehide', runAutosave);
+
+        function pickCandidate(slots, onScreenJson) {
+            return slots
+                .filter(sl => sl.key !== autosaveKey && sl.json !== onScreenJson)
+                .sort((x, y) => y.savedAt - x.savedAt)[0] || null;
+        }
+
+        async function initAutosave() {
+            autosaveBaseline = JSON.stringify(buildProjectData());
+            try {
+                const slots = await readSlots();
+                // Housekeeping only ever removes old slots, never this page's.
+                const others = slots.filter(sl => sl.key !== autosaveKey).sort((x, y) => y.savedAt - x.savedAt);
+                const drop = others.filter((sl, i) => i >= AUTOSAVE_KEEP || Date.now() - sl.savedAt > AUTOSAVE_MAX_AGE).map(sl => sl.key);
+                if (drop.length) await queueWrite(() => idbTx('readwrite', st => { drop.forEach(k => st.delete(k)); }));
+                previousSnapshot = pickCandidate(slots.filter(sl => !drop.includes(sl.key)), autosaveBaseline);
+                // Best effort: ask the browser not to evict this under storage pressure.
+                if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+            } catch (err) {
+                autosaveFailed(err);
+                previousSnapshot = null;
+            }
+            autosaveStarted = true;
+            updateRestoreButton();
+            if (previousSnapshot) {
+                showToast('Found a copy of your last session saved in this browser. Use “Restore previous data” under Project to bring it back.', 12000);
+            }
+        }
+
+        function describeSnapshot(snap) {
+            const d = new Date(snap.savedAt);
+            const when = d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+            return when + ' · ' + snap.pawnCount + ' pawn' + (snap.pawnCount === 1 ? '' : 's');
+        }
+        function updateRestoreButton() {
+            const box = document.getElementById('previous-data-controls');
+            const note = document.getElementById('restore-previous-note');
+            if (box) {
+                box.style.display = previousSnapshot ? '' : 'none';
+                box.querySelectorAll('button').forEach(b => { b.disabled = restoring; });
+                if (previousSnapshot) {
+                    const when = describeSnapshot(previousSnapshot);
+                    document.getElementById('restore-previous-btn').title = 'Replace what is on screen with the copy saved in this browser (' + when + ')';
+                    document.getElementById('append-previous-btn').title = 'Add the pawns from that copy (' + when + ') to what is on screen';
+                    document.getElementById('clear-previous-btn').title = 'Delete the copies saved by earlier sessions';
+                }
+            }
+            if (note) {
+                note.classList.toggle('warn', !!autosaveError);
+                note.innerText = autosaveError ? 'Autosave is off: ' + autosaveError
+                    : (previousSnapshot ? 'Saved ' + describeSnapshot(previousSnapshot) : '');
+            }
+        }
+
+        // Restore and Append run inside the import queue, so they are ordered with
+        // any Load or Add and nothing can change the project between taking the
+        // undo copy and replacing it. The page is locked for the duration.
+        async function withPreviousData(work) {
+            if (!previousSnapshot || restoring) return;
+            let data;
+            try { data = JSON.parse(previousSnapshot.json); }
+            catch (err) { alert('The saved copy could not be read.'); return; }
+            restoring = true; updateRestoreButton();
+            autosaveHold++; importBusyBegin();
+            try {
+                await runImport(() => work(data));
+            } catch (err) {
+                console.warn('[autosave] previous data failed', err);
+                alert((err && err.message) || 'Could not use the saved copy.');
+            } finally {
+                importBusyEnd(); autosaveHold--; scheduleAutosave();
+                restoring = false; updateRestoreButton();
+            }
+        }
+
+        // Swaps rather than overwrites: what is on screen first goes into a slot
+        // of its own, so a restore that wasn't wanted is undone by pressing the
+        // button again (that slot is then the newest copy on offer).
+        function restorePreviousData() {
+            return withPreviousData(async (data) => {
+                // Keep the current project first; if that can't be written the
+                // restore is abandoned rather than risking the work on screen.
+                const undo = makeSnapshot();
+                await queueWrite(() => idbTx('readwrite', st => st.put(undo, 'undo:' + newSlotId())));
+                await _loadProjectFromJSON(data);
+                lastSavedJson = null; autosaveSuppress = null;
+                previousSnapshot = pickCandidate(await readSlots(), JSON.stringify(buildProjectData()));
+                showToast('Restored your saved copy.');
+            });
+        }
+
+        // Adds the saved copy's pawns to what is on screen. Nothing is replaced, so
+        // there is nothing to undo; the saved copy stays on offer.
+        function appendPreviousData() {
+            return withPreviousData(async (data) => { await _addProjectFromJSON(data); });
+        }
+
+        // Deletes the copies left by earlier sessions (and undo copies), but not
+        // this session's own autosave, in a single transaction.
+        async function clearPreviousData() {
+            if (!previousSnapshot || restoring) return;
+            if (!confirm('Delete the previous data saved in this browser? The project on screen and this session’s autosave are not affected.')) return;
+            try {
+                await queueWrite(() => idbTx('readwrite', st => {
+                    const req = st.openKeyCursor();
+                    req.onsuccess = () => {
+                        const c = req.result;
+                        if (c) { if (c.key !== autosaveKey) st.delete(c.key); c.continue(); }
+                    };
+                    return req;
+                }));
+            } catch (err) {
+                console.warn('[autosave] clear previous failed', err);
+                alert('Could not delete the previous data: ' + ((err && err.message) || err));
+                return;
+            }
+            previousSnapshot = null;
+            updateRestoreButton();
+            showToast('Previous data deleted.');
+        }
+
+        // Deletes every copy this browser holds, in one transaction. Anything
+        // already queued is cancelled or finishes first, and the project that was
+        // on screen is not written back until it changes again.
+        async function clearSavedData() {
+            if (!confirm('Delete the copies of your project that this browser has saved? Files you saved to your computer are not affected.')) return;
+            autosaveGen++;
+            clearTimeout(autosaveTimer); autosaveTimer = null;
+            try {
+                await queueWrite(() => idbTx('readwrite', st => st.clear()));
+            } catch (err) {
+                console.warn('[autosave] delete failed', err);
+                alert('Could not delete the saved copies: ' + ((err && err.message) || err));
+                scheduleAutosave();
+                return;
+            }
+            previousSnapshot = null; lastSavedJson = null;
+            autosaveSuppress = state.pawns.length ? makeSnapshot().json : null;
+            updateRestoreButton();
+            showToast('Saved copies deleted from this browser.');
+        }
+
         function showToast(message, ms) {
             let toast = document.getElementById('app-toast');
             if (!toast) {

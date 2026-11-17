@@ -9,7 +9,10 @@
  *
  * Bump CACHE_VERSION on every deploy; the activate handler evicts old caches.
  */
-const CACHE_VERSION = 'trifold-v2026.10.25.01';
+// The beta app shares an origin with the main app, so it keeps to its own
+// 'trifold-beta-' cache names and never touches (or is touched by) the main app's.
+const CACHE_PREFIX = 'trifold-beta-';
+const CACHE_VERSION = CACHE_PREFIX + 'v2026.11.17.01';
 const SHELL = [
   './',
   './index.html',
@@ -22,15 +25,32 @@ const SHELL = [
   './icons/favicon-64.png'
 ];
 
+// The pages the app cannot open offline without. If either fails to cache the
+// install is abandoned, so the previous worker (and its cache) stays in charge
+// instead of being replaced by one with no shell to fall back on.
+const REQUIRED = ['./', './index.html'];
+
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_VERSION)
+    caches.open(CACHE_VERSION).then(cache =>
       // addAll rejects the whole batch if any single file 404s, which would
-      // leave the app permanently uninstallable. Add them individually.
-      .then(cache => Promise.all(SHELL.map(url =>
-        cache.add(url).catch(err => console.warn('[sw] skipped', url, err))
-      )))
-      .then(() => self.skipWaiting())
+      // leave the app permanently uninstallable. Add them individually, and
+      // only treat the required pages as fatal.
+      Promise.all(SHELL.map(url =>
+        cache.add(url).then(() => null, err => {
+          console.warn('[sw] could not cache', url, err);
+          return REQUIRED.includes(url) ? url : null;
+        })
+      )).then(failed => {
+        const missing = failed.filter(Boolean);
+        if (missing.length) {
+          // Drop the half-filled cache; activate would otherwise keep it.
+          return caches.delete(CACHE_VERSION).then(() => {
+            throw new Error('shell not cached: ' + missing.join(', '));
+          });
+        }
+      })
+    ).then(() => self.skipWaiting())
   );
 });
 
@@ -38,7 +58,7 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(k => k !== CACHE_VERSION).map(k => caches.delete(k))
+        keys.filter(k => k.startsWith(CACHE_PREFIX) && k !== CACHE_VERSION).map(k => caches.delete(k))
       ))
       .then(() => self.clients.claim())
   );
