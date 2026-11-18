@@ -1937,7 +1937,7 @@
         // Teams from a file: only well-formed colours, short plain names, no repeats.
         function cleanTeams(raw) {
             const out = [], seen = new Set();
-            (Array.isArray(raw) ? raw : []).slice(0, 64).forEach(t => {
+            (Array.isArray(raw) ? raw : []).forEach(t => {
                 if (!t || typeof t !== 'object' || typeof t.color !== 'string' || !/^#[0-9a-f]{6}$/i.test(t.color)) return;
                 const color = t.color.toLowerCase();
                 if (seen.has(color)) return;
@@ -2512,6 +2512,10 @@
             else renderSinglePawn(index);
         }
 
+        // Pawn sizes outside this range aren't offered anywhere in the app, and a
+        // huge one would make drawPawnCanvas allocate an enormous canvas.
+        const PAWN_W_RANGE = [0.5, 3], PAWN_H_RANGE = [0.5, 4];
+        const cleanDim = (v, fallback, [lo, hi]) => { const n = Number(v); return Number.isFinite(n) && n >= lo && n <= hi ? n : fallback; };
         function updateGlobalSize() {
             const size = document.getElementById('size-select').value;
             let w = 1.0, h = 1.5;
@@ -2652,8 +2656,8 @@
                 isDark: p.isDark !== undefined ? p.isDark : calculateDarkness(img),
                 isFlipped: p.isFlipped || false, showBorder: p.showBorder || false, borderStyle: p.borderStyle === 'dashed' ? 'dashed' : 'solid',
                 scale: p.scale || 1.0, rotation: p.rotation || 0, offsetX: p.offsetX || 0, offsetY: p.offsetY || 0,
-                pawnWidth: p.pawnWidth || defaults.pawnWidth, pawnHeight: p.pawnHeight || defaults.pawnHeight,
-                trackerScale: p.trackerScale || 1,
+                pawnWidth: cleanDim(p.pawnWidth, defaults.pawnWidth, PAWN_W_RANGE), pawnHeight: cleanDim(p.pawnHeight, defaults.pawnHeight, PAWN_H_RANGE),
+                trackerScale: cleanTrackerScale(p.trackerScale),
                 hpMode: p.hpMode || 'standard',
                 // Absent means "saved before this existed", which should get the
                 // new default rather than silently opting out.
@@ -2820,8 +2824,8 @@
 
             // Stage: everything slow (image loading) happens first, against local
             // variables. Nothing on screen or in `state` changes until it all worked.
-            const pawnWidth = projectData.pawnWidth || 1.0;
-            const pawnHeight = projectData.pawnHeight || 1.5;
+            const pawnWidth = cleanDim(projectData.pawnWidth, 1.0, PAWN_W_RANGE);
+            const pawnHeight = cleanDim(projectData.pawnHeight, 1.5, PAWN_H_RANGE);
             // Cards load first so attachment validation has a library to check
             // against. Malformed entries are skipped rather than fatal.
             const cards = [];
@@ -3223,7 +3227,8 @@
                 `<table:table table:style-name="PTbl"><table:table-column table:style-name="PCol${r.length}" table:number-columns-repeated="${r.length}"/><table:table-row>` +
                 r.map(cv => `<table:table-cell office:value-type="string" table:style-name="PCell"><text:p text:style-name="PCenter">${frame(cv)}</text:p></table:table-cell>`).join('') +
                 `</table:table-row></table:table><text:p text:style-name="PGap"/>`).join('');
-            const colStyles = [1, 2, 3, 4, 5, 6, 7, 8].map(n =>
+            const colCounts = [...new Set([1, 2, 3, 4, 5, 6, 7, 8, ...exportRows(parts.standees).concat(exportRows(parts.tokens)).map(r => r.length)])].filter(n => n > 0);
+            const colStyles = colCounts.map(n =>
                 `<style:style style:name="PCol${n}" style:family="table-column"><style:table-column-properties style:column-width="${+(usableIn / n).toFixed(3)}in"/></style:style>`).join('');
             let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
             <office:document xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" office:version="1.2" xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" office:mimetype="application/vnd.oasis.opendocument.text">
@@ -3517,9 +3522,16 @@
             renderCardsPage();
         }
 
+        // Hard ceiling on boxes drawn for one value, so an imported or mistyped
+        // "99999999" can't make the page build millions of elements.
+        const TRACKER_BOX_CAP = 100;
+        const cleanTrackerScale = v => { const n = Math.floor(Number(v)); return Number.isFinite(n) && n >= 1 ? Math.min(n, 1000) : 1; };
+        const overflowTag = n => `<span class="res-overflow">+${n}</span>`;
         function renderScaledBoxes(num, scale) {
             if (isNaN(num) || num <= 0) return '';
-            const numBoxes = Math.ceil(num / scale);
+            scale = cleanTrackerScale(scale);
+            const fullBoxes = Math.ceil(num / scale);
+            const numBoxes = Math.min(fullBoxes, TRACKER_BOX_CAP);
             let boxes = '<div class="track-box-container">';
             for (let i = 0; i < numBoxes; i++) {
                 if (i % 5 === 0) {
@@ -3530,6 +3542,7 @@
                 boxes += `<span class="track-box">${innerText}</span>`;
             }
             if (numBoxes > 0) boxes += '</div>';
+            if (fullBoxes > numBoxes) boxes += overflowTag(fullBoxes - numBoxes);
             boxes += '</div>';
             return boxes;
         }
@@ -4990,9 +5003,12 @@
                 { count: d.ones,  value: 1,  cls: 'hp-box-1'  }
             ];
             let html = '<div class="track-box-container adaptive-hp">';
-            let any = false;
+            let any = false, drawn = 0, skipped = 0;
             tiers.forEach(t => {
-                for (let i = 0; i < t.count; i++) {
+                const room = Math.max(0, TRACKER_BOX_CAP - drawn);
+                const n = Math.min(t.count, room);
+                skipped += t.count - n; drawn += n;
+                for (let i = 0; i < n; i++) {
                     if (i % 5 === 0) {
                         if (i > 0) html += '</div>';
                         html += '<div class="track-box-group">';
@@ -5000,8 +5016,9 @@
                     html += `<span class="track-box ${t.cls}">${t.value}</span>`;
                     any = true;
                 }
-                if (t.count > 0) html += '</div>';
+                if (n > 0) html += '</div>';
             });
+            if (skipped) html += overflowTag(skipped);
             html += '</div>';
             return any ? html : '';
         }
@@ -6114,10 +6131,60 @@
         // Restore previous data button. Opening the app never touches those
         // slots; old ones are pruned after 30 days or beyond the newest eight.
         // Nothing is written until the project differs from the starter project.
-        const AUTOSAVE_DB = 'trifold-autosave', AUTOSAVE_STORE = 'projects';
+        // The beta shares an origin with the main app, so it keeps its own database:
+        // it never offers (or deletes) the main app's copies, nor the other way round.
+        const AUTOSAVE_DB = 'trifold-beta-autosave', AUTOSAVE_STORE = 'projects';
         const AUTOSAVE_KEEP = 8, AUTOSAVE_MAX_AGE = 30 * 24 * 3600 * 1000;
         const newSlotId = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2);
         const autosaveKey = 'tab:' + newSlotId();
+
+        // Which tabs are open right now. Each tab holds a Web Lock named after its
+        // slot for as long as it lives (the browser frees it when the tab closes
+        // or crashes), so "previous" copies are exactly those with no live lock.
+        const TAB_LOCK_PREFIX = 'trifold-beta-tab:';
+        const LIVE_FALLBACK_MS = 10 * 60 * 1000;   // without Web Locks: recent means maybe live
+        if (navigator.locks && navigator.locks.request) {
+            navigator.locks.request(TAB_LOCK_PREFIX + autosaveKey.slice(4), () => new Promise(() => {})).catch(() => {});
+        }
+        async function liveTabKeys() {
+            if (!(navigator.locks && navigator.locks.query)) return null;
+            try {
+                const { held = [] } = await navigator.locks.query();
+                return new Set(held.map(l => l.name).filter(n => n && n.startsWith(TAB_LOCK_PREFIX)).map(n => 'tab:' + n.slice(TAB_LOCK_PREFIX.length)));
+            } catch (err) { return null; }
+        }
+        // True for a copy no open tab is writing to. `live` is liveTabKeys().
+        function isPreviousCopy(key, savedAt, live) {
+            if (key === autosaveKey) return false;
+            if (live) return !live.has(key);
+            return !String(key).startsWith('tab:') || Date.now() - (savedAt || 0) > LIVE_FALLBACK_MS;
+        }
+
+        // "Delete everything" has to reach tabs that are already holding a queued
+        // write, or they would put their copy straight back.
+        const CLEAR_SIGNAL = 'trifold-beta-autosave-cleared';
+        let clearChannel = null;
+        try { if (window.BroadcastChannel) clearChannel = new BroadcastChannel(CLEAR_SIGNAL); } catch (err) { clearChannel = null; }
+        function announceCleared() {
+            try {
+                if (clearChannel) clearChannel.postMessage({ from: autosaveKey });
+                else localStorage.setItem(CLEAR_SIGNAL, String(Date.now()));
+            } catch (err) { /* best effort */ }
+        }
+        // Another tab deleted every saved copy: drop anything this tab had queued,
+        // remove its own slot (after any write already in flight), and keep quiet
+        // until the project changes again.
+        function onSavedCopiesCleared() {
+            autosaveGen++;
+            clearTimeout(autosaveTimer); autosaveTimer = null;
+            lastSavedJson = null;
+            autosaveSuppress = state.pawns.length ? makeSnapshot().json : null;
+            previousSnapshot = null;
+            queueWrite(() => idbTx('readwrite', st => { st.delete(autosaveKey); })).catch(err => autosaveFailed(err));
+            updateRestoreButton();
+        }
+        if (clearChannel) clearChannel.onmessage = e => { if (e.data && e.data.from !== autosaveKey) onSavedCopiesCleared(); };
+        window.addEventListener('storage', e => { if (e.key === CLEAR_SIGNAL && e.newValue) onSavedCopiesCleared(); });
 
         let autosaveTimer = null;
         let autosaveStarted = false;        // set once start-up has read the saved slots
@@ -6226,7 +6293,8 @@
             try {
                 const slots = await readSlots();
                 // Housekeeping only ever removes old slots, never this page's.
-                const others = slots.filter(sl => sl.key !== autosaveKey).sort((x, y) => y.savedAt - x.savedAt);
+                const live = await liveTabKeys();
+                const others = slots.filter(sl => isPreviousCopy(sl.key, sl.savedAt, live)).sort((x, y) => y.savedAt - x.savedAt);
                 const drop = others.filter((sl, i) => i >= AUTOSAVE_KEEP || Date.now() - sl.savedAt > AUTOSAVE_MAX_AGE).map(sl => sl.key);
                 if (drop.length) await queueWrite(() => idbTx('readwrite', st => { drop.forEach(k => st.delete(k)); }));
                 previousSnapshot = pickCandidate(slots.filter(sl => !drop.includes(sl.key)), autosaveBaseline);
@@ -6315,16 +6383,19 @@
         // this session's own autosave, in a single transaction.
         async function clearPreviousData() {
             if (!previousSnapshot || restoring) return;
-            if (!confirm('Delete the previous data saved in this browser? The project on screen and this session’s autosave are not affected.')) return;
+            if (!confirm('Delete the previous data saved in this browser? The project on screen, this session’s autosave and any other open tabs are not affected.')) return;
             try {
-                await queueWrite(() => idbTx('readwrite', st => {
-                    const req = st.openKeyCursor();
-                    req.onsuccess = () => {
-                        const c = req.result;
-                        if (c) { if (c.key !== autosaveKey) st.delete(c.key); c.continue(); }
-                    };
-                    return req;
-                }));
+                await queueWrite(async () => {
+                    const live = await liveTabKeys();
+                    await idbTx('readwrite', st => {
+                        const req = st.openCursor();
+                        req.onsuccess = () => {
+                            const c = req.result;
+                            if (c) { if (isPreviousCopy(c.key, c.value && c.value.savedAt, live)) st.delete(c.key); c.continue(); }
+                        };
+                        return req;
+                    });
+                });
             } catch (err) {
                 console.warn('[autosave] clear previous failed', err);
                 alert('Could not delete the previous data: ' + ((err && err.message) || err));
@@ -6339,7 +6410,7 @@
         // already queued is cancelled or finishes first, and the project that was
         // on screen is not written back until it changes again.
         async function clearSavedData() {
-            if (!confirm('Delete the copies of your project that this browser has saved? Files you saved to your computer are not affected.')) return;
+            if (!confirm('Delete the copies of your project that this browser has saved, including those of other open tabs? Files you saved to your computer are not affected.')) return;
             autosaveGen++;
             clearTimeout(autosaveTimer); autosaveTimer = null;
             try {
@@ -6352,6 +6423,7 @@
             }
             previousSnapshot = null; lastSavedJson = null;
             autosaveSuppress = state.pawns.length ? makeSnapshot().json : null;
+            announceCleared();
             updateRestoreButton();
             showToast('Saved copies deleted from this browser.');
         }
